@@ -1,0 +1,1968 @@
+<!DOCTYPE html>  <html lang="en" dir="ltr">  
+<head>  
+<meta charset="UTF-8">  
+<meta name="viewport" content="width=device-width, initial-scale=1.0">  
+<title>SULTANFLIX PRO V8</title>  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css"/>  <style>  
+body{  
+margin:0;  
+background:#141414;  
+font-family:Arial;  
+color:white;  
+overflow-x:hidden;  
+}  
+header{
+display:flex;
+flex-direction:column;
+align-items:center;
+padding:10px;
+background:black;
+position:sticky;
+top:0;
+z-index:999
+} 
+nav{
+display:flex;
+gap:8px;
+flex-wrap:wrap;
+justify-content:center;
+}
+
+nav button,
+.langBtn{
+
+background:#222;
+border:none;
+color:white;
+
+padding:6px 12px;
+font-size:14px;
+
+border-radius:20px;
+
+cursor:pointer;
+transition:.2s;
+
+}
+nav button:hover,
+.langBtn:hover{
+background:#e50914;
+}
+.logo{
+font-size:28px;
+font-weight:bold;
+color:#e50914;
+letter-spacing:3px;
+margin-bottom:8px;
+}  
+  
+.searchBox{display:none;padding:10px;background:black}  
+.searchBox input{width:100%;padding:10px;border:none;border-radius:6px;font-size:16px}  
+  
+.banner{  
+height:60vh;  
+background-size:cover;  
+background-position:center;  
+display:flex;  
+align-items:flex-end;  
+padding:40px;  
+font-size:38px;  
+font-weight:bold;  
+transition:background 1s;  
+}  
+  
+.row{  
+display:flex;  
+gap:15px;  
+padding:20px;  
+overflow-x:auto;  
+overflow-y:hidden;  
+scroll-behavior:smooth;  
+-webkit-overflow-scrolling:touch;  
+}  
+  .row{  
+display:flex;  
+gap:15px;  
+padding:20px;  
+overflow-x:auto;  
+overflow-y:hidden;  
+scroll-behavior:smooth;  
+max-width:100%;  
+}  
+  .row::-webkit-scrollbar{  
+height:6px;  
+}  
+  
+.row::-webkit-scrollbar-thumb{  
+background:#e50914;  
+border-radius:10px;  
+}  
+.card{  
+min-width:170px;  
+flex:0 0 auto;  
+cursor:pointer;  
+text-align:center;  
+transition:.3s  
+}  
+  
+.card:hover{transform:scale(1.05)}  
+  
+.card img{  
+width:170px;  
+height:250px;  
+border-radius:8px;  
+object-fit:cover  
+}  
+  
+/* Skeleton loading */  
+  
+.skeleton{  
+width:170px;  
+height:250px;  
+background:#333;  
+border-radius:8px;  
+animation:pulse 1.2s infinite  
+}  
+  
+@keyframes pulse{  
+0%{opacity:.5}  
+50%{opacity:.9}  
+100%{opacity:.5}  
+}  
+  
+/* movie page */  
+  
+.moviePage{  
+position:fixed;  
+top:0;  
+left:0;  
+width:100vw;  
+height:100vh;  
+background:#000;  
+overflow-y:auto;  
+overflow-x:hidden;  
+z-index:9998;  
+display:none;  
+padding:20px;  
+box-sizing:border-box;  
+}  
+  
+/* Netflix style backdrop */  
+  
+.heroBackdrop{  
+position:absolute;  
+top:0;  
+left:0;  
+width:100%;  
+height:100%;  
+background-size:cover;  
+background-position:center;  
+filter:blur(25px) brightness(.35);  
+z-index:-1;  
+}  
+  
+/* details */  
+  
+.detailsCard{  
+max-width:900px;  
+margin:40px auto;  
+background:#181818;  
+border-radius:12px;  
+padding:30px;  
+box-shadow:0 10px 40px rgba(0,0,0,0.6);  
+display:flex;  
+flex-direction:column;  
+align-items:center;  
+}  
+  
+.detailsCard img{  
+width:220px;  
+border-radius:10px;  
+margin-bottom:20px;  
+}  
+  
+.detailsCard h1{  
+font-size:34px;  
+margin-bottom:10px;  
+text-align:center;  
+}  
+  
+.detailsCard p{  
+max-width:650px;  
+font-size:18px;  
+line-height:1.7;  
+text-align:left;  
+margin-bottom:10px;  
+}  
+  
+.info{opacity:.8;font-size:14px;margin-bottom:10px}  
+.rating{font-size:20px;margin:10px 0}  
+  
+.playBtn{  
+background:#e50914;  
+border:none;  
+padding:12px 30px;  
+color:white;  
+font-size:18px;  
+border-radius:8px;  
+cursor:pointer;  
+margin-top:10px;  
+transition:.25s  
+}  
+  
+.playBtn:hover{  
+transform:scale(1.05);  
+background:#ff1f1f;  
+}  
+  
+/* similar row */  
+  
+.similarTitle{  
+font-size:22px;  
+margin-top:30px  
+}  
+  
+/* seasons */  
+  
+.seasonGrid{  
+display:flex;  
+justify-content:center;  
+flex-wrap:wrap;  
+gap:12px;  
+margin-top:25px;  
+}  
+  
+/* episodes */  
+  
+.episodeGrid{  
+display:grid;  
+grid-template-columns:repeat(auto-fill,minmax(120px,1fr));  
+gap:12px;  
+margin-top:20px;  
+}  
+  
+.episodeBtn{  
+background:#1f1f1f;  
+padding:10px;  
+border-radius:10px;  
+cursor:pointer;  
+text-align:center;  
+font-weight:bold;  
+display:flex;  
+flex-direction:column;  
+align-items:center;  
+gap:8px;  
+}  
+  
+.episodeBtn img{  
+width:100%;  
+height:120px;  
+object-fit:cover;  
+border-radius:6px;  
+}  
+  
+.episodeBtn:hover{  
+background:#e50914;  
+}  
+  
+/* player */  
+  
+.player{  
+position:fixed;  
+top:0;  
+left:0;  
+width:100vw;  
+height:100vh;  
+background:black;  
+display:none;  
+z-index:9999  
+}  
+  
+.player iframe{  
+width:100%;  
+height:100%;  
+border:0  
+}  
+  
+.close{  
+position:fixed;  
+top:20px;  
+right:20px;  
+background:#e50914;  
+color:white;  
+border:none;  
+font-size:22px;  
+width:45px;  
+height:45px;  
+border-radius:50%;  
+cursor:pointer;  
+z-index:10000;  
+display:flex;  
+align-items:center;  
+justify-content:center;  
+}  
+  
+.close:hover{  
+background:#ff1f1f;  
+}  
+  
+  .langDropdown{
+position:relative;
+display:inline-block;
+}
+
+.langBtn{
+background:#222;
+color:white;
+border:none;
+padding:8px 14px;
+border-radius:6px;
+cursor:pointer;
+}
+
+.langMenu{
+display:none;
+position:absolute;
+top:40px;
+right:0;
+background:#1a1a1a;
+border-radius:8px;
+overflow:hidden;
+box-shadow:0 5px 20px rgba(0,0,0,0.6);
+z-index:999;
+min-width:140px;
+}
+
+.langMenu div{
+padding:10px;
+cursor:pointer;
+transition:.2s;
+}
+
+.langMenu div:hover{
+background:#e50914;
+}
+  
+.actionBtns{
+display:flex;
+gap:10px;
+margin-top:10px;
+flex-wrap:wrap;
+}
+  
+button:focus{outline:3px solid red}  
+  
+</style>  </head>  <body>  <header>  
+<div class="logo">SULTANFLIX</div>  <nav>  
+<button onclick="showSection('movies')">🎬 <span id="navMovies"></span></button>
+
+<button onclick="showSection('series')">📺 <span id="navSeries"></span></button>
+
+<button onclick="showSection('anime')">🍥 <span id="navAnime"></span></button>
+  
+<button onclick="openMyList()">❤️ My List</button>
+
+<button onclick="toggleSearch()">🔎 <span id="navSearch"></span></button>  
+<div class="langDropdown">
+
+<button onclick="toggleLangMenu()" class="langBtn">
+🌐 Language
+</button>
+
+<div id="langMenu" class="langMenu">
+
+<div onclick="setLang('ar')">🇸🇦 Arabic</div>
+
+<div onclick="setLang('en')">🇺🇸 English</div>
+
+<div onclick="setLang('fr')">🇫🇷 French</div>
+
+<div onclick="setLang('es')">🇪🇸 Spanish</div>
+
+</div>
+
+</div>
+</nav>  
+</header>  <div id="searchBox" class="searchBox">  
+<input id="searchInput" placeholder="Search..." onkeyup="smartSearch()">  
+</div>  <div id="banner" class="banner"></div>  <div id="moviesSection"></div>  
+<div id="seriesSection" style="display:none"></div>  
+<div id="animeSection" style="display:none"></div>  
+<div id="myListSection" style="display:none"></div>
+<div id="searchResults"></div>  <div id="moviePage" class="moviePage">  
+<button class="close" onclick="closeMoviePage()">✖</button>  
+<div id="movieDetails"></div>  
+</div>  <div id="seriesPage" class="moviePage">  
+<button class="close" onclick="closeSeriesPage()">✖</button>  
+<div id="seriesDetails"></div>  
+</div>  <div id="player" class="player">  
+<button class="close" onclick="closePlayer()">✖</button>  
+<iframe 
+id="frame"
+allowfullscreen
+sandbox="allow-scripts allow-same-origin allow-forms"
+referrerpolicy="no-referrer">
+</iframe>  
+</div>  
+  <script>  
+    
+  const originalOpen = window.open  
+  document.addEventListener("click",function(e){  
+if(e.target.tagName==="A"){  
+e.preventDefault()  
+}  
+})  
+  
+const API="https://api.themoviedb.org/3"  
+const KEY="6f3da2afe20dacbb24cd83311d36c361"  
+const IMG="https://image.tmdb.org/t/p/w342"
+const LANG = localStorage.getItem("lang") || "en"
+
+  const TEXT = {
+
+en:{
+movies:"Movies",
+series:"Series",
+anime:"Anime",
+search:"Search"
+},
+
+ar:{
+movies:"الأفلام",
+series:"المسلسلات",
+anime:"الأنمي",
+search:"بحث"
+},
+
+fr:{
+movies:"Films",
+series:"Séries",
+anime:"Anime",
+search:"Recherche"
+},
+
+es:{
+movies:"Películas",
+series:"Series",
+anime:"Anime",
+search:"Buscar"
+}
+
+}
+  
+  if(LANG==="ar"){
+document.body.dir="rtl"
+}
+  
+const banner=document.getElementById("banner")  
+const player=document.getElementById("player")  
+const frame=document.getElementById("frame")  
+  
+let movieBanner=[]  
+let seriesBanner=[]  
+let animeBanner=[]  
+  
+let bannerIndex=0  
+  
+async function loadHero(){  
+  
+const res = await fetch(`${API}/trending/movie/week?api_key=${KEY}&language=${LANG}`)  
+const data = await res.json()  
+  
+movieBanner = data.results.slice(0,10)  
+  
+changeBanner(movieBanner)  
+  
+}  
+  async function loadMovieBanner(){  
+  
+const res = await fetch(`${API}/trending/movie/week?api_key=${KEY}&language=${LANG}`)  
+const data = await res.json()  
+  
+movieBanner = data.results.slice(0,10)  
+  
+changeBanner(movieBanner)  
+  
+}  
+  async function loadSeriesBanner(){  
+  
+const res = await fetch(`${API}/trending/tv/week?api_key=${KEY}&language=${LANG}`)  
+const data = await res.json()  
+  
+seriesBanner = data.results.slice(0,10)  
+  
+changeBanner(seriesBanner)  
+  
+}  
+  async function loadAnimeBanner(){  
+  
+const res = await fetch(`${API}/discover/tv?api_key=${KEY}&language=${LANG}&with_genres=16`)  
+const data = await res.json()  
+  
+animeBanner = data.results.slice(0,10)  
+  
+changeBanner(animeBanner)  
+  
+}  
+  
+let bannerTimer  
+  
+function changeBanner(list){  
+  
+clearInterval(bannerTimer)  
+  
+bannerIndex = 0  
+  
+function update(){  
+  
+const m = list[bannerIndex]  
+  
+if(!m.backdrop_path){
+bannerIndex++
+if(bannerIndex>=list.length) bannerIndex=0
+return
+}  
+  
+banner.style.backgroundImage =
+`url(https://image.tmdb.org/t/p/w780${m.backdrop_path})`  
+  
+banner.innerHTML = `  
+<div style="background:linear-gradient(transparent,black);padding:20px">  
+${m.title || m.name}<br>  
+<button class="playBtn"  
+onclick="${m.title ? 'openMoviePage' : 'openSeriesPage'}(${m.id})">  
+▶ Watch  
+</button>  
+</div>  
+`  
+  
+bannerIndex++  
+  
+if(bannerIndex>=list.length) bannerIndex=0  
+  
+}  
+  
+update()  
+  
+bannerTimer = setInterval(update,5000)  
+  
+}  
+  
+loadHero()  
+  
+function toggleSearch(){  
+const box=document.getElementById("searchBox")  
+box.style.display=box.style.display==="block"?"none":"block"  
+}  
+  
+let searchTimeout  
+  
+function smartSearch(){  
+  
+clearTimeout(searchTimeout)  
+  
+searchTimeout=setTimeout(async()=>{  
+  
+const q=document.getElementById("searchInput").value.trim()  
+  
+if(q.length<2){  
+document.getElementById("searchResults").innerHTML=""  
+return  
+}  
+  
+const res=await fetch(`${API}/search/multi?api_key=${KEY}&language=${LANG}&query=${q}`)  
+const data=await res.json()  
+  
+// إخفاء الأقسام  
+moviesSection.style.display="none"  
+seriesSection.style.display="none"  
+  
+const container=document.getElementById("searchResults")  
+container.innerHTML=""  
+  
+// صف الأفلام  
+const movieRow=document.createElement("div")  
+movieRow.innerHTML="<h2>🎬 Movies</h2>"  
+const movieGrid=document.createElement("div")  
+movieGrid.className="row"  
+  
+// صف المسلسلات  
+const tvRow=document.createElement("div")  
+tvRow.innerHTML="<h2>📺 Series</h2>"  
+const tvGrid=document.createElement("div")  
+tvGrid.className="row"  
+  
+data.results.forEach(m=>{  
+  
+if(!m.poster_path)return  
+  
+const card=document.createElement("div")  
+card.className="card"  
+  
+let type = m.media_type==="movie" ? "🎬 Movie" : "📺 TV"  
+  
+card.innerHTML=`  
+<img loading="lazy" decoding="async" src="${IMG+m.poster_path}">  
+<div>${m.title||m.name}</div>  
+<small style="opacity:.7">${type}</small>  
+`  
+  
+card.onclick=()=>{  
+if(m.media_type==="movie"){  
+openMoviePage(m.id)  
+}else{  
+openSeriesPage(m.id)  
+}  
+}  
+  
+if(m.media_type==="movie"){  
+movieGrid.appendChild(card)  
+}  
+  
+if(m.media_type==="tv"){  
+tvGrid.appendChild(card)  
+}  
+  
+})  
+  
+movieRow.appendChild(movieGrid)  
+tvRow.appendChild(tvGrid)  
+  
+container.appendChild(movieRow)  
+container.appendChild(tvRow)  
+  
+},250)  
+  
+}  
+  
+async function openMoviePage(id){  
+  
+const res = await fetch(`${API}/movie/${id}?api_key=${KEY}&language=${LANG}`)  
+const m = await res.json()  
+const genres = m.genres.map(g=>g.name).join(" • ")  
+const castRes = await fetch(`${API}/movie/${id}/credits?api_key=${KEY}&language=${LANG}`)  
+const castData = await castRes.json()  
+    
+  let castHTML="<h2>🎭 Cast</h2><div class='row'>"  
+  
+castData.cast.slice(0,10).forEach(c=>{  
+if(!c.profile_path)return  
+castHTML+=`  
+<div class="card">  
+<img loading="lazy" src="https://image.tmdb.org/t/p/w200${c.profile_path}">  
+<div>${c.name}</div>  
+</div>  
+`  
+})  
+  
+castHTML+="</div>"  
+  
+moviePage.style.display="block"  
+  
+const v=await fetch(`${API}/movie/${id}/videos?api_key=${KEY}&language=${LANG}`)  
+const vids=await v.json()  
+  
+const trailer=vids.results.find(x=>x.type==="Trailer")  
+  
+let trailerBtn=""  
+  
+if(trailer){  
+  
+trailerBtn=`  
+<button class="playBtn"  
+onclick="openPlayer('https://www.youtube.com/embed/${trailer.key}')">  
+▶ Trailer  
+</button>`  
+  
+}  
+  
+movieDetails.innerHTML=`  
+  
+<div class="heroBackdrop"  
+style="background-image:url(https://image.tmdb.org/t/p/w780${m.backdrop_path})"></div>  
+  
+<div class="detailsCard">  
+  
+<img src="${IMG+m.poster_path}">  
+  
+<h1>${m.title}</h1>  
+  
+<div class="info">  
+📅 ${m.release_date} • ⏱ ${m.runtime} min  
+<br>  
+🎭 ${genres}  
+</div>  
+  
+<p>${m.overview}</p>  
+  
+<div class="rating">  
+⭐ ${m.vote_average} IMDb  
+</div>  
+    
+<div class="actionBtns">
+
+<button class="playBtn" onclick="playMovie(${id})">
+▶ Play
+</button>
+
+<button class="playBtn" onclick="toggleMyList(${m.id},'${m.title}','${m.poster_path}','movie')" id="myListBtn">
+❤️ My List
+</button>
+
+${trailerBtn}
+
+</div>  
+  
+<div id="serverList"></div>  
+${trailerBtn}  
+  
+<div class="similarTitle">Similar Movies</div>
+
+<div class="row" id="similarMovies"></div>
+
+<div class="similarTitle">Recommended</div>
+
+<div class="row" id="recommendedMovies"></div>
+  
+${castHTML}  
+  
+</div>  
+`  
+  
+setTimeout(()=>{
+updateMyListButton(id)
+},100)
+  
+}  
+  
+async function loadSimilarMovies(id){  
+  
+const sim=await fetch(`${API}/movie/${id}/similar?api_key=${KEY}&language=${LANG}`)  
+const similar=await sim.json()  
+  
+const container=document.getElementById("similarMovies")  
+  
+similar.results.slice(0,10).forEach(m=>{  
+  
+if(!m.poster_path)return  
+  
+const card=document.createElement("div")  
+card.className="card"  
+  
+card.innerHTML=`<img src="${IMG+m.poster_path}">`  
+  
+card.onclick=()=>openMoviePage(m.id)  
+  
+container.appendChild(card)  
+  
+})  
+  
+}  
+  
+  async function loadRecommendedMovies(id){
+
+const res = await fetch(`${API}/movie/${id}/recommendations?api_key=${KEY}&language=${LANG}`)
+const data = await res.json()
+
+const container = document.getElementById("recommendedMovies")
+
+if(!container) return
+
+container.innerHTML=""
+
+data.results.slice(0,10).forEach(m=>{
+
+if(!m.poster_path) return
+
+const card=document.createElement("div")
+card.className="card"
+
+card.innerHTML=`
+<img loading="lazy" src="${IMG+m.poster_path}">
+`
+
+card.onclick=()=>openMoviePage(m.id)
+
+container.appendChild(card)
+
+})
+
+}
+  
+function closeMoviePage(){  
+  
+moviePage.style.display="none"  
+  
+}  
+  
+async function openSeriesPage(id){  
+  
+const res=await fetch(`${API}/tv/${id}?api_key=${KEY}&language=${LANG}`)  
+const data=await res.json()  
+  
+seriesPage.style.display="block"  
+  
+let posterHTML=""  
+  
+if(data.poster_path){  
+posterHTML=`<img src="${IMG + data.poster_path}">`  
+}  
+  
+seriesDetails.innerHTML=`  
+<div class="detailsCard">  
+  
+${posterHTML}  
+  
+<h1>${data.name}</h1>  
+  
+<div class="info">  
+📺 ${data.number_of_seasons} Seasons  
+</div>  
+  
+<p>${data.overview}</p>  
+  
+<div class="rating">⭐ ${data.vote_average}</div>  
+  
+<div class="actionBtns">
+
+<button class="playBtn"
+onclick="toggleMyList(${data.id},'${data.name}','${data.poster_path}','tv')" id="myListBtn">
+❤️ My List
+</button>
+
+</div>
+  
+<h2>Seasons</h2>  
+  
+<div class="seasonGrid" id="seasonGrid"></div>  
+  
+<div id="episodeArea"></div>  
+  
+<div id="serverList"></div>  
+  
+</div>  
+`  
+setTimeout(()=>{
+updateMyListButton(id)
+},100)
+  
+const grid=document.getElementById("seasonGrid")  
+  
+data.seasons.forEach(s=>{  
+  
+if(s.season_number==0)return  
+  
+const btn=document.createElement("button")  
+  
+btn.textContent="Season "+s.season_number  
+  
+btn.onclick=()=>loadEpisodes(id,s.season_number)  
+  
+grid.appendChild(btn)  
+  
+})  
+  
+}  
+  
+async function loadEpisodes(id,season){  
+  
+const res=await fetch(`${API}/tv/${id}/season/${season}?api_key=${KEY}&language=${LANG}`)  
+const data=await res.json()  
+  
+let html=`<h3>Season ${season}</h3><div class="episodeGrid">`  
+  
+data.episodes.forEach(e=>{  
+  
+let img = e.still_path  
+? `https://image.tmdb.org/t/p/w300${e.still_path}`  
+: "https://via.placeholder.com/300x170?text=Episode"  
+  
+html+=`  
+<div class="episodeBtn"  
+onclick="showEpisodeServers(${id},${season},${e.episode_number})">  
+  
+<img src="${img}">  
+  
+<b>${e.name}</b>  
+  
+<div style="font-size:12px;opacity:.7">  
+${e.runtime||""} min  
+</div>  
+  
+<div style="font-size:12px;opacity:.7">  
+${e.overview||""}  
+</div>  
+  
+</div>`  
+  
+})  
+  
+html+="</div>"  
+  
+document.getElementById("episodeArea").innerHTML=html  
+  
+}  
+  
+function closeSeriesPage(){  
+seriesPage.style.display="none"  
+}  
+  
+function playMovie(id){
+
+openPlayer(`https://vidsrc.cc/v3/embed/movie/${id}`)
+
+}
+  
+function openPlayer(url){  
+  
+player.style.display="block"  
+frame.src=url  
+  
+localStorage.setItem("lastWatch",url)  
+  
+}  
+  
+function closePlayer(){  
+player.style.display="none"  
+frame.src=""  
+}  
+  
+function showSection(type){
+
+document.getElementById("searchResults").innerHTML=""
+
+moviesSection.style.display = type==="movies" ? "block" : "none"
+seriesSection.style.display = type==="series" ? "block" : "none"
+animeSection.style.display = type==="anime" ? "block" : "none"
+
+/* إخفاء My List */
+const myList = document.getElementById("myListSection")
+if(myList) myList.style.display="none"
+
+if(type==="movies"){
+loadMovieBanner()
+}
+
+if(type==="series"){
+loadSeriesBanner()
+}
+
+if(type==="anime"){
+loadAnimeBanner()
+}
+
+}  
+  
+async function createRow(title,url,container,type){
+
+const section=document.createElement("div")
+section.innerHTML=`<h2>${title}</h2>`
+
+const row=document.createElement("div")
+row.className="row"
+
+section.appendChild(row)
+document.getElementById(container).appendChild(section)
+
+let page=1
+let loading=false
+
+async function loadPage(){
+
+if(loading) return
+loading=true
+
+let link = url.includes("?")
+? `${API}${url}api_key=${KEY}&language=${LANG}&page=${page}`
+: `${API}${url}?api_key=${KEY}&language=${LANG}&page=${page}`
+
+const res=await fetch(link)
+const data=await res.json()
+
+data.results.forEach(m=>{
+
+if(!m.poster_path) return
+
+const card=document.createElement("div")
+card.className="card"
+
+card.innerHTML=`
+<img loading="lazy" decoding="async" src="${IMG+m.poster_path}">
+<div>${m.title||m.name}</div>
+`
+
+card.onclick=()=>{
+if(type==="tv"){
+openSeriesPage(m.id)
+}else{
+openMoviePage(m.id)
+}
+}
+
+row.appendChild(card)
+
+})
+
+page++
+loading=false
+
+}
+
+// تحميل أول 3 صفحات مباشرة
+await loadPage()
+await loadPage()
+await loadPage()
+
+// باقي الصفحات عند السحب
+row.addEventListener("scroll",()=>{
+
+if(row.scrollLeft + row.clientWidth >= row.scrollWidth-200){
+loadPage()
+}
+
+})
+
+}  
+  
+
+const observer = new IntersectionObserver((entries)=>{
+
+entries.forEach(entry=>{
+
+if(entry.isIntersecting){
+
+const el = entry.target
+
+createRow(
+el.dataset.title,
+el.dataset.url,
+el.dataset.container,
+el.dataset.type
+)
+
+observer.unobserve(el)
+
+el.remove()
+
+}
+
+})
+
+},{
+rootMargin:"400px"
+})  
+  
+function lazyRow(title,url,container,type){
+
+const placeholder=document.createElement("div")
+
+placeholder.dataset.title=title
+placeholder.dataset.url=url
+placeholder.dataset.container=container
+placeholder.dataset.type=type
+
+placeholder.style.minHeight="320px"
+
+const skeletonRow=document.createElement("div")
+skeletonRow.className="row"
+
+for(let i=0;i<6;i++){
+
+const sk=document.createElement("div")
+sk.className="skeleton"
+
+skeletonRow.appendChild(sk)
+
+}
+
+placeholder.appendChild(skeletonRow)
+
+document.getElementById(container).appendChild(placeholder)
+
+observer.observe(placeholder)
+
+}  
+  
+  async function lazyActors(){
+
+const placeholder=document.createElement("div")
+placeholder.style.minHeight="320px"
+
+document.getElementById("moviesSection").appendChild(placeholder)
+
+const observerActors = new IntersectionObserver(async(entries)=>{
+
+if(entries[0].isIntersecting){
+
+let actors=[]
+
+for(let page=1; page<=8; page++){
+
+const res = await fetch(`${API}/person/popular?api_key=${KEY}&language=${LANG}&page=${page}`)
+const data = await res.json()
+
+actors = actors.concat(data.results)
+
+}
+
+const section=document.createElement("div")
+section.innerHTML="<h2>🧑‍🎤 Popular Actors</h2>"
+
+const row=document.createElement("div")
+row.className="row"
+
+actors.forEach(a=>{
+
+if(!a.profile_path) return
+
+const card=document.createElement("div")
+card.className="card"
+
+card.innerHTML=`
+<img loading="lazy" decoding="async"
+src="https://image.tmdb.org/t/p/w300${a.profile_path}">
+<div>${a.name}</div>
+`
+
+card.onclick=()=>openActor(a.id)
+
+row.appendChild(card)
+
+})
+
+section.appendChild(row)
+
+placeholder.replaceWith(section)
+
+observerActors.disconnect()
+
+}
+
+},{
+rootMargin:"300px"
+})
+
+observerActors.observe(placeholder)
+
+}
+    
+  async function top10(){  
+  
+const res = await fetch(`${API}/trending/movie/day?api_key=${KEY}&language=${LANG}`)  
+const data = await res.json()  
+  
+const section=document.createElement("div")  
+section.innerHTML="<h2>🔥 Top 10 Today</h2>"  
+  
+const row=document.createElement("div")  
+row.className="row"  
+  
+data.results.slice(0,10).forEach((m,i)=>{  
+  
+if(!m.poster_path)return  
+  
+const card=document.createElement("div")  
+card.className="card"  
+  
+card.innerHTML=`  
+<img loading="lazy" decoding="async" src="${IMG+m.poster_path}">  
+<div>#${i+1}</div>  
+`  
+  
+card.onclick=()=>openMoviePage(m.id)  
+  
+row.appendChild(card)  
+  
+})  
+  
+section.appendChild(row)  
+  
+document.getElementById("moviesSection").prepend(section)  
+  
+}  
+  
+  async function loadSeriesCollection(title,query){
+
+const res = await fetch(`${API}/search/tv?api_key=${KEY}&language=${LANG}&query=${query}`)
+const data = await res.json()
+
+const section=document.createElement("div")
+section.innerHTML=`<h2>${title}</h2>`
+
+const row=document.createElement("div")
+row.className="row"
+
+data.results.forEach(m=>{
+
+if(!m.poster_path) return
+
+const card=document.createElement("div")
+card.className="card"
+
+card.innerHTML=`
+<img loading="lazy" src="${IMG+m.poster_path}">
+<div>${m.name}</div>
+`
+
+card.onclick=()=>openSeriesPage(m.id)
+
+row.appendChild(card)
+
+})
+
+section.appendChild(row)
+
+document.getElementById("seriesSection").appendChild(section)
+
+}
+  function loadAnimeUniverse(title,query){
+
+createRow(
+title,
+`/search/tv?query=${query}&`,
+"animeSection",
+"tv"
+)
+
+}
+  
+function load(){
+
+// =================🔥 TRENDING=================
+
+lazyRow("🔥 Trending","/trending/movie/week","moviesSection","movie")
+lazyRow("🎬 Popular","/movie/popular?","moviesSection","movie")
+lazyRow("🆕 New Releases","/movie/now_playing?","moviesSection","movie")
+lazyRow("🎥 Upcoming","/movie/upcoming?","moviesSection","movie")
+lazyRow("🏆 Award Winning","/discover/movie?sort_by=vote_average.desc&vote_count.gte=2000&","moviesSection","movie")
+lazyRow("💯 IMDb 8+","/discover/movie?vote_average.gte=8&","moviesSection","movie")
+
+// =================🎬 COLLECTIONS=================
+
+loadCollection(86311)
+loadCollection(1241)
+loadCollection(9485)
+loadCollection(10)
+loadCollection(119)
+loadCollection(645)
+loadCollection(8637)
+loadCollection(8650)
+
+// =================🎭 GENRES=================
+
+lazyRow("💥 Action","/discover/movie?with_genres=28&","moviesSection","movie")
+lazyRow("👻 Horror","/discover/movie?with_genres=27&","moviesSection","movie")
+lazyRow("😂 Comedy","/discover/movie?with_genres=35&","moviesSection","movie")
+lazyRow("🎭 Drama","/discover/movie?with_genres=18&","moviesSection","movie")
+lazyRow("🔎 Mystery","/discover/movie?with_genres=9648&","moviesSection","movie")
+lazyRow("🔫 Crime","/discover/movie?with_genres=80&","moviesSection","movie")
+lazyRow("❤️ Romance","/discover/movie?with_genres=10749&","moviesSection","movie")
+lazyRow("🚀 Sci-Fi","/discover/movie?with_genres=878&","moviesSection","movie")
+lazyRow("🧙 Fantasy","/discover/movie?with_genres=14&","moviesSection","movie")
+lazyRow("🕵️ Thriller","/discover/movie?with_genres=53&","moviesSection","movie")
+lazyRow("⚔ Adventure","/discover/movie?with_genres=12&","moviesSection","movie")
+lazyRow("🎖 War","/discover/movie?with_genres=10752&","moviesSection","movie")
+lazyRow("🎬 Documentary","/discover/movie?with_genres=99&","moviesSection","movie")
+
+// =================🍥 ANIME=================
+
+lazyRow("🎬 Anime Movies","/discover/movie?with_genres=16&","animeSection","movie")
+
+// =================🌍 COUNTRIES=================
+
+lazyRow("🇮🇳 Indian Movies","/discover/movie?with_original_language=hi&","moviesSection","movie")
+lazyRow("🇰🇷 Korean Movies","/discover/movie?with_original_language=ko&","moviesSection","movie")
+lazyRow("🇯🇵 Japanese Movies","/discover/movie?with_original_language=ja&","moviesSection","movie")
+lazyRow("🇨🇳 Chinese Movies","/discover/movie?with_original_language=zh&","moviesSection","movie")
+lazyRow("🇹🇭 Thai Movies","/discover/movie?with_original_language=th&","moviesSection","movie")
+lazyRow("🇮🇩 Indonesian Movies","/discover/movie?with_original_language=id&","moviesSection","movie")
+lazyRow("🇹🇷 Turkish Movies","/discover/movie?with_original_language=tr&","moviesSection","movie")
+lazyRow("🇮🇷 Iranian Movies","/discover/movie?with_original_language=fa&","moviesSection","movie")
+lazyRow("🇪🇸 Spanish Movies","/discover/movie?with_original_language=es&","moviesSection","movie")
+lazyRow("🇫🇷 French Movies","/discover/movie?with_original_language=fr&","moviesSection","movie")
+lazyRow("🇮🇹 Italian Movies","/discover/movie?with_original_language=it&","moviesSection","movie")
+lazyRow("🇩🇪 German Movies","/discover/movie?with_original_language=de&","moviesSection","movie")
+lazyRow("🇳🇱 Dutch Movies","/discover/movie?with_original_language=nl&","moviesSection","movie")
+lazyRow("🇧🇷 Brazilian Movies","/discover/movie?with_original_language=pt&","moviesSection","movie")
+
+// =================🕌 ARAB CINEMA=================
+
+lazyRow("🇸🇦 Arabic Movies","/discover/movie?with_original_language=ar&","moviesSection","movie")
+lazyRow("🎬 Arabic Action","/discover/movie?with_original_language=ar&with_genres=28&","moviesSection","movie")
+lazyRow("👻 Arabic Horror","/discover/movie?with_original_language=ar&with_genres=27&","moviesSection","movie")
+lazyRow("🆕 New Arabic Movies","/discover/movie?with_original_language=ar&sort_by=primary_release_date.desc&","moviesSection","movie")
+lazyRow("⭐ Top Rated Arabic Movies","/discover/movie?with_original_language=ar&sort_by=vote_average.desc&","moviesSection","movie")
+lazyRow("❤️ Arabic Romance","/discover/movie?with_original_language=ar&with_genres=10749&","moviesSection","movie")
+lazyRow("🔫 Arabic Crime","/discover/movie?with_original_language=ar&with_genres=80&","moviesSection","movie")
+lazyRow("😂 Arabic Comedy","/discover/movie?with_original_language=ar&with_genres=35&","moviesSection","movie")
+lazyRow("🚀 Arabic Sci-Fi","/discover/movie?with_original_language=ar&with_genres=878&","moviesSection","movie")
+lazyRow("⚔ Arabic Adventure","/discover/movie?with_original_language=ar&with_genres=12&","moviesSection","movie")
+lazyRow("🕵️ Arabic Thriller","/discover/movie?with_original_language=ar&with_genres=53&","moviesSection","movie")
+lazyRow("🔎 Arabic Mystery","/discover/movie?with_original_language=ar&with_genres=9648&","moviesSection","movie")
+lazyRow("🎬 Classic Arabic Movies","/discover/movie?with_original_language=ar&primary_release_date.lte=2000-01-01&","moviesSection","movie")
+lazyRow("🕌 Islamic History Movies","/discover/movie?with_original_language=ar&with_genres=36&","moviesSection","movie")
+lazyRow("🎓 Arabic School Movies","/discover/movie?with_original_language=ar&with_genres=35&","moviesSection","movie")
+lazyRow("🎥 Arabic Indie Movies","/discover/movie?with_original_language=ar&with_genres=18&sort_by=vote_count.desc&","moviesSection","movie")
+lazyRow("⭐ Critics Choice Arabic Movies","/discover/movie?with_original_language=ar&sort_by=vote_average.desc&vote_count.gte=200&","moviesSection","movie")
+lazyRow("💯 IMDb 7+ Arabic Movies","/discover/movie?with_original_language=ar&vote_average.gte=7&","moviesSection","movie")
+
+// =================🔥 ROMANCE / ADULT STYLE=================
+
+lazyRow("🔥 Late Night Movies","/discover/movie?with_genres=18,10749&vote_count.gte=200&","moviesSection","movie")
+lazyRow("🔞 Mature Romance","/discover/movie?with_genres=10749&vote_count.gte=200&","moviesSection","movie")
+lazyRow("🕶 Erotic Thriller","/discover/movie?with_genres=53,10749&","moviesSection","movie")
+lazyRow("💋 Forbidden Love","/discover/movie?with_genres=10749,18&sort_by=vote_average.desc&","moviesSection","movie")
+lazyRow("🔥 Steamy Movies","/discover/movie?with_genres=18,10749&sort_by=popularity.desc&","moviesSection","movie")
+
+lazyRow("🇯🇵 Japanese Romance","/discover/movie?with_original_language=ja&with_genres=10749&","moviesSection","movie")
+lazyRow("🇰🇷 Korean Romance","/discover/movie?with_original_language=ko&with_genres=10749&","moviesSection","movie")
+lazyRow("🇨🇳 Chinese Romance","/discover/movie?with_original_language=zh&with_genres=10749&","moviesSection","movie")
+lazyRow("🇹🇭 Thai Romance","/discover/movie?with_original_language=th&with_genres=10749&","moviesSection","movie")
+
+// =================🏢 STUDIOS=================
+
+lazyRow("🎥 Netflix Movies","/discover/movie?with_companies=213&","moviesSection","movie")
+lazyRow("🦸 Marvel Studios","/discover/movie?with_companies=420&","moviesSection","movie")
+lazyRow("🎨 Pixar Movies","/discover/movie?with_companies=3&","moviesSection","movie")
+lazyRow("🏰 Disney Movies","/discover/movie?with_companies=2&","moviesSection","movie")
+lazyRow("🎥 Warner Bros Movies","/discover/movie?with_companies=174&","moviesSection","movie")
+
+// =================⭐ ACTORS=================
+
+setTimeout(()=>{
+},500)
+
+} 
+    
+createRow("📺 Popular Series","/tv/popular?","seriesSection","tv")  
+  
+createRow("⭐ Top Rated Series","/tv/top_rated?","seriesSection","tv")  
+  
+createRow("🆕 Airing Today","/tv/airing_today?","seriesSection","tv")  
+  
+createRow("📅 On The Air","/tv/on_the_air?","seriesSection","tv")  
+  
+createRow("🍥 Anime","/discover/tv?with_genres=16&","seriesSection","tv")  
+  
+createRow("😂 Comedy Series","/discover/tv?with_genres=35&","seriesSection","tv")  
+  
+createRow("👻 Horror Series","/discover/tv?with_genres=27&","seriesSection","tv")  
+  
+createRow("💥 Action Series","/discover/tv?with_genres=10759&","seriesSection","tv")  
+    
+createRow("🇮🇳 Indian Series","/discover/tv?with_original_language=hi&","seriesSection","tv")  
+  
+createRow("🇸🇦 Arabic Series","/discover/tv?with_original_language=ar&","seriesSection","tv")  
+  
+createRow("🆕 New Arabic Series","/discover/tv?with_original_language=ar&sort_by=first_air_date.desc&","seriesSection","tv")  
+    
+createRow("⭐ Top Rated Arabic Series","/discover/tv?with_original_language=ar&sort_by=vote_average.desc&","seriesSection","tv")  
+    
+createRow("😂 Arabic Comedy Series","/discover/tv?with_original_language=ar&with_genres=35&","seriesSection","tv")  
+    
+createRow("🔫 Arabic Crime Series","/discover/tv?with_original_language=ar&with_genres=80&","seriesSection","tv")  
+   
+createRow("🇰🇷 Korean Series","/discover/tv?with_original_language=ko&","seriesSection","tv")  
+    
+createRow("🇯🇵 Japanese Series","/discover/tv?with_original_language=ja&","seriesSection","tv")  
+    
+createRow("🇨🇳 Chinese Series","/discover/tv?with_original_language=zh&","seriesSection","tv")  
+    
+createRow("🇹🇷 Turkish Series","/discover/tv?with_original_language=tr&","seriesSection","tv")  
+  
+createRow("🇪🇸 Spanish Series","/discover/tv?with_original_language=es&","seriesSection","tv")  
+  
+createRow("🇫🇷 French Series","/discover/tv?with_original_language=fr&","seriesSection","tv")  
+  
+createRow("🇩🇪 German Series","/discover/tv?with_original_language=de&","seriesSection","tv")  
+    
+createRow("🇮🇹 Italian Series","/discover/tv?with_original_language=it&","seriesSection","tv")  
+    
+createRow("🇮🇷 Iranian Series","/discover/tv?with_original_language=fa&","seriesSection","tv")  
+    
+createRow("🌎 Latin Series","/discover/tv?with_original_language=pt&","seriesSection","tv")  
+    
+  // SERIES COLLECTIONS
+
+loadSeriesCollection("📺 Game of Thrones Universe","game of thrones")
+
+loadSeriesCollection("🧟 Walking Dead Universe","walking dead")
+
+loadSeriesCollection("👑 House of the Dragon","house of the dragon")
+
+loadSeriesCollection("🚀 Star Trek Universe","star trek")
+
+loadSeriesCollection("🕵 Sherlock Universe","sherlock")
+  
+// STUDIOS TV
+
+createRow(
+"🎥 Netflix Series",
+"/discover/tv?with_networks=213&",
+"seriesSection",
+"tv"
+)
+
+createRow(
+"📺 HBO Series",
+"/discover/tv?with_networks=49&",
+"seriesSection",
+"tv"
+)
+
+createRow(
+"📡 AMC Series",
+"/discover/tv?with_networks=174&",
+"seriesSection",
+"tv"
+)
+
+createRow(
+"🎬 Disney+ Series",
+"/discover/tv?with_networks=2739&",
+"seriesSection",
+"tv"
+)
+  
+createRow("📺 Apple TV+","/discover/tv?with_networks=2552&","seriesSection","tv")
+
+createRow("📺 Amazon Prime","/discover/tv?with_networks=1024&","seriesSection","tv")
+
+createRow("📺 Hulu Series","/discover/tv?with_networks=453&","seriesSection","tv")
+  
+createRow("📺 Paramount+","/discover/tv?with_networks=4330&","seriesSection","tv")
+
+createRow("📺 Peacock","/discover/tv?with_networks=3353&","seriesSection","tv")
+
+createRow("📺 FX Series","/discover/tv?with_networks=88&","seriesSection","tv")
+
+createRow("📺 BBC Series","/discover/tv?with_networks=4&","seriesSection","tv")
+  
+// ANIME SECTION  
+  
+createRow("🔥 Trending Anime","/trending/tv/week?","animeSection","tv")  
+  
+createRow("⭐ Top Rated Anime","/discover/tv?with_genres=16&sort_by=vote_average.desc&","animeSection","tv")  
+  
+createRow("🆕 New Anime","/discover/tv?with_genres=16&sort_by=first_air_date.desc&","animeSection","tv")  
+  
+createRow("😂 Comedy Anime","/discover/tv?with_genres=16,35&","animeSection","tv")  
+  
+createRow("🧙 Fantasy Anime","/discover/tv?with_genres=16,10765&","animeSection","tv")  
+    
+createRow("🏆 Award Winning Anime","/discover/tv?with_genres=16&sort_by=vote_average.desc&vote_count.gte=200&","animeSection","tv")  
+  
+createRow("💯 IMDb 8+ Anime","/discover/tv?with_genres=16&vote_average.gte=8&","animeSection","tv")  
+  
+createRow("🔥 Most Watched Anime","/discover/tv?with_genres=16&sort_by=popularity.desc&","animeSection","tv")  
+    
+createRow("❤️ Romance Anime","/discover/tv?with_genres=16,10749&","animeSection","tv")  
+  
+createRow("💔 Drama Romance Anime","/discover/tv?with_genres=16,18,10749&","animeSection","tv")  
+    
+createRow("🏴‍☠ One Piece Universe","/search/tv?query=one%20piece&","animeSection","tv")  
+  
+createRow("🥷 Naruto Universe","/search/tv?query=naruto&","animeSection","tv")  
+  
+createRow("🐉 Dragon Ball Universe","/search/tv?query=dragon%20ball&","animeSection","tv")  
+  
+createRow("⚔ Attack on Titan Universe","/search/tv?query=attack%20on%20titan&","animeSection","tv")  
+  
+createRow("🗡 Demon Slayer Universe","/search/tv?query=demon%20slayer&","animeSection","tv")  
+  
+createRow("🦸 My Hero Academia","/search/tv?query=my%20hero%20academia&","animeSection","tv")  
+  
+createRow(
+"🍥 Toei Animation",
+"/discover/tv?with_companies=18&",
+"animeSection",
+"tv"
+)
+
+createRow(
+"🍥 MAPPA",
+"/discover/tv?with_companies=56953&",
+"animeSection",
+"tv"
+)
+
+createRow(
+"🍥 Studio Ghibli",
+"/discover/movie?with_companies=10342&sort_by=popularity.desc&",
+"animeSection",
+"movie"
+)
+  
+// ================= ACTORS =================
+
+loadActorsRow(
+"🔥 Top Actors",
+"/person/popular?"
+)
+
+loadActorsRow(
+"🎬 Hollywood Actors",
+"/discover/person?with_known_for_department=Acting&"
+)
+
+loadActorsRow(
+"🎭 Arabic Actors",
+"/search/person?query=arab&"
+)
+
+loadActorsRow(
+"🇰🇷 Korean Actors",
+"/search/person?query=korean&"
+)
+    
+setTimeout(()=>{
+top10()
+loadContinueWatching()
+},1000)  
+    
+  const movieServers = [  
+  
+{name:"Auto Server",url:(id)=>`https://vidsrc.cc/v3/embed/movie/${id}`},  
+  
+{name:"Server 2",url:(id)=>`https://vidlink.pro/movie/${id}`},  
+  
+{name:"Server 3",url:(id)=>`https://multiembed.mov/?video_id=${id}&tmdb=1`},  
+  
+{name:"Server 4",url:(id)=>`https://2embed.cc/embed/${id}`}  
+  
+]  
+  
+const tvServers = [  
+  
+{name:"Auto Server",url:(id,s,e)=>`https://vidsrc.cc/v3/embed/tv/${id}/${s}/${e}`},  
+  
+{name:"Server 2",url:(id,s,e)=>`https://vidlink.pro/tv/${id}/${s}/${e}`},  
+  
+{name:"Server 3",url:(id,s,e)=>`https://multiembed.mov/?video_id=${id}&tmdb=1&s=${s}&e=${e}`}  
+  
+]  
+    
+  function showEpisodeServers(id,season,episode){
+
+openPlayer(`https://vidsrc.cc/v3/embed/tv/${id}/${season}/${episode}`)
+
+}  
+    
+  async function loadActors(){  
+  
+const res = await fetch(`${API}/person/popular?api_key=${KEY}`)  
+const data = await res.json()  
+  
+const section=document.createElement("div")  
+section.innerHTML="<h2>🧑‍🎤 Popular Actors</h2>"  
+  
+const row=document.createElement("div")  
+row.className="row"  
+  
+data.results.slice(0,20).forEach(a=>{  
+  
+if(!a.profile_path)return  
+  
+const card=document.createElement("div")  
+card.className="card"  
+  
+card.innerHTML=`  
+<img loading="lazy" decoding="async" src="https://image.tmdb.org/t/p/w300${a.profile_path}">  
+<div>${a.name}</div>  
+`  
+  
+card.onclick=()=>openActor(a.id)  
+  
+row.appendChild(card)  
+  
+})  
+  
+section.appendChild(row)  
+  
+document.getElementById("moviesSection").appendChild(section)  
+  
+}  
+    
+  async function openActor(id){  
+  
+const actorRes = await fetch(`${API}/person/${id}?api_key=${KEY}&language=${LANG}`)  
+const actor = await actorRes.json()  
+  
+const movieRes = await fetch(`${API}/person/${id}/movie_credits?api_key=${KEY}&language=${LANG}`)  
+const movieData = await movieRes.json()  
+  
+const tvRes = await fetch(`${API}/person/${id}/tv_credits?api_key=${KEY}&language=${LANG}`)  
+const tvData = await tvRes.json()  
+  
+moviePage.style.display="block"  
+  
+let html = `  
+  
+<div class="detailsCard">  
+  
+<img src="${IMG+actor.profile_path}">  
+  
+<h1>${actor.name}</h1>  
+  
+<div class="info">  
+🎂 ${actor.birthday || "Unknown"}    
+🌍 ${actor.place_of_birth || "Unknown"}  
+</div>  
+  
+<p>${actor.biography || "No biography available."}</p>  
+  
+<h2>🎬 Movies</h2>  
+  
+<div class="row">  
+`  
+  
+movieData.cast.slice(0,20).forEach(m=>{  
+  
+if(!m.poster_path)return  
+  
+html+=`  
+  
+<div class="card" onclick="openMoviePage(${m.id})">  
+  
+<img src="${IMG+m.poster_path}">  
+  
+<div>${m.title}</div>  
+  
+</div>  
+  
+`  
+  
+})  
+  
+html+=`  
+</div>  
+  
+<h2>📺 TV Shows</h2>  
+  
+<div class="row">  
+`  
+  
+tvData.cast.slice(0,20).forEach(t=>{  
+  
+if(!t.poster_path)return  
+  
+html+=`  
+  
+<div class="card" onclick="openSeriesPage(${t.id})">  
+  
+<img src="${IMG+t.poster_path}">  
+  
+<div>${t.name}</div>  
+  
+</div>  
+  
+`  
+  
+})  
+  
+html+=`  
+</div>  
+</div>  
+`  
+  
+movieDetails.innerHTML = html  
+  
+}  
+    
+  async function loadCollection(id){  
+  
+const res = await fetch(`${API}/collection/${id}?api_key=${KEY}&language=${LANG}`)  
+const data = await res.json()  
+  
+const section=document.createElement("div")  
+section.innerHTML=`<h2>🎬 ${data.name}</h2>`  
+  
+const row=document.createElement("div")  
+row.className="row"  
+  
+data.parts.forEach(m=>{  
+  
+if(!m.poster_path)return  
+  
+const card=document.createElement("div")  
+card.className="card"  
+  
+card.innerHTML=`  
+<img src="${IMG+m.poster_path}">  
+<div>${m.title}</div>  
+`  
+  
+card.onclick=()=>openMoviePage(m.id)  
+  
+row.appendChild(card)  
+  
+})  
+  
+section.appendChild(row)  
+  
+document.getElementById("moviesSection").appendChild(section)  
+  
+}  
+    
+  function loadContinueWatching(){
+
+const last=localStorage.getItem("lastWatch")
+
+if(!last)return
+
+const section=document.createElement("div")
+
+section.innerHTML=`
+<h2>▶ Continue Watching</h2>
+<div class="row">
+
+<div class="card">
+<img src="https://image.tmdb.org/t/p/w500">
+
+<button class="playBtn"
+onclick="openPlayer('${last}')">
+Resume
+</button>
+
+</div>
+
+</div>
+`
+
+document.getElementById("moviesSection").prepend(section)
+
+}  
+  
+    
+  function qualityButtons(url){  
+  
+const list=document.getElementById("serverList")  
+  
+const q1=document.createElement("button")  
+q1.className="playBtn"  
+q1.innerText="1080p"  
+q1.onclick=()=>openPlayer(url)  
+  
+const q2=document.createElement("button")  
+q2.className="playBtn"  
+q2.innerText="720p"  
+q2.onclick=()=>openPlayer(url)  
+  
+list.appendChild(q1)  
+list.appendChild(q2)  
+  
+}  
+  window.addEventListener("beforeunload",()=>{  
+localStorage.setItem("lastWatch",frame.src)  
+})  
+  
+  async function loadActorsRow(title,url){
+
+const res = await fetch(`${API}${url}api_key=${KEY}&language=${LANG}`)
+const data = await res.json()
+
+const section=document.createElement("div")
+section.innerHTML=`<h2>${title}</h2>`
+
+const row=document.createElement("div")
+row.className="row"
+
+data.results.slice(0,40).forEach(a=>{
+
+if(!a.profile_path) return
+
+const card=document.createElement("div")
+card.className="card"
+
+card.innerHTML=`
+<img loading="lazy" decoding="async" src="https://image.tmdb.org/t/p/w300${a.profile_path}">
+<div>${a.name}</div>
+`
+
+card.onclick=()=>openActor(a.id)
+
+row.appendChild(card)
+
+})
+
+section.appendChild(row)
+
+document.getElementById("moviesSection").appendChild(section)
+
+}
+  
+  function toggleLangMenu(){
+
+const menu = document.getElementById("langMenu")
+
+menu.style.display =
+menu.style.display==="block" ? "none" : "block"
+
+}
+  
+  function setLang(lang){
+
+localStorage.setItem("lang",lang)
+
+window.location.reload(true)
+
+}
+  
+  function t(key){
+
+return TEXT[LANG][key] || key
+
+}
+  
+  function translateUI(){
+
+document.getElementById("navMovies").innerText = t("movies")
+document.getElementById("navSeries").innerText = t("series")
+document.getElementById("navAnime").innerText = t("anime")
+document.getElementById("navSearch").innerText = t("search")
+
+}
+  function openMyList(){
+
+moviesSection.style.display="none"
+seriesSection.style.display="none"
+animeSection.style.display="none"
+
+const container=document.getElementById("myListSection")
+container.style.display="block"
+
+container.innerHTML="<h2>❤️ My List</h2>"
+
+let list = JSON.parse(localStorage.getItem("myList")||"[]")
+
+const movies = list.filter(x=>x.type==="movie")
+const series = list.filter(x=>x.type==="tv")
+const anime  = list.filter(x=>x.type==="anime")
+
+createMyRow("🎬 Movies",movies)
+createMyRow("📺 Series",series)
+createMyRow("🍥 Anime",anime)
+
+}
+  function addToList(id,title,poster,type){
+
+let list = JSON.parse(localStorage.getItem("myList")||"[]")
+
+let exist = list.find(x=>x.id===id)
+
+if(exist){
+
+list = list.filter(x=>x.id!==id)
+
+alert("Removed from My List")
+
+}else{
+
+list.push({
+id:id,
+title:title,
+poster:poster,
+type:type
+})
+
+alert("Added to My List")
+
+}
+
+localStorage.setItem("myList",JSON.stringify(list))
+
+}
+  function toggleMyList(id,title,poster,type){
+
+let list = JSON.parse(localStorage.getItem("myList")||"[]")
+
+let exist = list.find(x=>x.id===id)
+
+if(exist){
+
+list = list.filter(x=>x.id!==id)
+
+}else{
+
+list.push({
+id:id,
+title:title,
+poster:poster,
+type:type
+})
+
+}
+
+localStorage.setItem("myList",JSON.stringify(list))
+
+updateMyListButton(id)
+
+}
+  function updateMyListButton(id){
+
+let list = JSON.parse(localStorage.getItem("myList")||"[]")
+
+const btn = document.getElementById("myListBtn")
+
+if(!btn) return
+
+let exist = list.find(x=>x.id===id)
+
+if(exist){
+
+btn.innerHTML="✓ In My List"
+
+}else{
+
+btn.innerHTML="❤️ My List"
+
+}
+
+}
+  function createMyRow(title,data){
+
+if(data.length===0) return
+
+const container=document.getElementById("myListSection")
+
+const section=document.createElement("div")
+section.innerHTML=`<h2>${title}</h2>`
+
+const row=document.createElement("div")
+row.className="row"
+
+data.forEach(m=>{
+
+const card=document.createElement("div")
+card.className="card"
+
+card.innerHTML=`
+<img src="${IMG+m.poster}">
+<div>${m.title}</div>
+`
+
+card.onclick=()=>{
+if(m.type==="movie"){
+openMoviePage(m.id)
+}else{
+openSeriesPage(m.id)
+}
+}
+
+row.appendChild(card)
+
+})
+
+section.appendChild(row)
+container.appendChild(section)
+
+}
+     
+  
+load()
+loadHero()
+showSection("movies")
+translateUI()  
+    
+  
+</script>  </body>  
+</html>  
