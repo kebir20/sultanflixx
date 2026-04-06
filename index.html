@@ -396,21 +396,12 @@ button:focus{outline:3px solid red}
 <div id="seriesDetails"></div>  
 </div>  <div id="player" class="player">  
 <button class="close" onclick="closePlayer()">✖</button>  
-<iframe 
-id="frame"
-allowfullscreen
-sandbox="allow-scripts allow-same-origin allow-forms"
-referrerpolicy="no-referrer">
-</iframe>  
+<iframe id="frame" tabindex="0" allow="autoplay; fullscreen"></iframe>
+</div>  
 </div>  
   <script>  
     
-  const originalOpen = window.open  
-  document.addEventListener("click",function(e){  
-if(e.target.tagName==="A"){  
-e.preventDefault()  
-}  
-})  
+  const originalOpen = window.open   
   
 const API="https://api.themoviedb.org/3"  
 const KEY="6f3da2afe20dacbb24cd83311d36c361"  
@@ -908,7 +899,11 @@ seriesPage.style.display="none"
   
 function playMovie(id){
 
-openPlayer(`https://vidsrc.cc/v3/embed/movie/${id}`)
+const url=`https://vidsrc.cc/v3/embed/movie/${id}`
+
+openPlayer(url)
+
+history.pushState(null,null,"#movie-"+id)
 
 }
   
