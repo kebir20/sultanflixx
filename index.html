@@ -1591,7 +1591,9 @@ const tvServers = [
     
   function showEpisodeServers(id,season,episode){
 
-openPlayer(`https://vidsrc.cc/v3/embed/tv/${id}/${season}/${episode}`)
+const url = "https://vidsrc.cc/v3/embed/tv/" + id + "/" + season + "/" + episode
+
+openPlayer(url)
 
 }  
     
