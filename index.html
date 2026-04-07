@@ -354,6 +354,12 @@ outline:3px solid red;
 transform:scale(1.1);
 }
   
+iframe[src*="ads"],
+iframe[src*="pop"],
+iframe[src*="banner"]{
+display:none!important
+}
+  
 button:focus{outline:3px solid red}  
   
 </style>  </head>  <body>  <header>  
@@ -401,13 +407,44 @@ button:focus{outline:3px solid red}
 <div id="seriesDetails"></div>  
 </div>  <div id="player" class="player">  
 <button class="close" onclick="closePlayer()">✖</button>  
-<iframe id="frame" sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"></iframe>
-</div>
+<iframe id="frame" tabindex="0" allow="autoplay; fullscreen"></iframe>
 </div>  
 </div>  
   <script>  
     
-  const originalOpen = window.open   
+  const originalOpen = window.open
+
+window.open = function(url){
+
+if(!url) return null
+
+if(
+url.includes("youtube") ||
+url.includes("vidsrc") ||
+url.includes("multiembed")
+){
+return originalOpen(url)
+}
+
+return null
+
+}
+
+document.addEventListener("click",function(e){
+
+const link = e.target.closest("a")
+
+if(!link) return
+
+if(
+link.href.includes("ads") ||
+link.href.includes("pop") ||
+link.href.includes("doubleclick")
+){
+e.preventDefault()
+}
+
+})
   
 const API="https://api.themoviedb.org/3"  
 const KEY="6f3da2afe20dacbb24cd83311d36c361"  
@@ -1985,6 +2022,28 @@ container.appendChild(section)
 }
      
   
+// 🔴 Anti Ads Script
+
+const blockAds = ["ads","pop","banner","doubleclick"]
+
+const observer = new MutationObserver(()=>{
+
+document.querySelectorAll("iframe").forEach(i=>{
+
+blockAds.forEach(a=>{
+if(i.src.includes(a)){
+i.remove()
+}
+})
+
+})
+
+})
+
+observer.observe(document.body,{childList:true,subtree:true})
+
+
+// تشغيل الموقع
 load()
 loadHero()
 showSection("movies")
