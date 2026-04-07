@@ -3,12 +3,13 @@
 <meta charset="UTF-8">  
 <meta name="viewport" content="width=device-width, initial-scale=1.0">  
 <title>SULTANFLIX PRO V8</title>  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css"/>  <style>  
-body{  
-margin:0;  
-background:#141414;  
-font-family:Arial;  
-color:white;  
-overflow-x:hidden;  
+body{
+margin:0;
+background:#141414;
+font-family:Arial;
+color:white;
+overflow-x:hidden;
+overflow-y:auto;
 }  
 header{
 display:flex;
@@ -112,6 +113,23 @@ height:250px;
 border-radius:8px;  
 object-fit:cover  
 }  
+.card{
+outline:none;
+}
+
+.card:focus{
+outline:4px solid #e50914;
+transform:scale(1.08);
+z-index:2;
+}
+
+.card:focus img{
+box-shadow:0 0 25px #e50914;
+}
+
+.row{
+scroll-behavior:smooth;
+}
   
 /* Skeleton loading */  
   
@@ -131,20 +149,28 @@ animation:pulse 1.2s infinite
   
 /* movie page */  
   
-.moviePage{  
-position:fixed;  
-top:0;  
-left:0;  
-width:100vw;  
-height:100vh;  
-background:#000;  
-overflow-y:auto;  
-overflow-x:hidden;  
-z-index:9998;  
-display:none;  
-padding:20px;  
-box-sizing:border-box;  
+.moviePage{
+position:fixed;
+top:0;
+left:0;
+width:100vw;
+height:100vh;
+background:#000;
+overflow-y:scroll;
+overflow-x:hidden;
+z-index:9998;
+display:none;
+padding:20px;
+box-sizing:border-box;
 }  
+.moviePage::-webkit-scrollbar{
+width:8px;
+}
+
+.moviePage::-webkit-scrollbar-thumb{
+background:#e50914;
+border-radius:10px;
+}
   
 /* Netflix style backdrop */  
   
@@ -636,7 +662,7 @@ if(!m.poster_path)return
   
 const card=document.createElement("div")  
 card.className="card"  
-  
+card.tabIndex=0
 let type = m.media_type==="movie" ? "🎬 Movie" : "📺 TV"  
   
 card.innerHTML=`  
@@ -767,26 +793,31 @@ ${castHTML}
 </div>  
 `  
   
+
 setTimeout(()=>{
 updateMyListButton(id)
+loadSimilarMovies(id)
+loadRecommendedMovies(id)
 },100)
   
 }  
   
-async function loadSimilarMovies(id){  
-  
-const sim=await fetch(`${API}/movie/${id}/similar?api_key=${KEY}&language=${LANG}`)  
-const similar=await sim.json()  
-  
-const container=document.getElementById("similarMovies")  
-  
+async function loadSimilarMovies(id){
+
+const sim = await fetch(`${API}/movie/${id}/similar?api_key=${KEY}&language=${LANG}`)
+const similar = await sim.json()
+
+const container = document.getElementById("similarMovies")
+
+container.innerHTML=""
+
 similar.results.slice(0,10).forEach(m=>{  
   
 if(!m.poster_path)return  
   
 const card=document.createElement("div")  
 card.className="card"  
-  
+card.tabIndex=0
 card.innerHTML=`<img src="${IMG+m.poster_path}">`  
   
 card.onclick=()=>openMoviePage(m.id)  
@@ -874,14 +905,21 @@ onclick="toggleMyList(${data.id},'${data.name}','${data.poster_path}','tv')" id=
   
 <div class="seasonGrid" id="seasonGrid"></div>  
   
-<div id="episodeArea"></div>  
+<div id="episodeArea"></div>
+
+<div class="similarTitle">Similar Series</div>
+<div class="row" id="similarSeries"></div>
+
+<div class="similarTitle">Recommended</div>
+<div class="row" id="recommendedSeries"></div>  
   
 <div id="serverList"></div>  
   
 </div>  
 `  
 setTimeout(()=>{
-updateMyListButton(id)
+loadSimilarSeries(id)
+loadRecommendedSeries(id)
 },100)
   
 const grid=document.getElementById("seasonGrid")  
@@ -901,6 +939,66 @@ grid.appendChild(btn)
 })  
   
 }  
+  
+  async function loadSimilarSeries(id){
+
+const res = await fetch(`${API}/tv/${id}/similar?api_key=${KEY}&language=${LANG}`)
+const data = await res.json()
+
+const container = document.getElementById("similarSeries")
+
+if(!container) return
+
+container.innerHTML=""
+
+data.results.slice(0,10).forEach(m=>{
+
+if(!m.poster_path) return
+
+const card=document.createElement("div")
+card.className="card"
+card.tabIndex=0
+card.innerHTML=`
+<img src="${IMG+m.poster_path}">
+`
+
+card.onclick=()=>openSeriesPage(m.id)
+
+container.appendChild(card)
+
+})
+
+}
+  
+  async function loadRecommendedSeries(id){
+
+const res = await fetch(`${API}/tv/${id}/recommendations?api_key=${KEY}&language=${LANG}`)
+const data = await res.json()
+
+const container = document.getElementById("recommendedSeries")
+
+if(!container) return
+
+container.innerHTML=""
+
+data.results.slice(0,10).forEach(m=>{
+
+if(!m.poster_path) return
+
+const card=document.createElement("div")
+card.className="card"
+card.tabIndex=0
+card.innerHTML=`
+<img src="${IMG+m.poster_path}">
+`
+
+card.onclick=()=>openSeriesPage(m.id)
+
+container.appendChild(card)
+
+})
+
+}
   
 async function loadEpisodes(id,season){  
   
@@ -1032,7 +1130,7 @@ if(!m.poster_path) return
 
 const card=document.createElement("div")
 card.className="card"
-
+card.tabIndex=0
 card.innerHTML=`
 <img loading="lazy" decoding="async" src="${IMG+m.poster_path}">
 <div>${m.title||m.name}</div>
@@ -1164,7 +1262,7 @@ if(!a.profile_path) return
 
 const card=document.createElement("div")
 card.className="card"
-
+card.tabIndex=0
 card.innerHTML=`
 <img loading="lazy" decoding="async"
 src="https://image.tmdb.org/t/p/w300${a.profile_path}">
@@ -1210,7 +1308,7 @@ if(!m.poster_path)return
   
 const card=document.createElement("div")  
 card.className="card"  
-  
+card.tabIndex=0
 card.innerHTML=`  
 <img loading="lazy" decoding="async" src="${IMG+m.poster_path}">  
 <div>#${i+1}</div>  
@@ -1245,7 +1343,7 @@ if(!m.poster_path) return
 
 const card=document.createElement("div")
 card.className="card"
-
+card.tabIndex=0
 card.innerHTML=`
 <img loading="lazy" src="${IMG+m.poster_path}">
 <div>${m.name}</div>
@@ -1614,7 +1712,7 @@ if(!a.profile_path)return
   
 const card=document.createElement("div")  
 card.className="card"  
-  
+card.tabIndex=0
 card.innerHTML=`  
 <img loading="lazy" decoding="async" src="https://image.tmdb.org/t/p/w300${a.profile_path}">  
 <div>${a.name}</div>  
@@ -1735,7 +1833,7 @@ if(!m.poster_path)return
   
 const card=document.createElement("div")  
 card.className="card"  
-  
+card.tabIndex=0
 card.innerHTML=`  
 <img src="${IMG+m.poster_path}">  
 <div>${m.title}</div>  
@@ -1822,7 +1920,7 @@ if(!a.profile_path) return
 
 const card=document.createElement("div")
 card.className="card"
-
+card.tabIndex=0
 card.innerHTML=`
 <img loading="lazy" decoding="async" src="https://image.tmdb.org/t/p/w300${a.profile_path}">
 <div>${a.name}</div>
@@ -1984,7 +2082,7 @@ data.forEach(m=>{
 
 const card=document.createElement("div")
 card.className="card"
-
+card.tabIndex=0
 card.innerHTML=`
 <img src="${IMG+m.poster}">
 <div>${m.title}</div>
@@ -2035,6 +2133,116 @@ break
 })
 
 },2000)
+  
+  document.addEventListener("wheel",function(e){
+
+const page = document.querySelector(".moviePage")
+
+if(page && page.style.display==="block"){
+page.scrollTop += e.deltaY
+}
+
+})
+  
+  document.addEventListener("keydown",function(e){
+
+const focus=document.activeElement
+
+if(!focus.classList.contains("card")) return
+
+if(e.key==="Enter"){
+focus.click()
+}
+
+if(e.key==="ArrowRight"){
+
+let next = focus.nextElementSibling
+
+if(next){
+next.focus()
+
+next.scrollIntoView({
+behavior:"smooth",
+inline:"center",
+block:"nearest"
+})
+
+}
+
+}
+
+if(e.key==="ArrowLeft"){
+
+let prev = focus.previousElementSibling
+
+if(prev){
+prev.focus()
+
+prev.scrollIntoView({
+behavior:"smooth",
+inline:"center",
+block:"nearest"
+})
+
+}
+
+}
+
+if(e.key==="ArrowDown"){
+
+let row = focus.closest(".row")
+let nextRow = row.parentElement.nextElementSibling?.querySelector(".row")
+
+if(nextRow){
+
+let index = [...row.children].indexOf(focus)
+
+let target = nextRow.children[index] || nextRow.children[0]
+
+target.focus()
+
+target.scrollIntoView({
+behavior:"smooth",
+inline:"center",
+block:"center"
+})
+
+}
+
+}
+
+if(e.key==="ArrowUp"){
+
+let row = focus.closest(".row")
+let prevRow = row.parentElement.previousElementSibling?.querySelector(".row")
+
+if(prevRow){
+
+let index = [...row.children].indexOf(focus)
+
+let target = prevRow.children[index] || prevRow.children[0]
+
+target.focus()
+
+target.scrollIntoView({
+behavior:"smooth",
+inline:"center",
+block:"center"
+})
+
+}
+
+}
+
+})
+  
+setTimeout(()=>{
+
+const first=document.querySelector(".card")
+
+if(first) first.focus()
+
+},1500)
      
   
 load()
