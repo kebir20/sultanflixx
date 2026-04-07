@@ -957,7 +957,22 @@ const servers = [
 
 ]
 
-openPlayer(servers[0])
+let i = 0
+
+function tryServer(){
+
+if(i >= servers.length) return
+
+openPlayer(servers[i])
+
+setTimeout(()=>{
+i++
+tryServer()
+},4000)
+
+}
+
+tryServer()
 
 }
   
