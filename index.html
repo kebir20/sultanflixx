@@ -349,11 +349,11 @@ margin-top:10px;
 flex-wrap:wrap;
 }
   
-button:focus{
+  button:focus{
 outline:3px solid red;
 transform:scale(1.1);
 }
-  
+
 iframe[src*="ads"],
 iframe[src*="pop"],
 iframe[src*="banner"]{
@@ -407,44 +407,14 @@ button:focus{outline:3px solid red}
 <div id="seriesDetails"></div>  
 </div>  <div id="player" class="player">  
 <button class="close" onclick="closePlayer()">✖</button>  
-<iframe id="frame" tabindex="0" allow="autoplay; fullscreen"></iframe>
-</div>  
+<iframe id="frame"></iframe>  
 </div>  
   <script>  
     
-  const originalOpen = window.open
-
-window.open = function(url){
-
-if(!url) return null
-
-if(
-url.includes("youtube") ||
-url.includes("vidsrc") ||
-url.includes("multiembed")
-){
-return originalOpen(url)
-}
-
-return null
-
-}
-
-document.addEventListener("click",function(e){
-
-const link = e.target.closest("a")
-
-if(!link) return
-
-if(
-link.href.includes("ads") ||
-link.href.includes("pop") ||
-link.href.includes("doubleclick")
-){
-e.preventDefault()
-}
-
-})
+  window.open = function(){  
+return null  
+}  
+  document.addEventListener("contextmenu",e=>e.preventDefault())  
   
 const API="https://api.themoviedb.org/3"  
 const KEY="6f3da2afe20dacbb24cd83311d36c361"  
@@ -944,35 +914,36 @@ function playMovie(id){
 
 const servers = [
 
-`https://vidsrc.me/embed/movie?tmdb=${id}`,
-`https://vidsrc.to/embed/movie/${id}`,
-`https://vidsrc.cc/v3/embed/movie/${id}`,
-`https://vidlink.pro/movie/${id}`,
-`https://multiembed.mov/?video_id=${id}&tmdb=1`,
-`https://2embed.cc/embed/${id}`,
-`https://embed.smashystream.com/playere.php?tmdb=${id}`,
-`https://player.autoembed.cc/embed/movie/${id}`,
-`https://moviesapi.club/movie/${id}`,
-`https://vidapi.xyz/embed/movie/${id}`
+{ name:"Server 1", url:`https://vidsrc.me/embed/movie?tmdb=${id}` },
+{ name:"Server 2", url:`https://vidsrc.to/embed/movie/${id}` },
+{ name:"Server 3", url:`https://vidsrc.cc/v3/embed/movie/${id}` },
+{ name:"Server 4", url:`https://vidlink.pro/movie/${id}` },
+{ name:"Server 5", url:`https://multiembed.mov/?video_id=${id}&tmdb=1` },
+{ name:"Server 6", url:`https://2embed.cc/embed/${id}` },
+{ name:"Server 7", url:`https://embed.smashystream.com/playere.php?tmdb=${id}` },
+{ name:"Server 8", url:`https://player.autoembed.cc/embed/movie/${id}` },
+{ name:"Server 9", url:`https://moviesapi.club/movie/${id}` },
+{ name:"Server 10", url:`https://vidapi.xyz/embed/movie/${id}` }
 
 ]
 
-let i = 0
+const list = document.getElementById("serverList")
 
-function tryServer(){
+list.innerHTML = "<h3>Servers</h3>"
 
-if(i >= servers.length) return
+servers.forEach(s=>{
 
-openPlayer(servers[i])
+const btn = document.createElement("button")
 
-setTimeout(()=>{
-i++
-tryServer()
-},4000)
+btn.className="playBtn"
 
-}
+btn.innerText = s.name
 
-tryServer()
+btn.onclick = ()=>openPlayer(s.url)
+
+list.appendChild(btn)
+
+})
 
 }
   
@@ -1607,22 +1578,7 @@ const tvServers = [
     
   function showEpisodeServers(id,season,episode){
 
-const servers = [
-
-`https://vidsrc.me/embed/tv?tmdb=${id}&season=${season}&episode=${episode}`,
-`https://vidsrc.to/embed/tv/${id}/${season}/${episode}`,
-`https://vidsrc.cc/v3/embed/tv/${id}/${season}/${episode}`,
-`https://vidlink.pro/tv/${id}/${season}/${episode}`,
-`https://multiembed.mov/?video_id=${id}&tmdb=1&s=${season}&e=${episode}`,
-`https://2embed.cc/embedtv/${id}&s=${season}&e=${episode}`,
-`https://embed.smashystream.com/playertv.php?tmdb=${id}&season=${season}&episode=${episode}`,
-`https://player.autoembed.cc/embed/tv/${id}/${season}/${episode}`,
-`https://moviesapi.club/tv/${id}/${season}/${episode}`,
-`https://vidapi.xyz/embed/tv/${id}/${season}/${episode}`
-
-]
-
-openPlayer(servers[0])
+openPlayer(`https://vidsrc.cc/v3/embed/tv/${id}/${season}/${episode}`)
 
 }  
     
@@ -2037,28 +1993,6 @@ container.appendChild(section)
 }
      
   
-// 🔴 Anti Ads Script
-
-const blockAds = ["ads","pop","banner","doubleclick"]
-
-const observer = new MutationObserver(()=>{
-
-document.querySelectorAll("iframe").forEach(i=>{
-
-blockAds.forEach(a=>{
-if(i.src.includes(a)){
-i.remove()
-}
-})
-
-})
-
-})
-
-observer.observe(document.body,{childList:true,subtree:true})
-
-
-// تشغيل الموقع
 load()
 loadHero()
 showSection("movies")
