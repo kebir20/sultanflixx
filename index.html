@@ -349,6 +349,11 @@ margin-top:10px;
 flex-wrap:wrap;
 }
   
+button:focus{
+outline:3px solid red;
+transform:scale(1.1);
+}
+  
 button:focus{outline:3px solid red}  
   
 </style>  </head>  <body>  <header>  
@@ -396,7 +401,8 @@ button:focus{outline:3px solid red}
 <div id="seriesDetails"></div>  
 </div>  <div id="player" class="player">  
 <button class="close" onclick="closePlayer()">✖</button>  
-<iframe id="frame" tabindex="0" allow="autoplay; fullscreen"></iframe>
+<iframe id="frame" sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"></iframe>
+</div>
 </div>  
 </div>  
   <script>  
