@@ -407,14 +407,49 @@ button:focus{outline:3px solid red}
 <div id="seriesDetails"></div>  
 </div>  <div id="player" class="player">  
 <button class="close" onclick="closePlayer()">✖</button>  
-<iframe id="frame"></iframe>  
+<iframe 
+id="frame"
+sandbox="allow-scripts allow-same-origin allow-presentation"
+allowfullscreen
+></iframe>  
 </div>  
   <script>  
     
-  window.open = function(){  
-return null  
+  const realOpen = window.open
+
+window.open = function(url){
+
+if(!url) return null
+
+if(
+url.includes("vidsrc") ||
+url.includes("youtube") ||
+url.includes("vidlink") ||
+url.includes("multiembed")
+){
+return realOpen(url)
+}
+
+return null
+
 }  
-  document.addEventListener("contextmenu",e=>e.preventDefault())  
+  document.addEventListener("click",function(e){
+
+if(e.target.tagName==="A"){
+
+let link = e.target.href || ""
+
+if(
+link.includes("ads") ||
+link.includes("pop") ||
+link.includes("banner")
+){
+e.preventDefault()
+}
+
+}
+
+})  
   
 const API="https://api.themoviedb.org/3"  
 const KEY="6f3da2afe20dacbb24cd83311d36c361"  
@@ -914,32 +949,35 @@ function playMovie(id){
 
 const servers = [
 
-{ name:"Server 1", url:`https://vidsrc.me/embed/movie?tmdb=${id}` },
-{ name:"Server 2", url:`https://vidsrc.to/embed/movie/${id}` },
-{ name:"Server 3", url:`https://vidsrc.cc/v3/embed/movie/${id}` },
-{ name:"Server 4", url:`https://vidlink.pro/movie/${id}` },
-{ name:"Server 5", url:`https://multiembed.mov/?video_id=${id}&tmdb=1` },
-{ name:"Server 6", url:`https://2embed.cc/embed/${id}` },
-{ name:"Server 7", url:`https://embed.smashystream.com/playere.php?tmdb=${id}` },
-{ name:"Server 8", url:`https://player.autoembed.cc/embed/movie/${id}` },
-{ name:"Server 9", url:`https://moviesapi.club/movie/${id}` },
-{ name:"Server 10", url:`https://vidapi.xyz/embed/movie/${id}` }
+{name:"Server 1", url:`https://vidsrc.cc/v3/embed/movie/${id}`},
+{name:"Server 2", url:`https://vidsrc.to/embed/movie/${id}`},
+{name:"Server 3", url:`https://vidsrc.me/embed/movie?tmdb=${id}`},
+{name:"Server 4", url:`https://vidlink.pro/movie/${id}`},
+{name:"Server 5", url:`https://multiembed.mov/?video_id=${id}&tmdb=1`},
+{name:"Server 6", url:`https://2embed.cc/embed/${id}`},
+{name:"Server 7", url:`https://embed.smashystream.com/playere.php?tmdb=${id}`},
+{name:"Server 8", url:`https://player.autoembed.cc/embed/movie/${id}`},
+{name:"Server 9", url:`https://vidapi.xyz/embed/movie/${id}`},
+{name:"Server 10", url:`https://moviesapi.club/movie/${id}`},
+{name:"Server 11", url:`https://superembed.stream/movie/${id}`},
+{name:"Server 12", url:`https://vidsrc.pm/embed/movie/${id}`},
+{name:"Server 13", url:`https://embed.su/embed/movie/${id}`},
+{name:"Server 14", url:`https://autoembed.co/movie/${id}`},
+{name:"Server 15", url:`https://player.smashy.stream/movie/${id}`}
 
 ]
 
 const list = document.getElementById("serverList")
 
-list.innerHTML = "<h3>Servers</h3>"
+list.innerHTML="<h3>Servers</h3>"
 
 servers.forEach(s=>{
 
-const btn = document.createElement("button")
-
+const btn=document.createElement("button")
 btn.className="playBtn"
+btn.innerText=s.name
 
-btn.innerText = s.name
-
-btn.onclick = ()=>openPlayer(s.url)
+btn.onclick=()=>openPlayer(s.url)
 
 list.appendChild(btn)
 
@@ -1991,6 +2029,35 @@ section.appendChild(row)
 container.appendChild(section)
 
 }
+  
+  const blockAds = [
+"ads",
+"pop",
+"banner",
+"doubleclick",
+"exoclick",
+"adsterra",
+"propeller"
+]
+
+setInterval(()=>{
+
+document.querySelectorAll("iframe").forEach(i=>{
+
+let src = i.src || ""
+
+for(let a of blockAds){
+
+if(src.includes(a)){
+i.remove()
+break
+}
+
+}
+
+})
+
+},2000)
      
   
 load()
