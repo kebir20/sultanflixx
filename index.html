@@ -433,11 +433,7 @@ button:focus{outline:3px solid red}
 <div id="seriesDetails"></div>  
 </div>  <div id="player" class="player">  
 <button class="close" onclick="closePlayer()">✖</button>  
-<iframe
-id="frame"
-sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-popups"
-allowfullscreen
-></iframe>  
+<iframe id="frame"></iframe>  
 </div>  
   <script>  
     
@@ -1045,9 +1041,36 @@ seriesPage.style.display="none"
   
 function playMovie(id){
 
-const url = "https://vidsrc.cc/v3/embed/movie/" + id
+const servers = [
 
-openPlayer(url)
+{ name:"Server 1", url:`https://vidsrc.me/embed/movie?tmdb=${id}` },
+{ name:"Server 2", url:`https://vidsrc.to/embed/movie/${id}` },
+{ name:"Server 3", url:`https://vidsrc.cc/v3/embed/movie/${id}` },
+{ name:"Server 4", url:`https://vidlink.pro/movie/${id}` },
+{ name:"Server 5", url:`https://multiembed.mov/?video_id=${id}&tmdb=1` },
+{ name:"Server 6", url:`https://2embed.cc/embed/${id}` },
+{ name:"Server 7", url:`https://embed.smashystream.com/playere.php?tmdb=${id}` },
+{ name:"Server 8", url:`https://player.autoembed.cc/embed/movie/${id}` },
+{ name:"Server 9", url:`https://moviesapi.club/movie/${id}` },
+{ name:"Server 10", url:`https://vidapi.xyz/embed/movie/${id}` }
+
+]
+
+const list = document.getElementById("serverList")
+
+list.innerHTML="<h3>Servers</h3>"
+
+servers.forEach(s=>{
+
+const btn=document.createElement("button")
+btn.className="playBtn"
+btn.innerText=s.name
+
+btn.onclick=()=>openPlayer(s.url)
+
+list.appendChild(btn)
+
+})
 
 }
 
