@@ -113,23 +113,6 @@ height:250px;
 border-radius:8px;  
 object-fit:cover  
 }  
-.card{
-outline:none;
-}
-
-.card:focus{
-outline:4px solid #e50914;
-transform:scale(1.08);
-z-index:2;
-}
-
-.card:focus img{
-box-shadow:0 0 25px #e50914;
-}
-
-.row{
-scroll-behavior:smooth;
-}
   
 /* Skeleton loading */  
   
@@ -433,7 +416,11 @@ button:focus{outline:3px solid red}
 <div id="seriesDetails"></div>  
 </div>  <div id="player" class="player">  
 <button class="close" onclick="closePlayer()">✖</button>  
-<iframe id="frame"></iframe>  
+<iframe
+id="frame"
+sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-popups"
+allowfullscreen
+></iframe>  
 </div>  
   <script>  
     
@@ -658,7 +645,7 @@ if(!m.poster_path)return
   
 const card=document.createElement("div")  
 card.className="card"  
-card.tabIndex=0
+  
 let type = m.media_type==="movie" ? "🎬 Movie" : "📺 TV"  
   
 card.innerHTML=`  
@@ -813,7 +800,7 @@ if(!m.poster_path)return
   
 const card=document.createElement("div")  
 card.className="card"  
-card.tabIndex=0
+  
 card.innerHTML=`<img src="${IMG+m.poster_path}">`  
   
 card.onclick=()=>openMoviePage(m.id)  
@@ -953,7 +940,7 @@ if(!m.poster_path) return
 
 const card=document.createElement("div")
 card.className="card"
-card.tabIndex=0
+
 card.innerHTML=`
 <img src="${IMG+m.poster_path}">
 `
@@ -983,7 +970,7 @@ if(!m.poster_path) return
 
 const card=document.createElement("div")
 card.className="card"
-card.tabIndex=0
+
 card.innerHTML=`
 <img src="${IMG+m.poster_path}">
 `
@@ -1041,36 +1028,9 @@ seriesPage.style.display="none"
   
 function playMovie(id){
 
-const servers = [
+const url = "https://vidsrc.cc/v3/embed/movie/" + id
 
-{ name:"Server 1", url:`https://vidsrc.me/embed/movie?tmdb=${id}` },
-{ name:"Server 2", url:`https://vidsrc.to/embed/movie/${id}` },
-{ name:"Server 3", url:`https://vidsrc.cc/v3/embed/movie/${id}` },
-{ name:"Server 4", url:`https://vidlink.pro/movie/${id}` },
-{ name:"Server 5", url:`https://multiembed.mov/?video_id=${id}&tmdb=1` },
-{ name:"Server 6", url:`https://2embed.cc/embed/${id}` },
-{ name:"Server 7", url:`https://embed.smashystream.com/playere.php?tmdb=${id}` },
-{ name:"Server 8", url:`https://player.autoembed.cc/embed/movie/${id}` },
-{ name:"Server 9", url:`https://moviesapi.club/movie/${id}` },
-{ name:"Server 10", url:`https://vidapi.xyz/embed/movie/${id}` }
-
-]
-
-const list = document.getElementById("serverList")
-
-list.innerHTML="<h3>Servers</h3>"
-
-servers.forEach(s=>{
-
-const btn=document.createElement("button")
-btn.className="playBtn"
-btn.innerText=s.name
-
-btn.onclick=()=>openPlayer(s.url)
-
-list.appendChild(btn)
-
-})
+openPlayer(url)
 
 }
 
@@ -1153,7 +1113,7 @@ if(!m.poster_path) return
 
 const card=document.createElement("div")
 card.className="card"
-card.tabIndex=0
+
 card.innerHTML=`
 <img loading="lazy" decoding="async" src="${IMG+m.poster_path}">
 <div>${m.title||m.name}</div>
@@ -1285,7 +1245,7 @@ if(!a.profile_path) return
 
 const card=document.createElement("div")
 card.className="card"
-card.tabIndex=0
+
 card.innerHTML=`
 <img loading="lazy" decoding="async"
 src="https://image.tmdb.org/t/p/w300${a.profile_path}">
@@ -1331,7 +1291,7 @@ if(!m.poster_path)return
   
 const card=document.createElement("div")  
 card.className="card"  
-card.tabIndex=0
+  
 card.innerHTML=`  
 <img loading="lazy" decoding="async" src="${IMG+m.poster_path}">  
 <div>#${i+1}</div>  
@@ -1366,7 +1326,7 @@ if(!m.poster_path) return
 
 const card=document.createElement("div")
 card.className="card"
-card.tabIndex=0
+
 card.innerHTML=`
 <img loading="lazy" src="${IMG+m.poster_path}">
 <div>${m.name}</div>
@@ -1735,7 +1695,7 @@ if(!a.profile_path)return
   
 const card=document.createElement("div")  
 card.className="card"  
-card.tabIndex=0
+  
 card.innerHTML=`  
 <img loading="lazy" decoding="async" src="https://image.tmdb.org/t/p/w300${a.profile_path}">  
 <div>${a.name}</div>  
@@ -1856,7 +1816,7 @@ if(!m.poster_path)return
   
 const card=document.createElement("div")  
 card.className="card"  
-card.tabIndex=0
+  
 card.innerHTML=`  
 <img src="${IMG+m.poster_path}">  
 <div>${m.title}</div>  
@@ -1943,7 +1903,7 @@ if(!a.profile_path) return
 
 const card=document.createElement("div")
 card.className="card"
-card.tabIndex=0
+
 card.innerHTML=`
 <img loading="lazy" decoding="async" src="https://image.tmdb.org/t/p/w300${a.profile_path}">
 <div>${a.name}</div>
@@ -2105,7 +2065,7 @@ data.forEach(m=>{
 
 const card=document.createElement("div")
 card.className="card"
-card.tabIndex=0
+
 card.innerHTML=`
 <img src="${IMG+m.poster}">
 <div>${m.title}</div>
@@ -2166,106 +2126,6 @@ page.scrollTop += e.deltaY
 }
 
 })
-  
-  document.addEventListener("keydown",function(e){
-
-const focus=document.activeElement
-
-if(!focus.classList.contains("card")) return
-
-if(e.key==="Enter"){
-focus.click()
-}
-
-if(e.key==="ArrowRight"){
-
-let next = focus.nextElementSibling
-
-if(next){
-next.focus()
-
-next.scrollIntoView({
-behavior:"smooth",
-inline:"center",
-block:"nearest"
-})
-
-}
-
-}
-
-if(e.key==="ArrowLeft"){
-
-let prev = focus.previousElementSibling
-
-if(prev){
-prev.focus()
-
-prev.scrollIntoView({
-behavior:"smooth",
-inline:"center",
-block:"nearest"
-})
-
-}
-
-}
-
-if(e.key==="ArrowDown"){
-
-let row = focus.closest(".row")
-let nextRow = row.parentElement.nextElementSibling?.querySelector(".row")
-
-if(nextRow){
-
-let index = [...row.children].indexOf(focus)
-
-let target = nextRow.children[index] || nextRow.children[0]
-
-target.focus()
-
-target.scrollIntoView({
-behavior:"smooth",
-inline:"center",
-block:"center"
-})
-
-}
-
-}
-
-if(e.key==="ArrowUp"){
-
-let row = focus.closest(".row")
-let prevRow = row.parentElement.previousElementSibling?.querySelector(".row")
-
-if(prevRow){
-
-let index = [...row.children].indexOf(focus)
-
-let target = prevRow.children[index] || prevRow.children[0]
-
-target.focus()
-
-target.scrollIntoView({
-behavior:"smooth",
-inline:"center",
-block:"center"
-})
-
-}
-
-}
-
-})
-  
-setTimeout(()=>{
-
-const first=document.querySelector(".card")
-
-if(first) first.focus()
-
-},1500)
      
   
 load()
