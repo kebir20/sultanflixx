@@ -2,6 +2,9 @@
 <head>  
 <meta charset="UTF-8">  
 <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#ff0000">
+<div id="loader">
 <title>SULTANFLIX PRO V8</title>  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css"/>  <style>  
 body{
 margin:0;
@@ -385,10 +388,41 @@ iframe[src*="pop"],
 iframe[src*="banner"]{
 display:none!important
 }
+
+  #loader{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:black;
+display:flex;
+align-items:center;
+justify-content:center;
+z-index:99999;
+}
+
+#loader .logo{
+font-size:40px;
+color:#e50914;
+font-weight:bold;
+animation:pulse 1.5s infinite;
+}
+
+@keyframes pulse{
+0%{opacity:.3}
+50%{opacity:1}
+100%{opacity:.3}
+}
   
 button:focus{outline:3px solid red}  
   
-</style>  </head>  <body>  <header>  
+</style>  </head> 
+  <body> 
+  <div id="loader">
+  <div class="logo">SULTANFLIX</div>
+</div>
+  <header>  
 <div class="logo">SULTANFLIX</div>  <nav>  
 <button onclick="showSection('movies')">🎬 <span id="navMovies"></span></button>
 
@@ -403,6 +437,8 @@ button:focus{outline:3px solid red}
 <button onclick="openMyList()">❤️ My List</button>
 
 <button onclick="toggleSearch()">🔎 <span id="navSearch"></span></button>  
+
+<button id="installBtn" style="display:none">📲 Install App</button>
 <div class="langDropdown">
 
 <button onclick="toggleLangMenu()" class="langBtn">
@@ -448,13 +484,6 @@ sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
 </div>  
   <script>  
 <script>
-if("serviceWorker" in navigator){
-
-navigator.serviceWorker.register("sw.js")
-
-}
-</script>
-
     
   const realOpen = window.open
 
@@ -2305,6 +2334,27 @@ p.style.display="none"
 f.src=""
 
 }
+    window.addEventListener("load",()=>{
+setTimeout(()=>{
+document.getElementById("loader").style.display="none"
+},1200)
+})
+
+    let deferredPrompt;
+
+window.addEventListener("beforeinstallprompt",(e)=>{
+e.preventDefault();
+deferredPrompt = e;
+document.getElementById("installBtn").style.display="block";
+});
+
+document.getElementById("installBtn").onclick = async ()=>{
+if(deferredPrompt){
+deferredPrompt.prompt();
+await deferredPrompt.userChoice;
+deferredPrompt=null;
+}
+};
      
   
 load()
@@ -2312,6 +2362,11 @@ loadHero()
 showSection("movies")
 translateUI()  
     
-  
+  <script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function() {
+    navigator.serviceWorker.register("/sw.js")
+  })
+}
 </script>  </body>  
 </html>  
