@@ -1,11 +1,13 @@
 {
 "name": "SultanFlix",
 "short_name": "SultanFlix",
+"description": "Watch Movies, Series and Anime",
 "start_url": "/",
 "display": "standalone",
 "background_color": "#000000",
 "theme_color": "#ff0000",
 "orientation": "portrait",
+"scope": "/",
 "icons": [
 {
 "src": "icon.png",
