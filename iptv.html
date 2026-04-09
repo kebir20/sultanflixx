@@ -1,0 +1,258 @@
+<!DOCTYPE html><html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>IPTV Player v8.1.7</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #000;
+      color: #fff;
+      overflow: hidden;
+    }
+    .player-container {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      background: black;
+    }
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: black;
+      border-radius: 20px;
+    }
+    .controls {
+      position: fixed;
+      bottom: 10px;
+      left: 0;
+      right: 0;
+      margin: auto;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 10px;
+      border-radius: 16px;
+      z-index: 10;
+      transition: opacity 0.3s ease;
+    }
+    .controls.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .controls button {
+      background: #222;
+      color: white;
+      border: none;
+      padding: 10px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .controls input[type="text"] {
+      padding: 8px;
+      border-radius: 6px;
+      border: none;
+      width: 180px;
+      display: none;
+    }
+    .channel-list {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      right: 0;
+      width: 240px;
+      background: rgba(20,20,20,0.8);
+      overflow-y: auto;
+      padding: 10px;
+      display: none;
+      z-index: 9;
+    }
+    .channel-list.show { display: block; }
+    .channel-item {
+      background: rgba(255,255,255,0.1);
+      margin-bottom: 6px;
+      padding: 8px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .channel-item.selected { background: #007bff; }
+  </style>
+</head>
+<body>
+  <div class="player-container">
+    <video id="videoPlayer" autoplay muted playsinline></video>
+    <div class="controls" id="controls">
+      <select id="serverSelect"></select>
+      <select id="categorySelect"><option value="all">كل التصنيفات</option></select>
+      <button id="searchToggle">🔍</button>
+      <input type="text" id="searchInput" placeholder="ابحث عن قناة...">
+      <button id="favToggleBtn">⭐</button>
+      <button id="viewFavBtn">⭐ عرض المفضلة</button>
+      <button id="randomBtn">🎲</button>
+      <button id="nextBtn">⏭</button>
+      <button id="prevBtn">⏮</button>
+      <button id="muteBtn">🔊</button>
+      <button id="playPauseBtn">⏯</button>
+      <button id="fullscreenBtn">⛶</button>
+      <button id="toggleListBtn">📺</button>
+    </div>
+    <div class="channel-list" id="channelList"></div>
+  </div><script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script><script>
+const controls = document.getElementById('controls');
+let hideTimeout;
+
+function resetHideControls() {
+  controls.classList.remove('hidden');
+  clearTimeout(hideTimeout);
+  hideTimeout = setTimeout(() => {
+    if (document.fullscreenElement) {
+      controls.classList.add('hidden');
+    }
+  }, 5000);
+}
+['mousemove', 'keydown', 'click', 'touchstart'].forEach(evt => document.addEventListener(evt, resetHideControls));
+const servers = [
+  {name: "Sports IPTV", url: "https://iptv-org.github.io/iptv/categories/sports.m3u"},
+  {name: "Rakuten IPTV", url: "http://www.kajman.witam.net/bog/m3u/04/Rakuten%20TV.m3u"},
+  {name: "PLUTO IPTV", url: "https://eviptv.com/m3u8/M3U_Listeleri/EU_FRANCE_PLUTO.m3u"},
+  {name: "HasBahCa IPTV", url: "https://www.geocities.ws/kokebaku/PremierLiga.m3u"},
+  {name: "HasBahCa IPTV2", url: "https://www.geocities.ws/kokebaku/OttvmateA10.m3u"},
+  {name: "Samsung TV", url: "https://www.geocities.ws/kokebaku/Bioskop.m3u"},
+  {name: "SamsungTV Plus", url: "https://zamana.dev/t.m3u"},
+  {name: "Movies IPTV", url: "https://iptv-org.github.io/iptv/categories/movies.m3u"},
+  {name: "Series IPTV", url: "https://iptv-org.github.io/iptv/categories/series.m3u"},
+  {name: "Documentary", url: "https://iptv-org.github.io/iptv/categories/documentary.m3u"},
+  {name: "Animation", url: "https://iptv-org.github.io/iptv/categories/animation.m3u"},
+  {name: "Kids IPTV", url: "https://iptv-org.github.io/iptv/categories/kids.m3u"},
+  {name: "Cartoon Network", url: "https://iptv-org.github.io/iptv/categories/animation.m3u"},
+  {name: "News IPTV", url: "https://iptv-org.github.io/iptv/categories/news.m3u"},
+  {name: "Middle East", url: "https://iptv-org.github.io/iptv/regions/arab.m3u"},
+  {name: "France", url: "https://iptv-org.github.io/iptv/countries/fr.m3u"},
+  {name: "Germany", url: "https://iptv-org.github.io/iptv/countries/de.m3u"},
+  {name: "Spain", url: "https://iptv-org.github.io/iptv/countries/es.m3u"},
+  {name: "Italy", url: "https://iptv-org.github.io/iptv/countries/it.m3u"},
+  {name: "USA", url: "https://iptv-org.github.io/iptv/countries/us.m3u"},
+  {name: "All IPTV", url: "https://iptv-org.github.io/iptv/index.m3u"}
+];
+
+const video = document.getElementById('videoPlayer');
+const channelList = document.getElementById('channelList');
+const serverSelect = document.getElementById('serverSelect');
+const categorySelect = document.getElementById('categorySelect');
+const favBtn = document.getElementById('favToggleBtn');
+const viewFavBtn = document.getElementById('viewFavBtn');
+let hls, currentIndex = 0;
+let channels = [], allChannels = [], favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+let showOnlyFav = false, currentCategory = "all";
+
+servers.forEach((s, i) => {
+  const option = document.createElement("option");
+  option.value = s.url;
+  option.textContent = s.name;
+  serverSelect.appendChild(option);
+});
+serverSelect.onchange = () => loadM3U(serverSelect.value);
+categorySelect.onchange = () => {
+  currentCategory = categorySelect.value;
+  renderChannels();
+};
+
+async function loadM3U(url) {
+  const res = await fetch(url);
+  const text = await res.text();
+  const lines = text.split('\n');
+  allChannels = [];
+  let group = "";
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].startsWith("#EXTINF")) {
+      const match = lines[i].match(/group-title="(.*?)"/);
+      group = match ? match[1] : "غير مصنف";
+      const name = lines[i].split(',')[1] || 'No Name';
+      const link = lines[i + 1];
+      if (link && link.startsWith('http')) {
+        allChannels.push({ name, link, group });
+      }
+    }
+  }
+  fillCategories();
+  renderChannels();
+}
+
+function fillCategories() {
+  const groups = [...new Set(allChannels.map(ch => ch.group))];
+  categorySelect.innerHTML = '<option value="all">كل التصنيفات</option>';
+  groups.forEach(g => {
+    const opt = document.createElement("option");
+    opt.value = g;
+    opt.textContent = g;
+    categorySelect.appendChild(opt);
+  });
+}
+
+function renderChannels() {
+  channelList.innerHTML = "";
+  channels = allChannels.filter(ch => {
+    return (!showOnlyFav || favorites.includes(ch.link)) && (currentCategory === "all" || ch.group === currentCategory);
+  });
+  channels.forEach((ch, i) => {
+    const div = document.createElement("div");
+    div.className = 'channel-item';
+    div.dataset.id = ch.link;
+    div.textContent = `${favorites.includes(ch.link) ? '⭐ ' : ''}${ch.name}`;
+    div.onclick = () => {
+      currentIndex = i;
+      playChannel(i);
+    };
+    channelList.appendChild(div);
+  });
+}
+
+function playChannel(index) {
+  const ch = channels[index];
+  if (!ch) return;
+  document.querySelectorAll('.channel-item').forEach(e => e.classList.remove('selected'));
+  document.querySelectorAll('.channel-item')[index].classList.add('selected');
+  if (hls) hls.destroy();
+  hls = new Hls();
+  hls.loadSource(ch.link);
+  hls.attachMedia(video);
+  hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
+  localStorage.setItem('lastPlayed', ch.link);
+  favBtn.textContent = favorites.includes(ch.link) ? '⭐ إزالة' : '⭐ إضافة';
+}
+
+favBtn.onclick = () => {
+  const current = channels[currentIndex];
+  const i = favorites.indexOf(current.link);
+  if (i === -1) favorites.push(current.link);
+  else favorites.splice(i, 1);
+  localStorage.setItem('favorites', JSON.stringify(favorites));
+  renderChannels();
+};
+
+viewFavBtn.onclick = () => {
+  showOnlyFav = !showOnlyFav;
+  viewFavBtn.textContent = showOnlyFav ? "📺 عرض الكل" : "⭐ عرض المفضلة";
+  renderChannels();
+};
+
+document.getElementById("toggleListBtn").onclick = () => {
+  channelList.classList.toggle("show");
+};
+document.getElementById("nextBtn").onclick = () => playChannel((currentIndex + 1) % channels.length);
+document.getElementById("prevBtn").onclick = () => playChannel((currentIndex - 1 + channels.length) % channels.length);
+document.getElementById("randomBtn").onclick = () => playChannel(Math.floor(Math.random() * channels.length));
+document.getElementById("muteBtn").onclick = () => video.muted = !video.muted;
+document.getElementById("playPauseBtn").onclick = () => video.paused ? video.play() : video.pause();
+document.getElementById("fullscreenBtn").onclick = () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+
+loadM3U(servers[0].url);
+</script></body>
+</html>
+</script></body>
+</html>
