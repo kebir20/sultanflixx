@@ -20,5 +20,22 @@
 "sizes": "512x512",
 "type": "image/png"
 }
-]
+],
+
+"screenshots": [
+{
+"src": "screenshots/home.png",
+"sizes": "1280x720",
+"type": "image/png"
+},
+{
+"src": "screenshots/movies.png",
+"sizes": "1280x720",
+"type": "image/png"
+},
+{
+"src": "screenshots/player.png",
+"sizes": "1280x720",
+"type": "image/png"
 }
+]
