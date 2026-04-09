@@ -4,7 +4,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">  
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#ff0000">
-<div id="loader">
 <title>SULTANFLIX PRO V8</title>  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css"/>  <style>  
 body{
 margin:0;
@@ -483,7 +482,6 @@ sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
 <iframe id="iptvFrame" allowfullscreen></iframe>
 </div>  
   <script>  
-<script>
     
   const realOpen = window.open
 
@@ -2370,16 +2368,11 @@ loadHero()
 showSection("movies")
 translateUI()
 
-window.addEventListener("load",function(){
-setTimeout(function(){
-document.getElementById("loader").style.display="none";
-},1200);
-});  
     
   <script>
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", function() {
-    navigator.serviceWorker.register("/sw.js")
+navigator.serviceWorker.register("/sw.js")
+}
   })
 }
 </script>  </body>  
