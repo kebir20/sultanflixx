@@ -2353,14 +2353,6 @@ document.getElementById("installBtn").onclick = async () => {
     deferredPrompt = null;
   }
 };
-
-document.getElementById("installBtn").onclick = async ()=>{
-if(deferredPrompt){
-deferredPrompt.prompt();
-await deferredPrompt.userChoice;
-deferredPrompt=null;
-}
-};
      
   
 load()
@@ -2368,12 +2360,13 @@ loadHero()
 showSection("movies")
 translateUI()
 
-    
-  <script>
+</script>
+
+<script>
 if ("serviceWorker" in navigator) {
 navigator.serviceWorker.register("/sw.js")
 }
-  })
-}
-</script>  </body>  
-</html>  
+</script>
+
+</body>
+</html>
