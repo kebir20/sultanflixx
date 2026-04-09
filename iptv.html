@@ -1,258 +1,773 @@
-<!DOCTYPE html><html lang="ar" dir="rtl">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>IPTV Player v8.1.7</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', sans-serif;
-      background: #000;
-      color: #fff;
-      overflow: hidden;
-    }
-    .player-container {
-      position: relative;
-      width: 100%;
-      height: 100vh;
-      background: black;
-    }
-    video {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      background: black;
-      border-radius: 20px;
-    }
-    .controls {
-      position: fixed;
-      bottom: 10px;
-      left: 0;
-      right: 0;
-      margin: auto;
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 8px;
-      background: rgba(0, 0, 0, 0.6);
-      padding: 10px;
-      border-radius: 16px;
-      z-index: 10;
-      transition: opacity 0.3s ease;
-    }
-    .controls.hidden {
-      opacity: 0;
-      pointer-events: none;
-    }
-    .controls button {
-      background: #222;
-      color: white;
-      border: none;
-      padding: 10px 12px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 16px;
-    }
-    .controls input[type="text"] {
-      padding: 8px;
-      border-radius: 6px;
-      border: none;
-      width: 180px;
-      display: none;
-    }
-    .channel-list {
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      right: 0;
-      width: 240px;
-      background: rgba(20,20,20,0.8);
-      overflow-y: auto;
-      padding: 10px;
-      display: none;
-      z-index: 9;
-    }
-    .channel-list.show { display: block; }
-    .channel-item {
-      background: rgba(255,255,255,0.1);
-      margin-bottom: 6px;
-      padding: 8px;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    .channel-item.selected { background: #007bff; }
-  </style>
-</head>
-<body>
-  <div class="player-container">
-    <video id="videoPlayer" autoplay muted playsinline></video>
-    <div class="controls" id="controls">
-      <select id="serverSelect"></select>
-      <select id="categorySelect"><option value="all">كل التصنيفات</option></select>
-      <button id="searchToggle">🔍</button>
-      <input type="text" id="searchInput" placeholder="ابحث عن قناة...">
-      <button id="favToggleBtn">⭐</button>
-      <button id="viewFavBtn">⭐ عرض المفضلة</button>
-      <button id="randomBtn">🎲</button>
-      <button id="nextBtn">⏭</button>
-      <button id="prevBtn">⏮</button>
-      <button id="muteBtn">🔊</button>
-      <button id="playPauseBtn">⏯</button>
-      <button id="fullscreenBtn">⛶</button>
-      <button id="toggleListBtn">📺</button>
-    </div>
-    <div class="channel-list" id="channelList"></div>
-  </div><script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script><script>
-const controls = document.getElementById('controls');
-let hideTimeout;
-
-function resetHideControls() {
-  controls.classList.remove('hidden');
-  clearTimeout(hideTimeout);
-  hideTimeout = setTimeout(() => {
-    if (document.fullscreenElement) {
-      controls.classList.add('hidden');
-    }
-  }, 5000);
+<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>IPTV Player v8.1.7</title><style>  body{margin:0;font-family:'Segoe UI',sans-serif;background:#000;color:#fff;overflow:hidden}
+.player-container{position:relative;width:100%;height:100vh;background:black}
+video{width:100%;height:100%;object-fit:contain;background:black;border-radius:20px}
+.controls{position:fixed;bottom:10px;left:0;right:0;margin:auto;display:flex;flex-wrap:wrap;justify-content:center;gap:8px;background:rgba(0,0,0,.6);padding:10px;border-radius:16px;z-index:10;transition:opacity .3s ease}
+.controls.hidden{opacity:0;pointer-events:none}
+.controls button{background:#222;color:#fff;border:none;padding:10px 12px;border-radius:6px;cursor:pointer;font-size:16px}
+.controls input[type="text"]{padding:8px;border-radius:6px;border:none;width:180px;display:none}
+.channel-list{position:absolute;top:0;bottom:0;right:0;width:240px;background:rgba(20,20,20,.8);overflow-y:auto;padding:10px;display:none;z-index:9}
+.channel-list.show{display:block}
+.channel-item{background:rgba(255,255,255,.1);margin-bottom:6px;padding:8px;border-radius:4px;cursor:pointer;transition:.2s}
+.channel-item:hover{background:rgba(0,123,255,.5);transform:scale(1.02)}
+.channel-item.selected{background:#007bff}
+.focused{outline:2px solid #00aaff;transform:scale(1.03)}
+#channelTitle{position:absolute;top:20px;right:20px;background:rgba(0,0,0,.6);padding:8px 14px;border-radius:10px;font-size:18px;z-index:11;max-width:70%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#channelOverlay{position:absolute;top:70px;right:20px;background:rgba(0,0,0,.7);padding:10px 14px;border-radius:10px;font-size:15px;z-index:12;opacity:0;transform:translateY(-8px);transition:opacity .25s ease,transform .25s ease;pointer-events:none;max-width:75%;line-height:1.5}
+#channelOverlay.show{opacity:1;transform:translateY(0)}
+.channel-item .meta{display:block;font-size:11px;opacity:.75;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.channel-item img.logo{width:22px;height:22px;object-fit:contain;vertical-align:middle;margin-left:6px;border-radius:4px;background:#111}
+.langDropdown{
+position:relative;
+display:inline-block;
 }
-['mousemove', 'keydown', 'click', 'touchstart'].forEach(evt => document.addEventListener(evt, resetHideControls));
-const servers = [
-  {name: "Sports IPTV", url: "https://iptv-org.github.io/iptv/categories/sports.m3u"},
-  {name: "Rakuten IPTV", url: "http://www.kajman.witam.net/bog/m3u/04/Rakuten%20TV.m3u"},
-  {name: "PLUTO IPTV", url: "https://eviptv.com/m3u8/M3U_Listeleri/EU_FRANCE_PLUTO.m3u"},
-  {name: "HasBahCa IPTV", url: "https://www.geocities.ws/kokebaku/PremierLiga.m3u"},
-  {name: "HasBahCa IPTV2", url: "https://www.geocities.ws/kokebaku/OttvmateA10.m3u"},
-  {name: "Samsung TV", url: "https://www.geocities.ws/kokebaku/Bioskop.m3u"},
-  {name: "SamsungTV Plus", url: "https://zamana.dev/t.m3u"},
-  {name: "Movies IPTV", url: "https://iptv-org.github.io/iptv/categories/movies.m3u"},
-  {name: "Series IPTV", url: "https://iptv-org.github.io/iptv/categories/series.m3u"},
-  {name: "Documentary", url: "https://iptv-org.github.io/iptv/categories/documentary.m3u"},
-  {name: "Animation", url: "https://iptv-org.github.io/iptv/categories/animation.m3u"},
-  {name: "Kids IPTV", url: "https://iptv-org.github.io/iptv/categories/kids.m3u"},
-  {name: "Cartoon Network", url: "https://iptv-org.github.io/iptv/categories/animation.m3u"},
-  {name: "News IPTV", url: "https://iptv-org.github.io/iptv/categories/news.m3u"},
-  {name: "Middle East", url: "https://iptv-org.github.io/iptv/regions/arab.m3u"},
-  {name: "France", url: "https://iptv-org.github.io/iptv/countries/fr.m3u"},
-  {name: "Germany", url: "https://iptv-org.github.io/iptv/countries/de.m3u"},
-  {name: "Spain", url: "https://iptv-org.github.io/iptv/countries/es.m3u"},
-  {name: "Italy", url: "https://iptv-org.github.io/iptv/countries/it.m3u"},
-  {name: "USA", url: "https://iptv-org.github.io/iptv/countries/us.m3u"},
-  {name: "All IPTV", url: "https://iptv-org.github.io/iptv/index.m3u"}
-];
 
-const video = document.getElementById('videoPlayer');
-const channelList = document.getElementById('channelList');
-const serverSelect = document.getElementById('serverSelect');
-const categorySelect = document.getElementById('categorySelect');
-const favBtn = document.getElementById('favToggleBtn');
-const viewFavBtn = document.getElementById('viewFavBtn');
-let hls, currentIndex = 0;
-let channels = [], allChannels = [], favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
-let showOnlyFav = false, currentCategory = "all";
+.langBtn{
+background:#222;
+color:white;
+border:none;
+padding:10px 14px;
+border-radius:8px;
+cursor:pointer;
+}
 
-servers.forEach((s, i) => {
-  const option = document.createElement("option");
-  option.value = s.url;
-  option.textContent = s.name;
-  serverSelect.appendChild(option);
-});
-serverSelect.onchange = () => loadM3U(serverSelect.value);
-categorySelect.onchange = () => {
-  currentCategory = categorySelect.value;
-  renderChannels();
+.langMenu{
+display:none;
+position:absolute;
+
+bottom:55px; /* تفتح للأعلى */
+
+right:0;
+background:#111;
+
+border-radius:12px;
+
+min-width:220px;
+max-height:260px;
+
+overflow-y:auto; /* يسمح بالتمرير */
+
+z-index:999;
+
+box-shadow:0 10px 40px rgba(0,0,0,.7);
+}
+
+.langMenu div{
+padding:12px;
+cursor:pointer;
+transition:.2s;
+border-bottom:1px solid rgba(255,255,255,.05);
+}
+  
+.langMenu div:focus,
+.langMenu div:hover{
+
+background:#007bff;
+
+outline:none;
+
+}
+  
+.langMenu::-webkit-scrollbar{
+width:6px;
+}
+
+.langMenu::-webkit-scrollbar-thumb{
+background:#007bff;
+border-radius:6px;
+}
+
+.langMenu div:hover{
+background:#007bff;
+}
+  </style>
+</head><body>
+
+<div class="player-container">  
+<video id="videoPlayer" autoplay muted playsinline></video>  
+<div id="channelTitle"></div><div id="channelOverlay"></div>  
+<div class="controls" id="controls"> 
+<select id="serverSelect" style="display:none"></select>
+<select id="categorySelect" style="display:none">
+<option value="all">كل التصنيفات</option>
+</select>
+<div class="langDropdown">
+
+<button onclick="toggleServerMenu()" class="langBtn">
+📡 السيرفر
+</button>
+
+<div id="serverMenu" class="langMenu"></div>
+
+</div>
+
+<div class="langDropdown">
+
+<button onclick="toggleCategoryMenu()" class="langBtn">
+📂 التصنيف
+</button>
+
+<div id="categoryMenu" class="langMenu"></div>
+
+</div>  
+<button id="searchToggle">🔍</button><input type="text" id="searchInput" placeholder="ابحث عن قناة...">  
+<button id="favToggleBtn">⭐</button><button id="viewFavBtn">⭐ عرض المفضلة</button>  
+<button id="historyBtn">🕓 آخر مشاهدة</button>  
+<button id="addServerBtn">➕ سيرفر</button>  
+<input type="file" id="m3uFileInput" accept=".m3u,.m3u8,text/plain" style="display:none">  
+<button id="uploadServerBtn">📂 ملف M3U</button>  
+<button id="randomBtn">🎲</button><button id="nextBtn">⏭</button><button id="prevBtn">⏮</button>  
+<button id="muteBtn">🔊</button><button id="playPauseBtn">⏯</button><button id="fullscreenBtn">⛶</button><button id="toggleListBtn">📺</button>  
+</div><div class="channel-list" id="channelList"></div></div>  
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>  
+<script>  
+const controls=document.getElementById('controls');let hideTimeout;  
+function resetHideControls(){controls.classList.remove('hidden');clearTimeout(hideTimeout);hideTimeout=setTimeout(()=>{if(document.fullscreenElement)controls.classList.add('hidden')},5000)}  
+['mousemove','keydown','click','touchstart'].forEach(evt=>document.addEventListener(evt,resetHideControls));  
+  
+  const servers=[
+{"name":"جميع القنوات","url":"https://iptv-org.github.io/iptv/index.m3u"},
+{"name":"قنوات رياضية","url":"https://iptv-org.github.io/iptv/categories/sports.m3u"},
+{"name":"أفلام","url":"https://iptv-org.github.io/iptv/categories/movies.m3u"},
+{"name":"مسلسلات","url":"https://iptv-org.github.io/iptv/categories/series.m3u"},
+{"name":"أخبار","url":"https://iptv-org.github.io/iptv/categories/news.m3u"},
+{"name":"موسيقى","url":"https://iptv-org.github.io/iptv/categories/music.m3u"},
+{"name":"أطفال","url":"https://iptv-org.github.io/iptv/categories/kids.m3u"},
+{"name":"وثائقيات","url":"https://iptv-org.github.io/iptv/categories/documentary.m3u"},
+{"name":"قنوات عربية","url":"https://iptv-org.github.io/iptv/regions/arab.m3u"},
+{"name":"فرنسا","url":"https://iptv-org.github.io/iptv/countries/fr.m3u"},
+{"name":"مصر","url":"https://iptv-org.github.io/iptv/countries/eg.m3u"},
+{"name":"السعودية","url":"https://iptv-org.github.io/iptv/countries/sa.m3u"},
+{"name":"الولايات المتحدة","url":"https://iptv-org.github.io/iptv/countries/us.m3u"},
+{"name":"المملكة المتحدة","url":"https://iptv-org.github.io/iptv/countries/gb.m3u"}
+  ];
+  
+function buildServerMenu(){
+
+const menu=document.getElementById("serverMenu")
+menu.innerHTML=""
+
+servers.forEach(s=>{
+
+const div=document.createElement("div")
+
+div.innerText=s.name
+
+div.onclick=()=>{
+
+serverSelect.value = s.url
+loadM3U(s.url)
+
+menu.style.display="none"
+
+}
+
+menu.appendChild(div)
+
+})
+
+}
+  
+  function buildCategoryMenu(){
+
+const menu=document.getElementById("categoryMenu")
+
+menu.innerHTML=""
+
+const groups=[...new Set(allChannels.map(ch=>ch.group))]
+
+groups.unshift("all")
+
+groups.forEach(g=>{
+
+const div=document.createElement("div")
+
+div.innerText = g==="all" ? "كل التصنيفات" : g
+
+div.onclick=()=>{
+
+categorySelect.value = g
+currentCategory = g
+renderChannels()
+
+menu.style.display="none"
+
+}
+
+menu.appendChild(div)
+
+})
+
+}
+  
+  function toggleServerMenu(){
+
+const menu=document.getElementById("serverMenu")
+
+menu.style.display=
+menu.style.display==="block"?"none":"block"
+
+}
+
+function toggleCategoryMenu(){
+
+const menu=document.getElementById("categoryMenu")
+
+menu.style.display=
+menu.style.display==="block"?"none":"block"
+
+}
+  
+const video=document.getElementById('videoPlayer'),channelList=document.getElementById('channelList'),serverSelect=document.getElementById('serverSelect'),categorySelect=document.getElementById('categorySelect'),favBtn=document.getElementById('favToggleBtn'),viewFavBtn=document.getElementById('viewFavBtn'),channelTitle=document.getElementById('channelTitle'),channelOverlay=document.getElementById('channelOverlay'),historyBtn=document.getElementById('historyBtn'),searchInput=document.getElementById('searchInput'),searchToggle=document.getElementById('searchToggle');
+const addServerBtn=document.getElementById('addServerBtn');
+const uploadServerBtn=document.getElementById('uploadServerBtn');
+const m3uFileInput=document.getElementById('m3uFileInput');
+
+let hls,currentIndex=0,channels=[],allChannels=[],favorites=JSON.parse(localStorage.getItem('favorites')||'[]'),showOnlyFav=false,currentCategory='all';
+let historyList=JSON.parse(localStorage.getItem('historyList')||'[]'),showOnlyHistory=false;
+let watchStats=JSON.parse(localStorage.getItem('watchStats')||'{}');
+let focusedIndex=0;
+const VIRTUAL_ITEM_HEIGHT=44,VIRTUAL_BUFFER=12;
+let m3uLines=[], channelPointers=[];
+
+let customServers=JSON.parse(localStorage.getItem('customServers')||'[]');
+customServers.forEach(s=>servers.push(s));
+
+function rebuildServerSelect(){
+serverSelect.innerHTML='';
+servers.forEach(s=>{const o=document.createElement('option');o.value=s.url;o.textContent=s.name;serverSelect.appendChild(o)});
+}
+rebuildServerSelect();
+buildServerMenu()
+  
+
+serverSelect.onchange=()=>{showOnlyHistory=false;historyBtn.textContent='🕓 آخر مشاهدة';loadM3U(serverSelect.value)};
+categorySelect.onchange=()=>{currentCategory=categorySelect.value;renderChannels()};
+searchToggle.onclick=()=>{searchInput.style.display=searchInput.style.display==='block'?'none':'block';searchInput.focus()};
+searchInput.oninput=()=>renderChannels();
+
+addServerBtn.onclick=()=>{
+const name=prompt('اسم السيرفر:');
+const url=prompt('رابط M3U:');
+if(!name||!url) return;
+const s={name,url};
+servers.push(s);
+customServers.push(s);
+localStorage.setItem('customServers',JSON.stringify(customServers));
+rebuildServerSelect();
+serverSelect.value=url;
+loadM3U(url);
 };
 
-async function loadM3U(url) {
-  const res = await fetch(url);
-  const text = await res.text();
-  const lines = text.split('\n');
-  allChannels = [];
-  let group = "";
-  for (let i = 0; i < lines.length; i++) {
-    if (lines[i].startsWith("#EXTINF")) {
-      const match = lines[i].match(/group-title="(.*?)"/);
-      group = match ? match[1] : "غير مصنف";
-      const name = lines[i].split(',')[1] || 'No Name';
-      const link = lines[i + 1];
-      if (link && link.startsWith('http')) {
-        allChannels.push({ name, link, group });
-      }
+uploadServerBtn.onclick=()=>m3uFileInput.click();
+m3uFileInput.onchange=(e)=>{
+const file=e.target.files&&e.target.files[0];
+if(!file) return;
+const reader=new FileReader();
+reader.onload=()=>loadM3UFromText(String(reader.result||''));
+reader.readAsText(file);
+};
+
+function parseExtinfAttributes(line){
+const attrs={};
+const re=/([\w-]+)="([^"]*)"/g;
+let m;
+while((m=re.exec(line))!==null){ attrs[m[1]]=m[2]; }
+return attrs;
+}
+function parseChannelAt(extinfIndex){
+const line=(m3uLines[extinfIndex]||'').trim();
+const attrs=parseExtinfAttributes(line);
+const group=attrs['group-title']||'غير مصنف';
+const name=((line.split(',')[1]||'No Name')).trim();
+const link=((m3uLines[extinfIndex+1]||'').trim());
+if(!/^https?:/i.test(link)) return null;
+return {
+name,link,group,
+logo:attrs['tvg-logo']||'',
+tvgId:attrs['tvg-id']||'',
+tvgName:attrs['tvg-name']||'',
+language:attrs['tvg-language']||attrs['language']||'',
+epg:attrs['tvg-url']||'',
+quality:attrs['quality']||attrs['tvg-quality']||''
+};
+}
+
+function loadM3UFromText(text){
+m3uLines=text.split(/\r?\n/);
+channelPointers=[]; allChannels=[];
+for(let i=0;i<m3uLines.length;i++){ if(m3uLines[i].startsWith('#EXTINF')) channelPointers.push(i); }
+for(let i=0;i<channelPointers.length;i++){ const ch=parseChannelAt(channelPointers[i]); if(ch) allChannels.push(ch); }
+fillCategories() ; buildCategoryMenu() ; renderChannels();
+}
+
+async function loadM3U(url){
+const res = await fetch(url);
+const text = await res.text();
+
+loadM3UFromText(text);
+
+channels = getFilteredChannels();
+renderChannels();
+
+const last = localStorage.getItem('lastPlayed');
+if(last){
+const idx = channels.findIndex(c=>c.link===last);
+if(idx!==-1){
+currentIndex = idx;
+playChannel(idx);
+}
+}
+}
+function fillCategories(){
+const groups=[...new Set(allChannels.map(ch=>ch.group))];
+categorySelect.innerHTML='<option value="all">كل التصنيفات</option>';
+
+groups.forEach(g=>{
+const o=document.createElement('option');
+o.value=g;
+o.textContent=g;
+categorySelect.appendChild(o);
+});
+}
+
+function getFilteredChannels(){
+const q=(searchInput.value||'').toLowerCase().trim();
+let base=allChannels.filter(ch=>(!showOnlyFav||favorites.includes(ch.link))&&(currentCategory==='all'||ch.group===currentCategory));
+if(showOnlyHistory){
+const set=new Set(historyList.map(h=>h.link));
+base=base.filter(ch=>set.has(ch.link));
+base.sort((a,b)=>historyList.findIndex(h=>h.link===a.link)-historyList.findIndex(h=>h.link===b.link));
+}else{
+base.sort((a,b)=>(watchStats[b.link]||0)-(watchStats[a.link]||0));
+}
+if(q) base=base.filter(ch=>ch.name.toLowerCase().includes(q));
+return base;
+}
+
+function renderChannels(){
+channelList.innerHTML='';
+channels=getFilteredChannels();
+const viewport=document.createElement('div');
+viewport.style.position='relative';
+viewport.style.height=(channels.length*VIRTUAL_ITEM_HEIGHT)+'px';
+channelList.appendChild(viewport);
+
+function draw(){
+const st=channelList.scrollTop,vh=channelList.clientHeight||400,
+start=Math.max(0,Math.floor(st/VIRTUAL_ITEM_HEIGHT)-VIRTUAL_BUFFER),
+end=Math.min(channels.length,Math.ceil((st+vh)/VIRTUAL_ITEM_HEIGHT)+VIRTUAL_BUFFER);
+viewport.innerHTML='';
+for(let i=start;i<end;i++){
+const ch=channels[i],div=document.createElement('div');
+div.className='channel-item'+(i===currentIndex?' selected':'')+(i===focusedIndex?' focused':'');
+div.style.position='absolute';div.style.right='0';div.style.left='0';div.style.top=(i*VIRTUAL_ITEM_HEIGHT)+'px';
+div.innerHTML=`${ch.logo?`<img class="logo" src="${ch.logo}" onerror="this.style.display='none'">`:''}${favorites.includes(ch.link)?'⭐ ':''}${ch.name}<span class="meta">${[ch.language,ch.quality,ch.tvgId].filter(Boolean).join(' • ')}</span>`;
+div.onclick=()=>{currentIndex=i;focusedIndex=i;playChannel(i)};
+viewport.appendChild(div);
+}
+}
+channelList.onscroll=draw; draw();
+}
+
+function ensureFocusedVisible(){
+const top=focusedIndex*VIRTUAL_ITEM_HEIGHT;
+const bottom=top+VIRTUAL_ITEM_HEIGHT;
+const viewTop=channelList.scrollTop;
+const viewBottom=viewTop+channelList.clientHeight;
+if(top<viewTop) channelList.scrollTop=top;
+else if(bottom>viewBottom) channelList.scrollTop=bottom-channelList.clientHeight;
+}
+
+function showOverlay(ch,index){
+channelOverlay.innerHTML=`📺 ${ch.name}<br>📂 ${ch.group||'غير مصنف'}${ch.language?`<br>🌐 ${ch.language}`:''}${ch.quality?`<br>🎚 ${ch.quality}`:''}${ch.tvgId?`<br>🆔 ${ch.tvgId}`:''}<br># ${index+1}`;
+channelOverlay.classList.add('show');
+clearTimeout(showOverlay._t);
+showOverlay._t=setTimeout(()=>channelOverlay.classList.remove('show'),3000);
+}
+
+function pushHistory(ch){
+historyList=historyList.filter(h=>h.link!==ch.link);
+historyList.unshift({name:ch.name,link:ch.link,group:ch.group,ts:Date.now()});
+if(historyList.length>30)historyList=historyList.slice(0,30);
+localStorage.setItem('historyList',JSON.stringify(historyList));
+}
+
+let preloaded={link:null,hls:null};
+function preloadNext(){
+if(!channels.length) return;
+const nextIndex=(currentIndex+1)%channels.length;
+const next=channels[nextIndex];
+if(!next || preloaded.link===next.link) return;
+if(preloaded.hls){try{preloaded.hls.destroy()}catch(e){}}
+if(Hls.isSupported()){
+const v=document.createElement('video');
+v.muted=true; v.playsInline=true;
+const ph=new Hls({maxBufferLength:20,enableWorker:true,lowLatencyMode:true});
+ph.loadSource(next.link); ph.attachMedia(v);
+preloaded={link:next.link,hls:ph};
+}
+}
+
+function playChannel(index){
+const ch=channels[index]; if(!ch) return;
+currentIndex=index; focusedIndex=index;
+if(hls){hls.destroy();hls=null}
+if(video.canPlayType('application/vnd.apple.mpegurl')){
+video.src=ch.link; video.play();
+}else if(Hls.isSupported()){
+hls=new Hls({maxBufferLength:60,maxMaxBufferLength:120,enableWorker:true,lowLatencyMode:true});
+hls.loadSource(ch.link); hls.attachMedia(video);
+hls.on(Hls.Events.MANIFEST_PARSED,()=>{hls.currentLevel=-1;video.play()});
+hls.on(Hls.Events.ERROR,(_,data)=>{if(data&&data.fatal)setTimeout(()=>playChannel(currentIndex),3000)});
+}
+watchStats[ch.link]=(watchStats[ch.link]||0)+1;
+localStorage.setItem('watchStats',JSON.stringify(watchStats));
+channelTitle.textContent=ch.name;
+showOverlay(ch,index);
+pushHistory(ch);
+localStorage.setItem('lastPlayed',ch.link);
+favBtn.textContent=favorites.includes(ch.link)?'⭐ إزالة':'⭐ إضافة';
+renderChannels(); preloadNext();
+}
+
+video.addEventListener('error',()=>{if(!channels.length)return;setTimeout(()=>playChannel(currentIndex),3000)});
+
+// ===============================
+// 🔥 PRO MAX REMOTE ENGINE
+// ===============================
+
+let MODE = "PLAYER"; // PLAYER | UI | CHANNELS
+let uiElements = [];
+let uiIndex = 0;
+
+// تجهيز أزرار الواجهة
+function buildUIFocus(){
+uiElements = [
+...document.querySelectorAll('.controls select'),
+...document.querySelectorAll('.controls button')
+];
+}
+
+// اظهار تركيز بصري
+function updateUIFocus(){
+uiElements.forEach(el=>el.classList.remove('focused'));
+if(uiElements[uiIndex]){
+uiElements[uiIndex].classList.add('focused');
+uiElements[uiIndex].focus();
+}
+}
+
+// دخول وضع UI
+function enterUIMode(){
+MODE = "UI";
+controls.classList.remove('hidden');
+buildUIFocus();
+updateUIFocus();
+}
+
+// دخول وضع القنوات
+function enterChannelMode(){
+MODE = "CHANNELS";
+channelList.classList.add('show');
+ensureFocusedVisible();
+renderChannels();
+}
+
+// دخول وضع المشغل
+function enterPlayerMode(){
+MODE = "PLAYER";
+uiElements.forEach(el=>el.classList.remove('focused'));
+}
+
+// ===============================
+// KEY HANDLER
+// ===============================
+
+document.addEventListener('keydown',e=>{
+
+if(!channels.length) return;
+
+// ====== PLAYER MODE ======
+if(MODE==="PLAYER"){
+
+if(e.key==="ArrowDown"){  
+  enterUIMode();  
+  e.preventDefault();  
+  return;  
+}  
+
+if(e.key==="ArrowRight"){  
+  playChannel((currentIndex+1)%channels.length);  
+  e.preventDefault();  
+  return;  
+}  
+
+if(e.key==="ArrowLeft"){  
+  playChannel((currentIndex-1+channels.length)%channels.length);  
+  e.preventDefault();  
+  return;  
+}  
+
+if(e.key==="Enter"){  
+  enterChannelMode();  
+  e.preventDefault();  
+  return;  
+}
+
+}
+
+// ====== UI MODE ======
+if(MODE==="UI"){
+
+if(e.key==="ArrowRight"){  
+  uiIndex=(uiIndex-1+uiElements.length)%uiElements.length;  
+  updateUIFocus();  
+  e.preventDefault();  
+  return;  
+}  
+
+if(e.key==="ArrowLeft"){  
+  uiIndex=(uiIndex+1)%uiElements.length;  
+  updateUIFocus();  
+  e.preventDefault();  
+  return;  
+}  
+
+if(e.key==="ArrowUp"){  
+  enterPlayerMode();  
+  e.preventDefault();  
+  return;  
+}  
+
+if(e.key==="Enter"){  
+  const el = uiElements[uiIndex];
+  if(el){
+    if(el.tagName==="SELECT"){
+      el.focus();
+      el.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true}));
+      el.dispatchEvent(new Event('change',{bubbles:true}));
+    }else{
+      el.click();
     }
   }
-  fillCategories();
-  renderChannels();
+  e.preventDefault();  
+  return;  
 }
 
-function fillCategories() {
-  const groups = [...new Set(allChannels.map(ch => ch.group))];
-  categorySelect.innerHTML = '<option value="all">كل التصنيفات</option>';
-  groups.forEach(g => {
-    const opt = document.createElement("option");
-    opt.value = g;
-    opt.textContent = g;
-    categorySelect.appendChild(opt);
-  });
 }
 
-function renderChannels() {
-  channelList.innerHTML = "";
-  channels = allChannels.filter(ch => {
-    return (!showOnlyFav || favorites.includes(ch.link)) && (currentCategory === "all" || ch.group === currentCategory);
-  });
-  channels.forEach((ch, i) => {
-    const div = document.createElement("div");
-    div.className = 'channel-item';
-    div.dataset.id = ch.link;
-    div.textContent = `${favorites.includes(ch.link) ? '⭐ ' : ''}${ch.name}`;
-    div.onclick = () => {
-      currentIndex = i;
-      playChannel(i);
-    };
-    channelList.appendChild(div);
-  });
+// ====== CHANNEL MODE ======
+if(MODE==="CHANNELS"){
+
+if(e.key==="ArrowDown"){  
+  focusedIndex=Math.min(channels.length-1,focusedIndex+1);  
+  ensureFocusedVisible();  
+  renderChannels();  
+  e.preventDefault();  
+  return;  
+}  
+
+if(e.key==="ArrowUp"){  
+  focusedIndex=Math.max(0,focusedIndex-1);  
+  ensureFocusedVisible();  
+  renderChannels();  
+  e.preventDefault();  
+  return;  
+}  
+
+if(e.key==="ArrowLeft"){  
+  enterPlayerMode();  
+  channelList.classList.remove('show');  
+  e.preventDefault();  
+  return;  
+}  
+
+if(e.key==="Enter"){  
+  playChannel(focusedIndex);  
+  enterPlayerMode();  
+  channelList.classList.remove('show');  
+  e.preventDefault();  
+  return;  
 }
 
-function playChannel(index) {
-  const ch = channels[index];
-  if (!ch) return;
-  document.querySelectorAll('.channel-item').forEach(e => e.classList.remove('selected'));
-  document.querySelectorAll('.channel-item')[index].classList.add('selected');
-  if (hls) hls.destroy();
-  hls = new Hls();
-  hls.loadSource(ch.link);
-  hls.attachMedia(video);
-  hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
-  localStorage.setItem('lastPlayed', ch.link);
-  favBtn.textContent = favorites.includes(ch.link) ? '⭐ إزالة' : '⭐ إضافة';
 }
 
-favBtn.onclick = () => {
-  const current = channels[currentIndex];
-  const i = favorites.indexOf(current.link);
-  if (i === -1) favorites.push(current.link);
-  else favorites.splice(i, 1);
-  localStorage.setItem('favorites', JSON.stringify(favorites));
-  renderChannels();
+});
+
+favBtn.onclick=()=>{
+const current=channels[currentIndex];if(!current)return;
+const i=favorites.indexOf(current.link);
+if(i===-1)favorites.push(current.link);else favorites.splice(i,1);
+localStorage.setItem('favorites',JSON.stringify(favorites));
+renderChannels();
 };
 
-viewFavBtn.onclick = () => {
-  showOnlyFav = !showOnlyFav;
-  viewFavBtn.textContent = showOnlyFav ? "📺 عرض الكل" : "⭐ عرض المفضلة";
-  renderChannels();
-};
+viewFavBtn.onclick=()=>{showOnlyFav=!showOnlyFav;viewFavBtn.textContent=showOnlyFav?'📺 عرض الكل':'⭐ عرض المفضلة';renderChannels()};
+historyBtn.onclick=()=>{showOnlyHistory=!showOnlyHistory;historyBtn.textContent=showOnlyHistory?'📺 رجوع للقنوات':'🕓 آخر مشاهدة';renderChannels()};
 
-document.getElementById("toggleListBtn").onclick = () => {
-  channelList.classList.toggle("show");
-};
-document.getElementById("nextBtn").onclick = () => playChannel((currentIndex + 1) % channels.length);
-document.getElementById("prevBtn").onclick = () => playChannel((currentIndex - 1 + channels.length) % channels.length);
-document.getElementById("randomBtn").onclick = () => playChannel(Math.floor(Math.random() * channels.length));
-document.getElementById("muteBtn").onclick = () => video.muted = !video.muted;
-document.getElementById("playPauseBtn").onclick = () => video.paused ? video.play() : video.pause();
-document.getElementById("fullscreenBtn").onclick = () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+document.getElementById('toggleListBtn').onclick=()=>channelList.classList.toggle('show');
+document.getElementById('nextBtn').onclick=()=>{if(!channels.length)return;playChannel((currentIndex+1)%channels.length)};
+document.getElementById('prevBtn').onclick=()=>{if(!channels.length)return;playChannel((currentIndex-1+channels.length)%channels.length)};
+document.getElementById('randomBtn').onclick=()=>{if(!channels.length)return;playChannel(Math.floor(Math.random()*channels.length))};
+document.getElementById('muteBtn').onclick=()=>video.muted=!video.muted;
+document.getElementById('playPauseBtn').onclick=()=>video.paused?video.play():video.pause();
+document.getElementById('fullscreenBtn').onclick=()=>document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen();
 
 loadM3U(servers[0].url);
-</script></body>
-</html>
-</script></body>
-</html>
+
+// ===============================
+// 🔥 ULTRA SELECT ENGINE (Android TV FIX)
+// ===============================
+
+let SELECT_MODE = false;
+let selectOverlay = null;
+let selectList = null;
+let selectTitle = null;
+let activeSelect = null;
+let selectOptions = [];
+let selectIndex = 0;
+
+function ensureSelectOverlay(){
+  if(selectOverlay) return;
+  selectOverlay = document.createElement('div');
+  selectOverlay.id = 'tvSelectOverlay';
+  selectOverlay.style.position = 'fixed';
+  selectOverlay.style.inset = '0';
+  selectOverlay.style.background = 'rgba(0,0,0,.65)';
+  selectOverlay.style.zIndex = '9999';
+  selectOverlay.style.display = 'none';
+  selectOverlay.style.alignItems = 'center';
+  selectOverlay.style.justifyContent = 'center';
+
+  const panel = document.createElement('div');
+  panel.style.width = 'min(520px, 92vw)';
+  panel.style.maxHeight = '80vh';
+  panel.style.background = 'rgba(15,15,15,.98)';
+  panel.style.border = '1px solid rgba(255,255,255,.15)';
+  panel.style.borderRadius = '16px';
+  panel.style.padding = '10px';
+  panel.style.boxShadow = '0 20px 60px rgba(0,0,0,.6)';
+  panel.style.display = 'flex';
+  panel.style.flexDirection = 'column';
+  panel.style.gap = '8px';
+
+  selectTitle = document.createElement('div');
+  selectTitle.style.fontSize = '18px';
+  selectTitle.style.fontWeight = '700';
+  selectTitle.style.padding = '8px 10px';
+  selectTitle.style.background = 'rgba(255,255,255,.06)';
+  selectTitle.style.borderRadius = '10px';
+
+  selectList = document.createElement('div');
+  selectList.style.overflowY = 'auto';
+  selectList.style.maxHeight = '65vh';
+  selectList.style.display = 'flex';
+  selectList.style.flexDirection = 'column';
+  selectList.style.gap = '6px';
+
+  panel.appendChild(selectTitle);
+  panel.appendChild(selectList);
+  selectOverlay.appendChild(panel);
+  document.body.appendChild(selectOverlay);
+}
+
+function openTVSelect(sel){
+  if(!sel) return;
+  ensureSelectOverlay();
+
+  activeSelect = sel;
+  selectOptions = Array.from(sel.options || []);
+  if(!selectOptions.length) return;
+
+  selectIndex = Math.max(0, sel.selectedIndex || 0);
+  selectTitle.textContent = sel.id === 'serverSelect' ? 'اختيار السيرفر' :
+                            sel.id === 'categorySelect' ? 'اختيار التصنيف' :
+                            'اختيار';
+
+  renderTVSelect();
+  selectOverlay.style.display = 'flex';
+  SELECT_MODE = true;
+}
+
+function closeTVSelect(apply){
+  if(!SELECT_MODE) return;
+  if(apply && activeSelect){
+    activeSelect.selectedIndex = selectIndex;
+    activeSelect.dispatchEvent(new Event('change', {bubbles:true}));
+  }
+  selectOverlay.style.display = 'none';
+  SELECT_MODE = false;
+  activeSelect = null;
+}
+
+function renderTVSelect(){
+  if(!selectList) return;
+  selectList.innerHTML = '';
+  selectOptions.forEach((opt, i)=>{
+    const item = document.createElement('div');
+    item.textContent = opt.textContent || opt.label || ('Option '+i);
+    item.style.padding = '10px 12px';
+    item.style.borderRadius = '10px';
+    item.style.background = i===selectIndex ? 'rgba(0,123,255,.9)' : 'rgba(255,255,255,.08)';
+    item.style.outline = i===selectIndex ? '2px solid #00aaff' : 'none';
+    item.style.cursor = 'pointer';
+    item.onclick = ()=>{
+      selectIndex = i;
+      renderTVSelect();
+      closeTVSelect(true);
+    };
+    selectList.appendChild(item);
+  });
+
+  const active = selectList.children[selectIndex];
+  if(active){
+    active.scrollIntoView({block:'nearest'});
+  }
+}
+
+document.addEventListener('keydown', function(e){
+
+  if(SELECT_MODE){
+    if(e.key === 'ArrowDown'){
+      selectIndex = Math.min(selectOptions.length-1, selectIndex+1);
+      renderTVSelect();
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      return;
+    }
+    if(e.key === 'ArrowUp'){
+      selectIndex = Math.max(0, selectIndex-1);
+      renderTVSelect();
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      return;
+    }
+    if(e.key === 'Enter'){
+      closeTVSelect(true);
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      return;
+    }
+    if(e.key === 'Escape' || e.key === 'Backspace' || e.key === 'ArrowLeft'){
+      closeTVSelect(false);
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      return;
+    }
+    return;
+  }
+
+  try{
+    if(typeof MODE !== 'undefined' && MODE === 'UI'){
+      const el = (typeof uiElements !== 'undefined' && uiElements[uiIndex]) ? uiElements[uiIndex] : null;
+      if(el && el.tagName === 'SELECT' && e.key === 'Enter'){
+        openTVSelect(el);
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        return;
+      }
+    }
+  }catch(err){}
+}, true);
+
+</script></body></html>
