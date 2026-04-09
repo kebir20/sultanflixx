@@ -433,12 +433,16 @@ button:focus{outline:3px solid red}
 </div>  <div id="seriesPage" class="moviePage">  
 <button class="close" onclick="closeSeriesPage()">✖</button>  
 <div id="seriesDetails"></div>  
-</div>  <div id="player" class="player">  
-<button class="close" onclick="closePlayer()">✖</button>  
-<iframe id="frame"></iframe>  
+</div> 
+<div id="player" class="player">
+<button class="close" onclick="closePlayer()">✖</button>
+<iframe id="frame" allowfullscreen
+sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
+</div>
+
 <div id="iptvPlayer" class="player">
 <button class="close" onclick="closeIPTV()">✖</button>
-<iframe id="iptvFrame"></iframe>
+<iframe id="iptvFrame" allowfullscreen></iframe>
 </div>  
   <script>  
     
