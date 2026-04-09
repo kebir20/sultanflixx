@@ -1,25 +1,47 @@
-const CACHE="sultanflix-v1"
+const CACHE = "sultanflix-v2"
 
-const assets=[
+const assets = [
 "/",
 "/index.html",
 "/iptv.html",
 "/radio.html",
-"/manifest.json"
+"/manifest.json",
+"/icon.png"
 ]
 
-self.addEventListener("install",e=>{
+self.addEventListener("install", e => {
+
+self.skipWaiting()
 
 e.waitUntil(
-caches.open(CACHE).then(cache=>cache.addAll(assets))
+caches.open(CACHE).then(cache => cache.addAll(assets))
 )
 
 })
 
-self.addEventListener("fetch",e=>{
+self.addEventListener("activate", e => {
+
+e.waitUntil(
+caches.keys().then(keys =>
+Promise.all(
+keys.filter(k => k !== CACHE)
+.map(k => caches.delete(k))
+)
+)
+)
+
+})
+
+self.addEventListener("fetch", e => {
 
 e.respondWith(
-caches.match(e.request).then(res=>res||fetch(e.request))
+
+caches.match(e.request).then(res => {
+
+return res || fetch(e.request)
+
+})
+
 )
 
 })
