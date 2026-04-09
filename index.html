@@ -447,6 +447,14 @@ sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
 <iframe id="iptvFrame" allowfullscreen></iframe>
 </div>  
   <script>  
+<script>
+if("serviceWorker" in navigator){
+
+navigator.serviceWorker.register("sw.js")
+
+}
+</script>
+
     
   const realOpen = window.open
 
