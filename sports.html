@@ -1,0 +1,661 @@
+<!DOCTYPE html><html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>IPTV Player</title>
+  <style>
+    body {
+      margin: 0; font-family: sans-serif;
+      background: #000; color: #fff;
+      overflow: hidden;
+    }
+    video {
+      width: 100%; height: 100vh;
+      background: #000; border-radius: 12px;
+      object-fit: contain;
+    }
+    .controls {
+      position: absolute; bottom: 10px; left: 0; right: 0;
+      display: flex; flex-wrap: wrap; justify-content: center;
+      gap: 6px; z-index: 10;
+      background: rgba(0,0,0,0.5); padding: 10px;
+      border-radius: 12px; transition: opacity 0.4s;
+    }
+    .controls.hidden { opacity: 0; pointer-events: none; }
+    .controls button, .controls select {
+      background: #222; color: #fff;
+      padding: 8px; border: none; border-radius: 6px;
+      font-size: 14px; cursor: pointer;
+    }
+    .channel-overlay {
+      position: absolute; top: 10px; left: 10px;
+      background: rgba(0,0,0,0.6); padding: 6px 12px;
+      border-radius: 8px; font-size: 14px; z-index: 15;
+    }
+    .channel-list {
+      position: absolute; top: 0; right: 0; bottom: 0;
+      width: 240px; overflow-y: auto;
+      background: rgba(0,0,0,0.7); padding: 10px;
+      display: none;
+    }
+    .channel-list.show { display: block; }
+    .channel-item {
+      background: #333; padding: 8px;
+      border-radius: 5px; margin-bottom: 6px;
+      cursor: pointer; transition: 0.3s;
+    }
+    .channel-item:hover { background: #444; }
+    .channel-item.selected { background: #007bff; }
+    .search-bar {
+      display: none; text-align: center;
+      margin: 6px auto;
+    }
+    .search-bar input {
+      width: 80%; padding: 6px;
+      border-radius: 8px; border: none;
+    }
+  </style>
+</head>
+<body>
+<video id="videoPlayer" autoplay muted playsinline></video>
+<div class="channel-overlay" id="channelOverlay">اسم القناة</div>
+<div class="controls" id="controls">
+  <select id="categoryFilter" tabindex="0"><option value="all">عرض الكل</option></select>
+  <button id="favToggleBtn" tabindex="0">⭐</button>
+  <button id="viewFavBtn" tabindex="0">⭐ المفضلة</button>
+  <button id="randomBtn" tabindex="0">🎲</button>
+  <button id="nextBtn" tabindex="0">⏭</button>
+  <button id="prevBtn" tabindex="0">⏮</button>
+  <button id="muteBtn" tabindex="0">🔊</button>
+  <button id="playPauseBtn" tabindex="0">⏯</button>
+  <button id="fullscreenBtn" tabindex="0">⛶</button>
+  <button id="toggleListBtn" tabindex="0">📺</button>
+  <button id="searchToggleBtn" tabindex="0">🔍</button>
+  <span id="channelCount" style="padding: 6px 12px; font-size: 14px;"></span>
+</div>
+<div class="search-bar" id="searchBar">
+  <input type="text" id="searchInput" placeholder="ابحث عن قناة..." tabindex="0">
+</div>
+<div class="channel-list" id="channelList">
+  <div class="channel-item" data-id="2499" data-quality="HD" tabindex="0">Bein Sports 1 HD FR</div>
+<div class="channel-item" data-id="6123" data-quality="HD" tabindex="0">beIN Sports 1 HD QA</div>
+<div class="channel-item" data-id="6131" data-quality="HD" tabindex="0">beIN Sports 1 Premium HD QA</div>
+<div class="channel-item" data-id="6133" data-quality="HD" tabindex="0">beIN Sports 2 HD EN</div>
+<div class="channel-item" data-id="2500" data-quality="HD" tabindex="0">Bein Sports 2 HD FR</div>
+<div class="channel-item" data-id="2501" data-quality="HD" tabindex="0">Bein Sports 3 HD FR</div>
+<div class="channel-item" data-id="6124" data-quality="HD" tabindex="0">beIN Sports 3 HD QA</div>
+<div class="channel-item" data-id="6125" data-quality="HD" tabindex="0">beIN Sports 4 HD QA</div>
+<div class="channel-item" data-id="6126" data-quality="HD" tabindex="0">beIN Sports 5 HD QA</div>
+<div class="channel-item" data-id="6127" data-quality="HD" tabindex="0">beIN Sports 6 HD QA</div>
+<div class="channel-item" data-id="6128" data-quality="HD" tabindex="0">beIN Sports 7 HD QA</div>
+<div class="channel-item" data-id="2543" data-quality="HD" tabindex="0">BEIN SPORTS HD ES</div>
+<div class="channel-item" data-id="9026" data-quality="FHD" tabindex="0">Eurosport 1 FHD orig</div>
+<div class="channel-item" data-id="31561" data-quality="Standard" tabindex="0">Viaplay Sports 1 UK</div>
+<div class="channel-item" data-id="31562" data-quality="Standard" tabindex="0">Viaplay Sports 2 UK</div>
+<div class="channel-item" data-id="31563" data-quality="Standard" tabindex="0">Tring Sport 1 AL</div>
+<div class="channel-item" data-id="31564" data-quality="Standard" tabindex="0">Tring Sport 2 AL</div>
+<div class="channel-item" data-id="31565" data-quality="Standard" tabindex="0">Tring Sport 3 AL</div>
+<div class="channel-item" data-id="31566" data-quality="Standard" tabindex="0">Tring Sport 4 AL</div>
+<div class="channel-item" data-id="31568" data-quality="Standard" tabindex="0">Sport 1</div>
+<div class="channel-item" data-id="31569" data-quality="Standard" tabindex="0">Sport 2</div>
+<div class="channel-item" data-id="31570" data-quality="HD" tabindex="0">Nova Sport 3 CZ</div>
+<div class="channel-item" data-id="31571" data-quality="HD" tabindex="0">Nova Sport 4 CZ</div>
+<div class="channel-item" data-id="31572" data-quality="Standard" tabindex="0">Cytavision Sports 1 GR</div>
+<div class="channel-item" data-id="31573" data-quality="Standard" tabindex="0">Cytavision Sports 2 GR</div>
+<div class="channel-item" data-id="31574" data-quality="Standard" tabindex="0">Cytavision Sports 3 GR</div>
+<div class="channel-item" data-id="31575" data-quality="Standard" tabindex="0">Cytavision Sports 5 GR</div>
+<div class="channel-item" data-id="31576" data-quality="Standard" tabindex="0">Cytavision Sports 6 GR</div>
+<div class="channel-item" data-id="31577" data-quality="Standard" tabindex="0">Cytavision Sports 7 GR</div>
+<div class="channel-item" data-id="31578" data-quality="Standard" tabindex="0">Cosmote Sport 1 GR</div>
+<div class="channel-item" data-id="31579" data-quality="Standard" tabindex="0">Cosmote Sport 2 GR</div>
+<div class="channel-item" data-id="31581" data-quality="Standard" tabindex="0">Cosmote Sport 3 GR</div>
+<div class="channel-item" data-id="31582" data-quality="Standard" tabindex="0">Cosmote Sport 4 GR</div>
+<div class="channel-item" data-id="31583" data-quality="Standard" tabindex="0">Cosmote Sport 5 GR</div>
+<div class="channel-item" data-id="31584" data-quality="Standard" tabindex="0">Cosmote Sport 6 GR</div>
+<div class="channel-item" data-id="31585" data-quality="Standard" tabindex="0">Cosmote Sport 7 GR</div>
+<div class="channel-item" data-id="31586" data-quality="Standard" tabindex="0">Cosmote Sport 8 GR</div>
+<div class="channel-item" data-id="31587" data-quality="Standard" tabindex="0">Cosmote Sport 9 GR</div>
+<div class="channel-item" data-id="31588" data-quality="Standard" tabindex="0">Cosmote Sport Highlights GR</div>
+<div class="channel-item" data-id="31589" data-quality="Standard" tabindex="0">Sport Live DK</div>
+<div class="channel-item" data-id="31590" data-quality="Standard" tabindex="0">SPORT TV+ DK</div>
+<div class="channel-item" data-id="31591" data-quality="Standard" tabindex="0">SuperSport Rugby ZA</div>
+<div class="channel-item" data-id="31592" data-quality="Standard" tabindex="0">Canal 11 PT</div>
+<div class="channel-item" data-id="31593" data-quality="Standard" tabindex="0">M4 Sport HU</div>
+<div class="channel-item" data-id="31594" data-quality="Standard" tabindex="0">Match 4 HU</div>
+<div class="channel-item" data-id="31595" data-quality="Standard" tabindex="0">Sport Extra RO</div>
+<div class="channel-item" data-id="31596" data-quality="Standard" tabindex="0">LFC TV UK</div>
+<div class="channel-item" data-id="31597" data-quality="Standard" tabindex="0">Arena Esport RS</div>
+<div class="channel-item" data-id="31598" data-quality="Standard" tabindex="0">Arena Fight RS</div>
+<div class="channel-item" data-id="31599" data-quality="Standard" tabindex="0">Arena Premium 1 RS</div>
+<div class="channel-item" data-id="31600" data-quality="Standard" tabindex="0">Arena Premium 2 RS</div>
+<div class="channel-item" data-id="31601" data-quality="Standard" tabindex="0">Arena Premium 3 RS</div>
+<div class="channel-item" data-id="31602" data-quality="Standard" tabindex="0">Arena Sport 1 RS</div>
+<div class="channel-item" data-id="31603" data-quality="Standard" tabindex="0">Arena Sport 3 RS</div>
+<div class="channel-item" data-id="31604" data-quality="Standard" tabindex="0">Arena Sport 3 Premium RS</div>
+<div class="channel-item" data-id="31605" data-quality="Standard" tabindex="0">Arena Sport 4 RS</div>
+<div class="channel-item" data-id="31606" data-quality="Standard" tabindex="0">Arena Sport 5 RS</div>
+<div class="channel-item" data-id="31607" data-quality="Standard" tabindex="0">Arena Sport 6 RS</div>
+<div class="channel-item" data-id="31608" data-quality="Standard" tabindex="0">Arena Sport 7 RS</div>
+<div class="channel-item" data-id="31609" data-quality="Standard" tabindex="0">Arena Sport 8 RS</div>
+<div class="channel-item" data-id="31610" data-quality="Standard" tabindex="0">Arena Sport 9 RS</div>
+<div class="channel-item" data-id="31611" data-quality="Standard" tabindex="0">Arena Sport 1x2 RS</div>
+<div class="channel-item" data-id="18169" data-quality="Standard" tabindex="0">UFC Fight Pass</div>
+<div class="channel-item" data-id="9335" data-quality="HD" tabindex="0">Sky Sports Racing HD 50 UK</div>
+<div class="channel-item" data-id="9334" data-quality="HD" tabindex="0">Sky Sports Premier League HD 50 UK</div>
+<div class="channel-item" data-id="9310" data-quality="HD" tabindex="0">Sky Sports Mix HD 50 UK</div>
+<div class="channel-item" data-id="9308" data-quality="HD" tabindex="0">Sky Sports Main Event HD 50 UK</div>
+<div class="channel-item" data-id="9293" data-quality="HD" tabindex="0">Sky Sports Golf HD 50 UK</div>
+<div class="channel-item" data-id="9289" data-quality="HD" tabindex="0">Sky Sports Football HD 50 UK</div>
+<div class="channel-item" data-id="9283" data-quality="HD" tabindex="0">Sky Sports F1 HD 50 UK</div>
+<div class="channel-item" data-id="9258" data-quality="HD" tabindex="0">Sky Sports Cricket HD 50 UK</div>
+<div class="channel-item" data-id="9248" data-quality="HD" tabindex="0">Sky Sports Arena HD 50 UK</div>
+<div class="channel-item" data-id="9155" data-quality="HD" tabindex="0">Sky Sports Action HD 50 UK</div>
+<div class="channel-item" data-id="2160" data-quality="HD" tabindex="0">Premier Sports 1 HD 50 UK</div>
+<div class="channel-item" data-id="2149" data-quality="HD" tabindex="0">Game Show Channel HD IL</div>
+<div class="channel-item" data-id="16034" data-quality="HD" tabindex="0">Старт Триумф HD</div>
+<div class="channel-item" data-id="16019" data-quality="4K" tabindex="0">5Sport 4K IL</div>
+<div class="channel-item" data-id="5043" data-quality="HD" tabindex="0">Sky Sport Golf HD DE</div>
+<div class="channel-item" data-id="5042" data-quality="HD" tabindex="0">Sky Sport Premier League HD DE</div>
+<div class="channel-item" data-id="20004" data-quality="HD" tabindex="0">Мир Баскетбола HD</div>
+<div class="channel-item" data-id="20027" data-quality="HD" tabindex="0">FightBox HD</div>
+<div class="channel-item" data-id="20028" data-quality="HD" tabindex="0">Extreme Sports HD</div>
+<div class="channel-item" data-id="14023" data-quality="Standard" tabindex="0">Танцуй!</div>
+<div class="channel-item" data-id="15289" data-quality="Standard" tabindex="0">МАТЧ! +4 (Алтай, Дианэт)</div>
+<div class="channel-item" data-id="19396" data-quality="HD" tabindex="0">KHL Prime HD</div>
+<div class="channel-item" data-id="19422" data-quality="HD" tabindex="0">BOX Be On Edge Live 1 HD</div>
+<div class="channel-item" data-id="19423" data-quality="HD" tabindex="0">BOX Be On Edge Live 2 HD</div>
+<div class="channel-item" data-id="19424" data-quality="HD" tabindex="0">BOX Be On Edge HD</div>
+<div class="channel-item" data-id="107" data-quality="Standard" tabindex="0">Матч! Страна</div>
+<div class="channel-item" data-id="6012" data-quality="Standard" tabindex="0">Матч +2</div>
+<div class="channel-item" data-id="15432" data-quality="Standard" tabindex="0">МАТЧ! +3 (Омск)</div>
+<div class="channel-item" data-id="6023" data-quality="Standard" tabindex="0">Матч +4</div>
+<div class="channel-item" data-id="6052" data-quality="Standard" tabindex="0">Матч +8</div>
+<div class="channel-item" data-id="6121" data-quality="Standard" tabindex="0">Fox Sports News AU</div>
+<div class="channel-item" data-id="14193" data-quality="HD" tabindex="0">UPL 1 HD (Тест)</div>
+<div class="channel-item" data-id="14194" data-quality="HD" tabindex="0">UPL 2 HD (Тест)</div>
+<div class="channel-item" data-id="14195" data-quality="HD" tabindex="0">UPL 3 HD (Тест)</div>
+<div class="channel-item" data-id="14196" data-quality="HD" tabindex="0">UPL 4 HD (Тест)</div>
+<div class="channel-item" data-id="6066" data-quality="Standard" tabindex="0">Golf TV FR</div>
+<div class="channel-item" data-id="6112" data-quality="Standard" tabindex="0">Motorvision TV DE</div>
+<div class="channel-item" data-id="6122" data-quality="Standard" tabindex="0">Sky Racing AU</div>
+<div class="channel-item" data-id="6113" data-quality="Standard" tabindex="0">Sky Sport Austria 2 DE</div>
+<div class="channel-item" data-id="6097" data-quality="Standard" tabindex="0">Sky Sport Bundesliga 9 DE</div>
+<div class="channel-item" data-id="6099" data-quality="Standard" tabindex="0">CANAL+ SPORT 2 PL</div>
+<div class="channel-item" data-id="6158" data-quality="Standard" tabindex="0">Band Sports BR</div>
+<div class="channel-item" data-id="123" data-quality="Standard" tabindex="0">Матч! Планета</div>
+<div class="channel-item" data-id="124" data-quality="Standard" tabindex="0">Матч! Футбол 1</div>
+<div class="channel-item" data-id="519" data-quality="Standard" tabindex="0">KHL</div>
+<div class="channel-item" data-id="522" data-quality="Standard" tabindex="0">Матч! Футбол 3</div>
+<div class="channel-item" data-id="528" data-quality="Standard" tabindex="0">Матч! Арена</div>
+<div class="channel-item" data-id="529" data-quality="Standard" tabindex="0">Матч! Игра</div>
+<div class="channel-item" data-id="530" data-quality="Standard" tabindex="0">Матч! Футбол 2</div>
+<div class="channel-item" data-id="531" data-quality="Standard" tabindex="0">Матч! Премьер</div>
+<div class="channel-item" data-id="535" data-quality="Standard" tabindex="0">Матч ТВ</div>
+<div class="channel-item" data-id="141" data-quality="Standard" tabindex="0">Eurosport 1</div>
+<div class="channel-item" data-id="144" data-quality="Standard" tabindex="0">Extreme Sports</div>
+<div class="channel-item" data-id="150" data-quality="Standard" tabindex="0">Матч! Боец</div>
+<div class="channel-item" data-id="160" data-quality="Standard" tabindex="0">Viju+ Sport</div>
+<div class="channel-item" data-id="843" data-quality="Standard" tabindex="0">MMA-TV.com</div>
+<div class="channel-item" data-id="870" data-quality="Standard" tabindex="0">Бокс ТВ</div>
+<div class="channel-item" data-id="2154" data-quality="Standard" tabindex="0">Старт</div>
+<div class="channel-item" data-id="5050" data-quality="Standard" tabindex="0">Футбол</div>
+<div class="channel-item" data-id="2477" data-quality="HD" tabindex="0">Sky Sport News HD DE</div>
+<div class="channel-item" data-id="2478" data-quality="HD" tabindex="0">Sky Sport 1 HD DE</div>
+<div class="channel-item" data-id="2479" data-quality="HD" tabindex="0">Sky Sport 2 HD DE</div>
+<div class="channel-item" data-id="2480" data-quality="HD" tabindex="0">Sky Sport Bundesliga 1 HD DE</div>
+<div class="channel-item" data-id="2492" data-quality="HD" tabindex="0">Sky Sport Austria 1 HD DE</div>
+<div class="channel-item" data-id="2499" data-quality="HD" tabindex="0">Bein Sports 1 HD FR</div>
+<div class="channel-item" data-id="2500" data-quality="HD" tabindex="0">Bein Sports 2 HD FR</div>
+<div class="channel-item" data-id="2501" data-quality="HD" tabindex="0">Bein Sports 3 HD FR</div>
+<div class="channel-item" data-id="2502" data-quality="HD" tabindex="0">Canal+ Sport HD FR</div>
+<div class="channel-item" data-id="2503" data-quality="HD" tabindex="0">Sport 1 HD DE</div>
+<div class="channel-item" data-id="2505" data-quality="Standard" tabindex="0">TNT Sports 1 UK</div>
+<div class="channel-item" data-id="2506" data-quality="HD" tabindex="0">TNT Sports 2 HD UK</div>
+<div class="channel-item" data-id="2507" data-quality="Standard" tabindex="0">Star Sports 2 IN</div>
+<div class="channel-item" data-id="2508" data-quality="Standard" tabindex="0">Star Sports 1 IN</div>
+<div class="channel-item" data-id="2511" data-quality="Standard" tabindex="0">YAS Sports AE</div>
+<div class="channel-item" data-id="2512" data-quality="Standard" tabindex="0">ONTime Sports EG</div>
+<div class="channel-item" data-id="2515" data-quality="HD" tabindex="0">C More Sport HD SE</div>
+<div class="channel-item" data-id="2517" data-quality="HD" tabindex="0">Eleven Sports 2 HD PL</div>
+<div class="channel-item" data-id="2518" data-quality="HD" tabindex="0">Eleven Sports 1 HD PL</div>
+<div class="channel-item" data-id="2519" data-quality="Standard" tabindex="0">nSport+ PL</div>
+<div class="channel-item" data-id="2520" data-quality="HD" tabindex="0">TVP Sport HD PL</div>
+<div class="channel-item" data-id="2521" data-quality="HD" tabindex="0">Sportklub HD PL</div>
+<div class="channel-item" data-id="2522" data-quality="HD" tabindex="0">DIGI Sport 2 HD RO</div>
+<div class="channel-item" data-id="2523" data-quality="HD" tabindex="0">DIGI Sport 1 HD RO</div>
+<div class="channel-item" data-id="2524" data-quality="HD" tabindex="0">DIGI Sport 3 HD RO</div>
+<div class="channel-item" data-id="2525" data-quality="HD" tabindex="0">SPORT TV 1 HD PT</div>
+<div class="channel-item" data-id="2526" data-quality="HD" tabindex="0">SPORT TV 2 HD PT</div>
+<div class="channel-item" data-id="2527" data-quality="HD" tabindex="0">SPORT TV 3 HD PT</div>
+<div class="channel-item" data-id="2528" data-quality="Standard" tabindex="0">SPORT TV 4 PT</div>
+<div class="channel-item" data-id="2529" data-quality="Standard" tabindex="0">SPORT TV 5 PT</div>
+<div class="channel-item" data-id="2530" data-quality="HD" tabindex="0">Sporting TV HD PT</div>
+<div class="channel-item" data-id="2531" data-quality="HD" tabindex="0">Eleven Sports 1 HD PT</div>
+<div class="channel-item" data-id="2532" data-quality="HD" tabindex="0">Eleven Sports 2 HD PT</div>
+<div class="channel-item" data-id="2534" data-quality="Standard" tabindex="0">Eleven Sports 4 PT</div>
+<div class="channel-item" data-id="2535" data-quality="Standard" tabindex="0">Eleven Sports 5 PT</div>
+<div class="channel-item" data-id="2536" data-quality="Standard" tabindex="0">Eleven Sports 6 PT</div>
+<div class="channel-item" data-id="2538" data-quality="HD" tabindex="0">DIGI Sport 4 HD RO</div>
+<div class="channel-item" data-id="2540" data-quality="HD" tabindex="0">TV 2 Sport 2 HD NO</div>
+<div class="channel-item" data-id="2541" data-quality="HD" tabindex="0">C More Sport 1 HD FI</div>
+<div class="channel-item" data-id="2545" data-quality="HD" tabindex="0">RMC Sport 1 HD FR</div>
+<div class="channel-item" data-id="2546" data-quality="HD" tabindex="0">RMC Sport 2 HD FR</div>
+<div class="channel-item" data-id="2547" data-quality="HD" tabindex="0">RMC Sport 3 HD FR</div>
+<div class="channel-item" data-id="2548" data-quality="Standard" tabindex="0">Sport 1 LT</div>
+<div class="channel-item" data-id="2550" data-quality="HD" tabindex="0">Arena Sport 1 SK</div>
+<div class="channel-item" data-id="2551" data-quality="HD" tabindex="0">ČT sport HD CZ</div>
+<div class="channel-item" data-id="2555" data-quality="HD" tabindex="0">Nova Sport 1 HD CZ</div>
+<div class="channel-item" data-id="2556" data-quality="HD" tabindex="0">Nova Sport 2 HD CZ</div>
+<div class="channel-item" data-id="2557" data-quality="HD" tabindex="0">Sport 2 HD CZ</div>
+<div class="channel-item" data-id="2558" data-quality="Standard" tabindex="0">Sport 5 CZ</div>
+<div class="channel-item" data-id="2559" data-quality="Standard" tabindex="0">Ziggo Sport Golf NL</div>
+<div class="channel-item" data-id="2560" data-quality="HD" tabindex="0">Ziggo Sport Select HD NL</div>
+<div class="channel-item" data-id="2561" data-quality="Standard" tabindex="0">Ziggo Sport Voetbal NL</div>
+<div class="channel-item" data-id="2544" data-quality="HD" tabindex="0">Infosport+ HD FR</div>
+<div class="channel-item" data-id="6119" data-quality="Standard" tabindex="0">Fox Sports News AU</div>
+<div class="channel-item" data-id="6541" data-quality="HD" tabindex="0">Setanta Eurasia HD orig</div>
+<div class="channel-item" data-id="6542" data-quality="HD" tabindex="0">Setanta Eurasia Plus HD orig</div>
+<div class="channel-item" data-id="6543" data-quality="Standard" tabindex="0">Setanta Eurasia</div>
+<div class="channel-item" data-id="6544" data-quality="Standard" tabindex="0">Setanta Eurasia Plus</div>
+<div class="channel-item" data-id="6554" data-quality="HD" tabindex="0">Окко Спорт HD</div>
+<div class="channel-item" data-id="6555" data-quality="HD" tabindex="0">Premier Sports 1 HD UK</div>
+<div class="channel-item" data-id="6556" data-quality="HD" tabindex="0">EUROSPORT 2 HD UK</div>
+<div class="channel-item" data-id="7062" data-quality="Standard" tabindex="0">Eleven Sports 3 PT</div>
+<div class="channel-item" data-id="7064" data-quality="Standard" tabindex="0">Eleven Sports 6 PT</div>
+<div class="channel-item" data-id="7234" data-quality="HD" tabindex="0">Sky Sport Bundesliga 2 HD DE</div>
+<div class="channel-item" data-id="7235" data-quality="HD" tabindex="0">Sky Sport Bundesliga 3 HD DE</div>
+<div class="channel-item" data-id="7236" data-quality="HD" tabindex="0">Sky Sport Bundesliga 4 HD DE</div>
+<div class="channel-item" data-id="7237" data-quality="HD" tabindex="0">Sky Sport Bundesliga 5 HD DE</div>
+<div class="channel-item" data-id="7238" data-quality="HD" tabindex="0">Sky Sport Bundesliga 6 HD DE</div>
+<div class="channel-item" data-id="7239" data-quality="HD" tabindex="0">Sky Sport Bundesliga 7 HD DE</div>
+<div class="channel-item" data-id="7240" data-quality="HD" tabindex="0">Sky Sport Bundesliga 8 HD DE</div>
+<div class="channel-item" data-id="7241" data-quality="HD" tabindex="0">Sky Sport Bundesliga 9 HD DE</div>
+<div class="channel-item" data-id="7263" data-quality="FHD" tabindex="0">Arena Sport 1 FHD HR</div>
+<div class="channel-item" data-id="7264" data-quality="FHD" tabindex="0">Arena Sport 2 FHD HR</div>
+<div class="channel-item" data-id="7265" data-quality="FHD" tabindex="0">Arena Sport 3 FHD HR</div>
+<div class="channel-item" data-id="7266" data-quality="FHD" tabindex="0">Arena Sport 4 FHD HR</div>
+<div class="channel-item" data-id="7267" data-quality="FHD" tabindex="0">Arena Sport 5 FHD HR</div>
+<div class="channel-item" data-id="7268" data-quality="FHD" tabindex="0">Arena Sport 6 FHD HR</div>
+<div class="channel-item" data-id="7269" data-quality="HD" tabindex="0">Sport Klub 1 HD HR</div>
+<div class="channel-item" data-id="7270" data-quality="HD" tabindex="0">Sport Klub 2 HD HR</div>
+<div class="channel-item" data-id="7271" data-quality="HD" tabindex="0">Sport Klub 3 HD HR</div>
+<div class="channel-item" data-id="7272" data-quality="HD" tabindex="0">Sport Klub 4 HD HR</div>
+<div class="channel-item" data-id="7273" data-quality="HD" tabindex="0">Sport Klub 5 HD HR</div>
+<div class="channel-item" data-id="7274" data-quality="HD" tabindex="0">Sport Klub 6 HD HR</div>
+<div class="channel-item" data-id="7275" data-quality="HD" tabindex="0">Sport Klub 7 HD HR</div>
+<div class="channel-item" data-id="7276" data-quality="HD" tabindex="0">Sport Klub 8 HD HR</div>
+<div class="channel-item" data-id="7277" data-quality="Standard" tabindex="0">Sport Klub Golf HR</div>
+<div class="channel-item" data-id="7278" data-quality="HD" tabindex="0">Sport Klub HD HR</div>
+<div class="channel-item" data-id="7280" data-quality="FHD" tabindex="0">TVP Sport FHD PL</div>
+<div class="channel-item" data-id="7296" data-quality="FHD" tabindex="0">Polsat Sport FHD PL</div>
+<div class="channel-item" data-id="7303" data-quality="HD" tabindex="0">POLSAT SPORT NEWS HD PL</div>
+<div class="channel-item" data-id="7304" data-quality="Standard" tabindex="0">POLSAT SPORT PREMIUM 1 PL</div>
+<div class="channel-item" data-id="7305" data-quality="Standard" tabindex="0">POLSAT SPORT PREMIUM 2 PL</div>
+<div class="channel-item" data-id="7306" data-quality="Standard" tabindex="0">POLSAT SPORT PREMIUM 3 PPV PL</div>
+<div class="channel-item" data-id="7307" data-quality="Standard" tabindex="0">POLSAT SPORT PREMIUM 4 PPV PL</div>
+<div class="channel-item" data-id="7308" data-quality="Standard" tabindex="0">POLSAT SPORT PREMIUM 5 PPV PL</div>
+<div class="channel-item" data-id="7309" data-quality="Standard" tabindex="0">POLSAT SPORT PREMIUM 6 PPV PL</div>
+<div class="channel-item" data-id="7310" data-quality="HD" tabindex="0">POLSAT SPORT EXTRA HD PL</div>
+<div class="channel-item" data-id="7311" data-quality="HD" tabindex="0">POLSAT SPORT FIGHT HD PL</div>
+<div class="channel-item" data-id="7322" data-quality="Standard" tabindex="0">FOX SPORTS 1 US</div>
+<div class="channel-item" data-id="7323" data-quality="Standard" tabindex="0">FOX SPORTS 2 US</div>
+<div class="channel-item" data-id="7324" data-quality="Standard" tabindex="0">CBS SPORTS NETWORK US</div>
+<div class="channel-item" data-id="7327" data-quality="Standard" tabindex="0">NBC SPORTS NETWORK US</div>
+<div class="channel-item" data-id="7328" data-quality="Standard" tabindex="0">NHL NETWORK US</div>
+<div class="channel-item" data-id="7329" data-quality="HD" tabindex="0">Arena Sport 1 HD HR</div>
+<div class="channel-item" data-id="7330" data-quality="HD" tabindex="0">Arena Sport 2 HD HR</div>
+<div class="channel-item" data-id="7331" data-quality="HD" tabindex="0">Arena Sport 3 HD HR</div>
+<div class="channel-item" data-id="7332" data-quality="HD" tabindex="0">Arena Sport 4 HD HR</div>
+<div class="channel-item" data-id="7333" data-quality="HD" tabindex="0">Arena Sport 5 HD HR</div>
+<div class="channel-item" data-id="7334" data-quality="HD" tabindex="0">Arena Sport 6 HD HR</div>
+<div class="channel-item" data-id="7335" data-quality="Standard" tabindex="0">SKY SPORTS PREMIER LEAGUE UK</div>
+<div class="channel-item" data-id="7336" data-quality="Standard" tabindex="0">SKY SPORTS FOOTBALL UK</div>
+<div class="channel-item" data-id="7337" data-quality="Standard" tabindex="0">SKY SPORTS MAIN EVENT UK</div>
+<div class="channel-item" data-id="7338" data-quality="Standard" tabindex="0">SKY SPORTS ARENA UK</div>
+<div class="channel-item" data-id="7339" data-quality="Standard" tabindex="0">SKY SPORTS MIX UK</div>
+<div class="channel-item" data-id="7340" data-quality="HD" tabindex="0">Sky Sports Action HD UK</div>
+<div class="channel-item" data-id="7341" data-quality="Standard" tabindex="0">SKY SPORTS RACING UK</div>
+<div class="channel-item" data-id="7342" data-quality="Standard" tabindex="0">SKY SPORTS F1 UK</div>
+<div class="channel-item" data-id="7343" data-quality="Standard" tabindex="0">SKY SPORTS CRICKET UK</div>
+<div class="channel-item" data-id="7344" data-quality="Standard" tabindex="0">SKY SPORTS GOLF UK</div>
+<div class="channel-item" data-id="7355" data-quality="Standard" tabindex="0">TV 2 SPORT HD DK</div>
+<div class="channel-item" data-id="7360" data-quality="Standard" tabindex="0">Наш Спорт 1</div>
+<div class="channel-item" data-id="7361" data-quality="Standard" tabindex="0">Наш Спорт 2</div>
+<div class="channel-item" data-id="7362" data-quality="Standard" tabindex="0">Наш Спорт 3</div>
+<div class="channel-item" data-id="7363" data-quality="Standard" tabindex="0">Наш Спорт 4</div>
+<div class="channel-item" data-id="7364" data-quality="Standard" tabindex="0">Наш Спорт 5</div>
+<div class="channel-item" data-id="10033" data-quality="Standard" tabindex="0">Мир Баскетбола</div>
+<div class="channel-item" data-id="10039" data-quality="HD" tabindex="0">Хоккейный HD</div>
+<div class="channel-item" data-id="10057" data-quality="HD" tabindex="0">Спортивный HD</div>
+<div class="channel-item" data-id="10058" data-quality="HD" tabindex="0">Футбольный HD</div>
+<div class="channel-item" data-id="10078" data-quality="Standard" tabindex="0">MUTV UK</div>
+<div class="channel-item" data-id="11056" data-quality="Standard" tabindex="0">WWE Russian</div>
+<div class="channel-item" data-id="11110" data-quality="FHD" tabindex="0">V Sport Football FHD</div>
+<div class="channel-item" data-id="11111" data-quality="FHD" tabindex="0">V Sport Vinter FHD</div>
+<div class="channel-item" data-id="12032" data-quality="HD" tabindex="0">C MORE FOOTBALL HD SE</div>
+<div class="channel-item" data-id="12033" data-quality="HD" tabindex="0">C MORE GOLF HD SE</div>
+<div class="channel-item" data-id="12034" data-quality="HD" tabindex="0">C MORE HITS HD SE</div>
+<div class="channel-item" data-id="12035" data-quality="HD" tabindex="0">C MORE HOKEY HD SE</div>
+<div class="channel-item" data-id="12042" data-quality="HD" tabindex="0">C MORE STARTS HD SE</div>
+<div class="channel-item" data-id="12047" data-quality="HD" tabindex="0">EUROSPORT 1 HD SE</div>
+<div class="channel-item" data-id="12048" data-quality="HD" tabindex="0">EUROSPORT 2 HD SE</div>
+<div class="channel-item" data-id="12074" data-quality="HD" tabindex="0">VIASAT SPORT EXTRA HD SE</div>
+<div class="channel-item" data-id="12075" data-quality="HD" tabindex="0">VIASAT SPORT HD SE</div>
+<div class="channel-item" data-id="12076" data-quality="HD" tabindex="0">VIASAT SPORT FOOTBAL HD SE</div>
+<div class="channel-item" data-id="12077" data-quality="HD" tabindex="0">VIASAT SPORT GOLF HD SE</div>
+<div class="channel-item" data-id="12078" data-quality="HD" tabindex="0">V Sport Vinter HD SE</div>
+<div class="channel-item" data-id="12079" data-quality="HD" tabindex="0">VIASAT SPORT PREMIUM HD SE</div>
+<div class="channel-item" data-id="12100" data-quality="Standard" tabindex="0">TV3 SPORT SE</div>
+<div class="channel-item" data-id="14180" data-quality="Standard" tabindex="0">Setanta Event 1</div>
+<div class="channel-item" data-id="14181" data-quality="Standard" tabindex="0">Setanta Event 2</div>
+<div class="channel-item" data-id="14182" data-quality="Standard" tabindex="0">Setanta Event 3</div>
+<div class="channel-item" data-id="14183" data-quality="Standard" tabindex="0">Setanta Event 4</div>
+<div class="channel-item" data-id="14184" data-quality="Standard" tabindex="0">Setanta Event 5</div>
+<div class="channel-item" data-id="14185" data-quality="Standard" tabindex="0">Setanta Event 6</div>
+<div class="channel-item" data-id="14186" data-quality="Standard" tabindex="0">Окко Event 1</div>
+<div class="channel-item" data-id="14187" data-quality="Standard" tabindex="0">Окко Event 2</div>
+<div class="channel-item" data-id="14188" data-quality="Standard" tabindex="0">Окко Event 3</div>
+<div class="channel-item" data-id="14189" data-quality="Standard" tabindex="0">Окко Event 4</div>
+<div class="channel-item" data-id="14190" data-quality="Standard" tabindex="0">Окко Event 5</div>
+<div class="channel-item" data-id="14191" data-quality="Standard" tabindex="0">Окко Event 6</div>
+<div class="channel-item" data-id="15097" data-quality="HD" tabindex="0">SKY HIGH FIGHT + HD</div>
+<div class="channel-item" data-id="15143" data-quality="HD" tabindex="0">Живи Активно HD</div>
+<div class="channel-item" data-id="15179" data-quality="HD" tabindex="0">Eurosport HD DE</div>
+<div class="channel-item" data-id="15183" data-quality="HD" tabindex="0">Setanta Ukraine HD orig</div>
+<div class="channel-item" data-id="15184" data-quality="HD" tabindex="0">Setanta Ukraine Plus HD orig</div>
+<div class="channel-item" data-id="15231" data-quality="Standard" tabindex="0">Fastnfunbox</div>
+<div class="channel-item" data-id="15232" data-quality="Standard" tabindex="0">FightBox</div>
+<div class="channel-item" data-id="15238" data-quality="HD" tabindex="0">QSport Arena HD</div>
+<div class="channel-item" data-id="15307" data-quality="Standard" tabindex="0">МАТЧ! +2 (Уфа)</div>
+<div class="channel-item" data-id="15314" data-quality="Standard" tabindex="0">МАТЧ! +0 (Липецк)</div>
+<div class="channel-item" data-id="15335" data-quality="Standard" tabindex="0">МАТЧ! +7 (Владивосток)</div>
+<div class="channel-item" data-id="15387" data-quality="Standard" tabindex="0">МАТЧ! +4 (Томск)</div>
+<div class="channel-item" data-id="15409" data-quality="Standard" tabindex="0">МАТЧ! +0 (Белгород)</div>
+<div class="channel-item" data-id="15448" data-quality="Standard" tabindex="0">МАТЧ! +0 (Элиста)</div>
+<div class="channel-item" data-id="16039" data-quality="Standard" tabindex="0">Red Bull TV</div>
+<div class="channel-item" data-id="16040" data-quality="HD" tabindex="0">Red Bull TV HD</div>
+<div class="channel-item" data-id="18000" data-quality="HD" tabindex="0">Go3 Sport 1 HD EE</div>
+<div class="channel-item" data-id="18001" data-quality="HD" tabindex="0">Go3 Sport 2 HD EE</div>
+<div class="channel-item" data-id="18011" data-quality="HD" tabindex="0">Go3 Sport 1 HD LV</div>
+<div class="channel-item" data-id="18012" data-quality="HD" tabindex="0">Go3 Sport 2 HD LV</div>
+<div class="channel-item" data-id="18016" data-quality="HD" tabindex="0">Best4Sport HD LV</div>
+<div class="channel-item" data-id="18015" data-quality="HD" tabindex="0">Best4Sport 2 HD LV</div>
+<div class="channel-item" data-id="18025" data-quality="HD" tabindex="0">Go3 Sport Open HD LV</div>
+<div class="channel-item" data-id="19022" data-quality="Standard" tabindex="0">sky Sport F1 DE</div>
+<div class="channel-item" data-id="19023" data-quality="HD" tabindex="0">Sport1+ HD DE</div>
+<div class="channel-item" data-id="19024" data-quality="Standard" tabindex="0">FC Bayern TV</div>
+<div class="channel-item" data-id="19025" data-quality="HD" tabindex="0">Auto Motor Sport HD</div>
+<div class="channel-item" data-id="19026" data-quality="HD" tabindex="0">Sport Digital HD</div>
+<div class="channel-item" data-id="19027" data-quality="FHD" tabindex="0">sky Sport 1 FHD DE</div>
+<div class="channel-item" data-id="19028" data-quality="Standard" tabindex="0">sky Sport 1 DE</div>
+<div class="channel-item" data-id="19029" data-quality="Standard" tabindex="0">sky Sport 2 DE</div>
+<div class="channel-item" data-id="19030" data-quality="Standard" tabindex="0">sky Sport 3 DE</div>
+<div class="channel-item" data-id="19031" data-quality="Standard" tabindex="0">sky Sport 4 DE</div>
+<div class="channel-item" data-id="19032" data-quality="Standard" tabindex="0">sky Sport 5 DE</div>
+<div class="channel-item" data-id="19033" data-quality="Standard" tabindex="0">sky Sport 6 DE</div>
+<div class="channel-item" data-id="19034" data-quality="Standard" tabindex="0">sky Sport 7 DE</div>
+<div class="channel-item" data-id="19035" data-quality="Standard" tabindex="0">sky Sport 8 DE</div>
+<div class="channel-item" data-id="19036" data-quality="Standard" tabindex="0">sky Sport 9 DE</div>
+<div class="channel-item" data-id="19037" data-quality="Standard" tabindex="0">sky Sport 10 DE</div>
+<div class="channel-item" data-id="19038" data-quality="HD" tabindex="0">sky Sport Austria 4 HD (ONLY ON MATCH DAYS)</div>
+<div class="channel-item" data-id="19039" data-quality="HD" tabindex="0">Eurosport360 1 HD DE</div>
+<div class="channel-item" data-id="19040" data-quality="HD" tabindex="0">Eurosport360 2 HD DE</div>
+<div class="channel-item" data-id="19041" data-quality="FHD" tabindex="0">Sky Sport FHD DE</div>
+<div class="channel-item" data-id="19042" data-quality="HD" tabindex="0">Dazn 1 HD</div>
+<div class="channel-item" data-id="19043" data-quality="HD" tabindex="0">Dazn 2 HD</div>
+<div class="channel-item" data-id="19044" data-quality="4K" tabindex="0">Sky Sport UHD DE</div>
+<div class="channel-item" data-id="19051" data-quality="HD" tabindex="0">TNT SPORTS 1 HD</div>
+<div class="channel-item" data-id="19052" data-quality="HD" tabindex="0">TNT SPORTS 2 HD</div>
+<div class="channel-item" data-id="19053" data-quality="HD" tabindex="0">TNT SPORTS 3 HD</div>
+<div class="channel-item" data-id="19054" data-quality="HD" tabindex="0">TNT SPORTS 4 HD</div>
+<div class="channel-item" data-id="19055" data-quality="HD" tabindex="0">TNT SPORTS 6 HD</div>
+<div class="channel-item" data-id="19056" data-quality="HD" tabindex="0">ESPN HD BR</div>
+<div class="channel-item" data-id="19057" data-quality="HD" tabindex="0">ESPN EXTRA HD BR</div>
+<div class="channel-item" data-id="19058" data-quality="HD" tabindex="0">ESPN2 HD BR</div>
+<div class="channel-item" data-id="19059" data-quality="HD" tabindex="0">ESPN BRASIL HD</div>
+<div class="channel-item" data-id="19060" data-quality="Standard" tabindex="0">ESPN Brasil</div>
+<div class="channel-item" data-id="19061" data-quality="HD" tabindex="0">ESPN HD BR</div>
+<div class="channel-item" data-id="19062" data-quality="FHD" tabindex="0">beIN Sports Max 1 FullHD</div>
+<div class="channel-item" data-id="19063" data-quality="FHD" tabindex="0">beIN Sports Max 2 FullHD</div>
+<div class="channel-item" data-id="19064" data-quality="HD" tabindex="0">beIN Sports Haber HD</div>
+<div class="channel-item" data-id="19065" data-quality="HD" tabindex="0">beIN Sports Max 1 HD</div>
+<div class="channel-item" data-id="19066" data-quality="HD" tabindex="0">beIN Sports Max 2 HD</div>
+<div class="channel-item" data-id="19067" data-quality="HD" tabindex="0">TRT SPOR HD</div>
+<div class="channel-item" data-id="19068" data-quality="HD" tabindex="0">TRT SPOR 2 HD</div>
+<div class="channel-item" data-id="19069" data-quality="HD" tabindex="0">A SPOR HD</div>
+<div class="channel-item" data-id="19070" data-quality="HD" tabindex="0">S SPORT + PLUS 1 HD</div>
+<div class="channel-item" data-id="19071" data-quality="HD" tabindex="0">S SPORT + PLUS 2 HD</div>
+<div class="channel-item" data-id="19072" data-quality="Standard" tabindex="0">TRT SPOR</div>
+<div class="channel-item" data-id="19073" data-quality="HD" tabindex="0">SPOR SMART 2 HD</div>
+<div class="channel-item" data-id="19074" data-quality="HD" tabindex="0">TiViBUSPOR 1 HD</div>
+<div class="channel-item" data-id="19075" data-quality="HD" tabindex="0">TiViBUSPOR 2 HD</div>
+<div class="channel-item" data-id="19076" data-quality="HD" tabindex="0">TiViBUSPOR 3 HD</div>
+<div class="channel-item" data-id="19077" data-quality="Standard" tabindex="0">EXXEN SPOR 1</div>
+<div class="channel-item" data-id="19105" data-quality="Standard" tabindex="0">Sky Sport F1 IT</div>
+<div class="channel-item" data-id="19106" data-quality="HD" tabindex="0">Rai Sport + HD</div>
+<div class="channel-item" data-id="19107" data-quality="HD" tabindex="0">SportItalia Live 24 HD</div>
+<div class="channel-item" data-id="19108" data-quality="HD" tabindex="0">SportItalia Plus HD</div>
+<div class="channel-item" data-id="19111" data-quality="Standard" tabindex="0">SKY SUPER TENNIS</div>
+<div class="channel-item" data-id="19112" data-quality="Standard" tabindex="0">Sport2U Tv</div>
+<div class="channel-item" data-id="19113" data-quality="Standard" tabindex="0">Sport Tv Pistoia</div>
+<div class="channel-item" data-id="19116" data-quality="HD" tabindex="0">Eurosport 2 HD IT</div>
+<div class="channel-item" data-id="19117" data-quality="Standard" tabindex="0">RTV Sport (San Marino)</div>
+<div class="channel-item" data-id="19118" data-quality="4K" tabindex="0">Sky Primafila Premiere 01 4K</div>
+<div class="channel-item" data-id="19119" data-quality="4K" tabindex="0">Sky Primafila Premiere 02 4K</div>
+<div class="channel-item" data-id="19120" data-quality="4K" tabindex="0">Sky Primafila Premiere 03 4K</div>
+<div class="channel-item" data-id="19121" data-quality="4K" tabindex="0">Sky Primafila Premiere 04 4K</div>
+<div class="channel-item" data-id="19122" data-quality="4K" tabindex="0">Sky Primafila Premiere 05 4K</div>
+<div class="channel-item" data-id="19123" data-quality="4K" tabindex="0">Sky Primafila Premiere 06 4K</div>
+<div class="channel-item" data-id="19124" data-quality="4K" tabindex="0">Sky Primafila Premiere 07 4K</div>
+<div class="channel-item" data-id="19125" data-quality="4K" tabindex="0">Sky Primafila Premiere 08 4K</div>
+<div class="channel-item" data-id="19126" data-quality="4K" tabindex="0">Sky Primafila Premiere 09 4K</div>
+<div class="channel-item" data-id="19127" data-quality="Standard" tabindex="0">SKY SPORT 24</div>
+<div class="channel-item" data-id="19128" data-quality="Standard" tabindex="0">SKY SPORT ARENA</div>
+<div class="channel-item" data-id="19129" data-quality="Standard" tabindex="0">SKY SPORT CALCIO</div>
+<div class="channel-item" data-id="19131" data-quality="Standard" tabindex="0">SKY SPORT FOOTBALL</div>
+<div class="channel-item" data-id="19132" data-quality="Standard" tabindex="0">SKY SPORT GOLF</div>
+<div class="channel-item" data-id="19133" data-quality="Standard" tabindex="0">SKY SPORT MOTOGP</div>
+<div class="channel-item" data-id="19134" data-quality="Standard" tabindex="0">SKY SPORT NBA</div>
+<div class="channel-item" data-id="19136" data-quality="Standard" tabindex="0">SKY SUPER TENNIS</div>
+<div class="channel-item" data-id="19138" data-quality="Standard" tabindex="0">Fox Sports South</div>
+<div class="channel-item" data-id="19139" data-quality="HD" tabindex="0">FOX SPORTS ARIZONA HD</div>
+<div class="channel-item" data-id="19140" data-quality="HD" tabindex="0">FOX SPORTS FLORIDA HD</div>
+<div class="channel-item" data-id="19141" data-quality="HD" tabindex="0">FOX SPORTS HOUSTON HD</div>
+<div class="channel-item" data-id="19142" data-quality="HD" tabindex="0">FOX SPORTS PRIME TICKET HD</div>
+<div class="channel-item" data-id="19143" data-quality="HD" tabindex="0">FOX SPORTS SOUTHWEST PLUS HD</div>
+<div class="channel-item" data-id="19144" data-quality="HD" tabindex="0">FOX SPORTS SPORTSTIME OHIO HD</div>
+<div class="channel-item" data-id="19145" data-quality="HD" tabindex="0">FOX SPORTS SUN HD</div>
+<div class="channel-item" data-id="19146" data-quality="HD" tabindex="0">FOX SPORTS OKLAHOMA HD</div>
+<div class="channel-item" data-id="19147" data-quality="FHD" tabindex="0">FOX NEWS CHANNEL FHD</div>
+<div class="channel-item" data-id="19149" data-quality="Standard" tabindex="0">Bally Sports Great Lakes</div>
+<div class="channel-item" data-id="19150" data-quality="Standard" tabindex="0">BALLY SPORTS SUN</div>
+<div class="channel-item" data-id="19151" data-quality="Standard" tabindex="0">BALLY SPORTS SOUTHEAST CAROLINAS</div>
+<div class="channel-item" data-id="19152" data-quality="Standard" tabindex="0">BALLY SPORTS NORTH</div>
+<div class="channel-item" data-id="19153" data-quality="Standard" tabindex="0">Bally SPORTS MIDWEST</div>
+<div class="channel-item" data-id="19154" data-quality="HD" tabindex="0">Espn News HD USA</div>
+<div class="channel-item" data-id="19155" data-quality="HD" tabindex="0">ESPN 2 HD USA</div>
+<div class="channel-item" data-id="19156" data-quality="Standard" tabindex="0">ESPN USA</div>
+<div class="channel-item" data-id="19158" data-quality="4K" tabindex="0">ELEVEN SPORTS 1 UHD PT</div>
+<div class="channel-item" data-id="19160" data-quality="4K" tabindex="0">BENFICA 4K TV UHD PT</div>
+<div class="channel-item" data-id="19161" data-quality="4K" tabindex="0">SPORT TV 1 4K UHD PT</div>
+<div class="channel-item" data-id="19163" data-quality="4K" tabindex="0">Viasat Sport Ultra HD DK</div>
+<div class="channel-item" data-id="19165" data-quality="Standard" tabindex="0">Barça TV</div>
+<div class="channel-item" data-id="19166" data-quality="HD" tabindex="0">ESPN DEPORTES HD ES</div>
+<div class="channel-item" data-id="19200" data-quality="Standard" tabindex="0">RMC SPORT 4</div>
+<div class="channel-item" data-id="19201" data-quality="HD" tabindex="0">ESPN 1 HD NL</div>
+<div class="channel-item" data-id="19202" data-quality="HD" tabindex="0">ESPN 2 HD NL</div>
+<div class="channel-item" data-id="19203" data-quality="HD" tabindex="0">ESPN 3 HD NL</div>
+<div class="channel-item" data-id="19204" data-quality="HD" tabindex="0">ESPN 4 HD NL</div>
+<div class="channel-item" data-id="19219" data-quality="HD" tabindex="0">Матч! Страна HD</div>
+<div class="channel-item" data-id="19221" data-quality="HD" tabindex="0">Матч! Боец HD</div>
+<div class="channel-item" data-id="19243" data-quality="HD" tabindex="0">MMA-TV.com HD</div>
+<div class="channel-item" data-id="19244" data-quality="HD" tabindex="0">Футбол HD</div>
+<div class="channel-item" data-id="19245" data-quality="HD" tabindex="0">Бокс ТВ HD</div>
+<div class="channel-item" data-id="19246" data-quality="HD" tabindex="0">Удар HD</div>
+<div class="channel-item" data-id="20059" data-quality="HD" tabindex="0">Sporsmart 2 HD</div>
+<div class="channel-item" data-id="20060" data-quality="HD" tabindex="0">Sporsmart HD</div>
+<div class="channel-item" data-id="20061" data-quality="HD" tabindex="0">Q Sport HD</div>
+<div class="channel-item" data-id="20062" data-quality="HD" tabindex="0">Q Sport League HD</div>
+<div class="channel-item" data-id="20065" data-quality="HD" tabindex="0">Setanta Sports 1 Qazaqstan HD</div>
+<div class="channel-item" data-id="20074" data-quality="HD" tabindex="0">Setanta Moldova HD</div>
+<div class="channel-item" data-id="20081" data-quality="FHD" tabindex="0">Setanta Sports 1 Baltic FHD</div>
+<div class="channel-item" data-id="20091" data-quality="Standard" tabindex="0">Fint Ga 1</div>
+<div class="channel-item" data-id="20092" data-quality="Standard" tabindex="0">Fint Ga 2</div>
+<div class="channel-item" data-id="20093" data-quality="Standard" tabindex="0">Fint Ga 3</div>
+<div class="channel-item" data-id="20094" data-quality="Standard" tabindex="0">Pimple TV 1</div>
+<div class="channel-item" data-id="20095" data-quality="Standard" tabindex="0">Pimple TV 2</div>
+<div class="channel-item" data-id="20096" data-quality="Standard" tabindex="0">Pimple TV 3</div>
+<div class="channel-item" data-id="20097" data-quality="Standard" tabindex="0">Pimple TV 4</div>
+<div class="channel-item" data-id="20098" data-quality="Standard" tabindex="0">Pimple TV 5</div>
+<div class="channel-item" data-id="20099" data-quality="Standard" tabindex="0">ViP Sport 1</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<script>
+const video = document.getElementById('videoPlayer');
+const controls = document.getElementById('controls');
+const allChannels = [...document.querySelectorAll('.channel-item')];
+const overlay = document.getElementById('channelOverlay');
+const searchToggleBtn = document.getElementById('searchToggleBtn');
+const searchBar = document.getElementById('searchBar');
+const searchInput = document.getElementById('searchInput');
+const channelList = document.getElementById('channelList');
+const favToggleBtn = document.getElementById('favToggleBtn');
+const viewFavBtn = document.getElementById('viewFavBtn');
+const nextBtn = document.getElementById('nextBtn');
+const prevBtn = document.getElementById('prevBtn');
+const randomBtn = document.getElementById('randomBtn');
+const muteBtn = document.getElementById('muteBtn');
+const playPauseBtn = document.getElementById('playPauseBtn');
+const fullscreenBtn = document.getElementById('fullscreenBtn');
+const toggleListBtn = document.getElementById('toggleListBtn');
+const categoryFilter = document.getElementById('categoryFilter');
+const channelCount = document.getElementById('channelCount');
+let hls, currentIndex = 0, hideTimeout;
+let favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+let showOnlyFav = false;
+const BASE_URL = "http://d91de342.rostelekom.xyz:80/iptv/QQZC3E76HQU9KFKANG2M9KM4/";
+function resetHideControls() {
+  controls.classList.remove('hidden');
+  clearTimeout(hideTimeout);
+  if (document.fullscreenElement) {
+    hideTimeout = setTimeout(() => {
+      controls.classList.add('hidden');
+    }, 5000);
+  }
+}
+['mousemove', 'keydown', 'touchstart'].forEach(evt => document.addEventListener(evt, resetHideControls));
+document.addEventListener('fullscreenchange', () => {
+  if (document.fullscreenElement) resetHideControls();
+  else {
+    clearTimeout(hideTimeout);
+    controls.classList.remove('hidden');
+  }
+});
+searchToggleBtn.onclick = () => {
+  if (searchBar.style.display === 'none' || !searchBar.style.display) {
+    searchBar.style.display = 'block';
+    searchInput.focus();
+  } else {
+    searchBar.style.display = 'none';
+  }
+};
+toggleListBtn.onclick = () => channelList.classList.toggle("show");
+searchInput.oninput = refreshChannelList;
+categoryFilter.onchange = refreshChannelList;
+viewFavBtn.onclick = () => {
+  showOnlyFav = !showOnlyFav;
+  refreshChannelList();
+};
+favToggleBtn.onclick = () => {
+  const ch = getVisibleChannels()[currentIndex];
+  if (!ch) return;
+  const id = ch.dataset.id;
+  if (favorites.includes(id)) favorites = favorites.filter(f => f !== id);
+  else favorites.push(id);
+  localStorage.setItem('favorites', JSON.stringify(favorites));
+  refreshChannelList();
+};
+nextBtn.onclick = () => {
+  const visible = getVisibleChannels();
+  playChannel((currentIndex + 1) % visible.length);
+};
+prevBtn.onclick = () => {
+  const visible = getVisibleChannels();
+  playChannel((currentIndex - 1 + visible.length) % visible.length);
+};
+randomBtn.onclick = () => {
+  const visible = getVisibleChannels();
+  playChannel(Math.floor(Math.random() * visible.length));
+};
+muteBtn.onclick = () => video.muted = !video.muted;
+playPauseBtn.onclick = () => video.paused ? video.play() : video.pause();
+fullscreenBtn.onclick = () => {
+  const el = document.documentElement;
+  if (!document.fullscreenElement) el.requestFullscreen();
+  else document.exitFullscreen();
+};
+function getVisibleChannels() {
+  const term = searchInput.value.toLowerCase();
+  const cat = categoryFilter.value;
+  return allChannels.filter(ch => {
+    const matchFav = !showOnlyFav || favorites.includes(ch.dataset.id);
+    const matchCat = cat === 'all' || ch.dataset.category === cat;
+    const matchSearch = ch.textContent.toLowerCase().includes(term);
+    return matchFav && matchCat && matchSearch;
+  });
+}
+function refreshChannelList() {
+  const visible = getVisibleChannels();
+  allChannels.forEach(ch => ch.style.display = 'none');
+  visible.forEach(ch => ch.style.display = 'block');
+  channelCount.textContent = `الكل: ${allChannels.length} | ظاهر: ${visible.length} | المفضلة: ${favorites.length}`;
+}
+function playChannel(index) {
+  const visible = getVisibleChannels();
+  const ch = visible[index];
+  if (!ch) return;
+  visible.forEach(c => c.classList.remove('selected'));
+  ch.classList.add('selected');
+  const id = ch.dataset.id;
+  const src = `${BASE_URL}${id}/index.m3u8`;
+  if (hls) hls.destroy();
+  hls = new Hls();
+  hls.loadSource(src);
+  hls.attachMedia(video);
+  overlay.textContent = ch.textContent;
+  overlay.style.display = 'block';
+  currentIndex = index;
+  localStorage.setItem('lastPlayed', id);
+  localStorage.setItem('lastCategory', categoryFilter.value);
+  resetHideControls();
+}
+allChannels.forEach((c, i) => {
+  c.onclick = () => {
+    currentIndex = getVisibleChannels().indexOf(c);
+    playChannel(currentIndex);
+  };
+});
+window.onload = () => {
+  const lastCategory = localStorage.getItem('lastCategory');
+  const lastId = localStorage.getItem('lastPlayed');
+  const addedCategories = new Set();
+  allChannels.forEach(c => {
+    const match = c.textContent.match(/^([A-Za-zА-Яа-я!]+)/);
+    const category = match ? match[1] : 'Other';
+    c.dataset.category = category;
+    if (!addedCategories.has(category)) {
+      addedCategories.add(category);
+      const opt = document.createElement('option');
+      opt.value = category;
+      opt.textContent = category;
+      categoryFilter.appendChild(opt);
+    }
+  });
+  if (lastCategory) categoryFilter.value = lastCategory;
+  refreshChannelList();
+  const idx = allChannels.findIndex(c => c.dataset.id === lastId);
+  playChannel(idx !== -1 ? idx : 0);
+};
+</script>
+</body>
+</html>
