@@ -2381,11 +2381,7 @@ document.getElementById("iptvMenu").style.display="none"
 
 function openIPTVPage(page){
 
-const p = document.getElementById("iptvPlayer")
-const f = document.getElementById("iptvFrame")
-
-p.style.display="block"
-f.src = page
+window.open(page,"_blank")
 
 }
 
