@@ -1,4 +1,4 @@
-const CACHE = "sultanflix-v2"
+const CACHE = "sultanflix-v3"
 
 const assets = [
 "/",
@@ -36,11 +36,17 @@ self.addEventListener("fetch", e => {
 
 e.respondWith(
 
-caches.match(e.request).then(res => {
+fetch(e.request)
+.then(res => {
 
-return res || fetch(e.request)
+const clone = res.clone()
+
+caches.open(CACHE).then(cache => cache.put(e.request, clone))
+
+return res
 
 })
+.catch(() => caches.match(e.request))
 
 )
 
