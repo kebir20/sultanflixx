@@ -2344,25 +2344,7 @@ if(first) first.focus()
 
 },1500)
   
-  function openIPTV(){
-
-const p = document.getElementById("iptvPlayer")
-const f = document.getElementById("iptvFrame")
-
-p.style.display="block"
-f.src="iptv.html"
-
-}
-
-function closeIPTV(){
-
-const p = document.getElementById("iptvPlayer")
-const f = document.getElementById("iptvFrame")
-
-p.style.display="none"
-f.src=""
-
-}
+    
     window.addEventListener("load",()=>{
 setTimeout(()=>{
 document.getElementById("loader").style.display="none"
@@ -2384,6 +2366,30 @@ document.getElementById("installBtn").onclick = async () => {
     deferredPrompt = null;
   }
 };
+    
+    function openIPTVMenu(){
+
+document.getElementById("iptvMenu").style.display="block"
+
+}
+
+function closeIPTVMenu(){
+
+document.getElementById("iptvMenu").style.display="none"
+
+}
+
+function openIPTVPage(page){
+
+const p = document.getElementById("iptvPlayer")
+const f = document.getElementById("iptvFrame")
+
+p.style.display="block"
+f.src = page
+
+}
+
+
      
   
 load()
@@ -2445,64 +2451,6 @@ box.remove()
 
 }
     
-function openIPTVMenu(){
-
-document.getElementById("iptvMenu").style.display="block"
-
-}
-
-function closeIPTVMenu(){
-
-document.getElementById("iptvMenu").style.display="none"
-
-}
-
-function openIPTVPage(page){
-
-const p = document.getElementById("iptvPlayer")
-const f = document.getElementById("iptvFrame")
-
-p.style.display="block"
-f.src = page
-
-}
-
-function showInstallBanner(){
-
-const box = document.createElement("div")
-
-box.style.position="fixed"
-box.style.bottom="20px"
-box.style.left="50%"
-box.style.transform="translateX(-50%)"
-box.style.background="#111"
-box.style.padding="12px 20px"
-box.style.borderRadius="30px"
-box.style.boxShadow="0 0 20px rgba(0,0,0,.6)"
-box.style.zIndex="99999"
-
-box.innerHTML = `
-<span style="margin-right:10px">📲 Install SultanFlix</span>
-<button id="installNow" style="background:#e50914;border:none;color:white;padding:6px 14px;border-radius:20px">Install</button>
-`
-
-document.body.appendChild(box)
-
-document.getElementById("installNow").onclick = async ()=>{
-
-if(deferredPrompt){
-
-deferredPrompt.prompt()
-await deferredPrompt.userChoice
-deferredPrompt=null
-box.remove()
-
-}
-
-}
-
-}
-
 </script>
 
 
@@ -2513,4 +2461,4 @@ navigator.serviceWorker.register("/sw.js")
 </script>
 
 </body>
-  </html>
+</html>
