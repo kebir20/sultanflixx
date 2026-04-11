@@ -429,7 +429,7 @@ button:focus{outline:3px solid red}
 
 <button onclick="showSection('anime')">🍥 <span id="navAnime"></span></button>
   
-<button onclick="openIPTV()">📡 IPTV</button>
+<button onclick="openIPTVMenu()">📡 IPTV</button>
 
 <button onclick="location.href='radio.html'">📻 Radio</button>
   
@@ -473,13 +473,51 @@ button:focus{outline:3px solid red}
 </div> 
 <div id="player" class="player">
 <button class="close" onclick="closePlayer()">✖</button>
-<iframe id="frame" allowfullscreen
-sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
+<iframe id="frame" allowfullscreen></iframe>
 </div>
 
 <div id="iptvPlayer" class="player">
 <button class="close" onclick="closeIPTV()">✖</button>
 <iframe id="iptvFrame" allowfullscreen></iframe>
+</div>
+
+
+<!-- IPTV MENU -->
+
+<div id="iptvMenu" class="moviePage">
+
+<button class="close" onclick="closeIPTVMenu()">✖</button>
+
+<div class="detailsCard">
+
+<h1>📡 IPTV</h1>
+
+<div class="seasonGrid">
+
+<button class="playBtn" onclick="openIPTVPage('iptv.html')">
+📺 Live TV
+</button>
+
+<button class="playBtn" onclick="openIPTVPage('sports.html')">
+⚽ Sports
+</button>
+
+<button class="playBtn" onclick="openIPTVPage('movies-tv.html')">
+🎬 Movie Channels
+</button>
+
+<button class="playBtn" onclick="openIPTVPage('news.html')">
+📰 News
+</button>
+
+<button class="playBtn" onclick="openIPTVPage('radio.html')">
+📻 Radio
+</button>
+
+</div>
+
+</div>
+
 </div>  
   <script>  
     
@@ -1117,13 +1155,6 @@ btn.onclick=()=>openPlayer(s.url)
 list.appendChild(btn)
 
 })
-
-}
-
-function openPlayer(url){
-
-player.style.display="block"
-frame.src=url
 
 }
   
@@ -2413,20 +2444,28 @@ box.remove()
 }
 
 }
+    
+function openIPTVMenu(){
 
-let deferredPrompt
+document.getElementById("iptvMenu").style.display="block"
 
-window.addEventListener("beforeinstallprompt", e => {
+}
 
-e.preventDefault()
+function closeIPTVMenu(){
 
-deferredPrompt = e
+document.getElementById("iptvMenu").style.display="none"
 
-setTimeout(()=>{
-showInstallBanner()
-},4000)
+}
 
-})
+function openIPTVPage(page){
+
+const p = document.getElementById("iptvPlayer")
+const f = document.getElementById("iptvFrame")
+
+p.style.display="block"
+f.src = page
+
+}
 
 function showInstallBanner(){
 
@@ -2474,4 +2513,4 @@ navigator.serviceWorker.register("/sw.js")
 </script>
 
 </body>
-</html>
+  </html>
