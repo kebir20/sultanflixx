@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>IPTV Player v20</title>
+
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
+<style>
+body{
+margin:0;
+background:#000;
+color:#fff;
+font-family:Segoe UI;
+overflow:hidden;
+}
+
+video{
+width:100%;
+height:100vh;
+background:#000;
+object-fit:contain;
+}
+
+.controls{
+position:fixed;
+bottom:10px;
+left:0;
+right:0;
+display:flex;
+flex-wrap:wrap;
+justify-content:center;
+gap:8px;
+background:rgba(0,0,0,.6);
+padding:10px;
+border-radius:14px;
+z-index:10;
+}
+
+button,input,select{
+padding:8px;
+border:none;
+border-radius:6px;
+background:#222;
+color:white;
+cursor:pointer;
+}
+
+.dropdown{
+background:#222;
+padding:8px 12px;
+border-radius:6px;
+cursor:pointer;
+position:relative;
+min-width:120px;
+text-align:center;
+}
+
+.dropdown-list{
+position:absolute;
+bottom:110%;
+left:0;
+right:0;
+background:#111;
+display:none;
+max-height:240px;
+overflow:auto;
+border-radius:8px;
+}
+
+.dropdown-list.show{display:block}
+
+.dropdown-item{
+padding:8px;
+border-bottom:1px solid #222;
+cursor:pointer;
+}
+
+.dropdown-item:hover{background:#007bff}
+
+.channel-list{
+position:fixed;
+right:0;
+top:0;
+bottom:0;
+width:320px;
+background:#111;
+overflow:auto;
+display:none;
+}
+
+.channel-list.show{display:block}
+
+.channel{
+display:flex;
+align-items:center;
+gap:10px;
+padding:8px;
+cursor:pointer;
+border-bottom:1px solid #222;
+}
+
+.channel img{
+width:32px;
+height:32px;
+object-fit:contain;
+}
+
+.channel:hover{
+background:#007bff;
+}
+
+.channel.active{
+background:#007bff;
+}
+
+.fav{
+margin-left:auto;
+cursor:pointer;
+}
+
+/* overlay info */
+#info{
+position:fixed;
+top:20px;
+right:20px;
+background:rgba(0,0,0,.7);
+padding:10px 16px;
+border-radius:10px;
+display:none;
+align-items:center;
+gap:10px;
+}
+
+#info img{
+width:40px;
+height:40px;
+object-fit:contain;
+}
+</style>
+</head>
+
+<body>
+
+<video id="video" autoplay playsinline></video>
+
+<div id="info"></div>
+
+<div class="controls">
+
+<div class="dropdown" id="serverDropdown">
+<div>Servers</div>
+<div class="dropdown-list"></div>
+</div>
+
+<div class="dropdown" id="catDropdown">
+<div>Categories</div>
+<div class="dropdown-list"></div>
+</div>
+
+<button id="playBtn">▶</button>
+<button id="timeshift">⏪30s</button>
+
+<select id="quality"></select>
+
+<button id="favBtn">⭐</button>
+<button id="searchBtn">🔍</button>
+
+<input id="search" placeholder="بحث" style="display:none">
+
+<button id="prev">⏮</button>
+<button id="next">⏭</button>
+<button id="random">🎲</button>
+<button id="fullscreenBtn">⛶</button>
+<button id="muteBtn">🔊</button>
+
+<button id="listBtn">📺</button>
+
+<button id="importBtn">📂</button>
+<input type="file" id="fileInput" accept=".m3u" multiple style="display:none">
+
+</div>
+
+<div id="channelList" class="channel-list"></div>
+
+<script>
+
+const video=document.getElementById("video")
+const list=document.getElementById("channelList")
+const search=document.getElementById("search")
+const qualitySelect=document.getElementById("quality")
+
+let allChannels=[]
+let channels=[]
+let categories=["All"]
+let categoryCount={}
+let currentCategory="All"
+
+let index=0
+let favorites=JSON.parse(localStorage.getItem("iptvFav")||"[]")
+let lastChannel=localStorage.getItem("lastChannel")
+
+let hls
+
+/* SERVERS */
+
+const servers=[
+{name:"Global",url:"https://iptv-org.github.io/iptv/index.m3u"},
+{name:"Sports",url:"https://iptv-org.github.io/iptv/categories/sports.m3u"},
+{name:"Movies",url:"https://iptv-org.github.io/iptv/categories/movies.m3u"},
+{name:"News",url:"https://iptv-org.github.io/iptv/categories/news.m3u"},
+{name:"France",url:"https://iptv-org.github.io/iptv/regions/fr.m3u"}
+]
+
+const serverList=document.querySelector("#serverDropdown .dropdown-list")
+
+servers.forEach(s=>{
+
+let d=document.createElement("div")
+d.className="dropdown-item"
+d.textContent=s.name
+
+d.onclick=()=>{
+load(s.url)
+serverList.classList.remove("show")
+}
+
+serverList.appendChild(d)
+
+})
+
+document.getElementById("serverDropdown").onclick=()=>{
+serverList.classList.toggle("show")
+}
+
+/* CATEGORY */
+
+function buildCategories(){
+
+const list=document.querySelector("#catDropdown .dropdown-list")
+list.innerHTML=""
+
+categories.forEach(c=>{
+
+let d=document.createElement("div")
+d.className="dropdown-item"
+d.textContent=c+" ("+(categoryCount[c]||0)+")"
+
+d.onclick=()=>{
+currentCategory=c
+render()
+list.classList.remove("show")
+}
+
+list.appendChild(d)
+
+})
+
+document.getElementById("catDropdown").onclick=()=>{
+list.classList.toggle("show")
+}
+
+}
+
+/* LOAD */
+
+async function load(url){
+
+let r=await fetch(url)
+let t=await r.text()
+
+parseM3U(t)
+render()
+
+}
+
+/* PARSER */
+
+function parseM3U(text){
+
+const lines=text.split("\n")
+
+allChannels=[]
+categories=["All"]
+categoryCount={"All":0}
+
+for(let i=0;i<lines.length;i++){
+
+let l=lines[i]
+
+if(l.startsWith("#EXTINF")){
+
+let name=l.split(",").pop().trim()
+
+let logo=(l.match(/tvg-logo="(.*?)"/)||[])[1]||""
+let group=(l.match(/group-title="(.*?)"/)||[])[1]||"Other"
+
+let link=(lines[i+1]||"").trim()
+
+if(link.startsWith("http")){
+
+allChannels.push({name,logo,group,link})
+
+if(!categories.includes(group)){
+categories.push(group)
+categoryCount[group]=0
+}
+
+categoryCount[group]++
+categoryCount["All"]++
+
+}
+
+}
+
+}
+
+document.title="IPTV ("+allChannels.length+")"
+
+buildCategories()
+
+}
+
+/* RENDER */
+
+function render(){
+
+channels=allChannels.filter(c=>{
+
+let s=c.name.toLowerCase().includes(search.value.toLowerCase())
+let g=currentCategory==="All"||c.group===currentCategory
+
+return s&&g
+
+})
+
+draw()
+
+}
+
+/* DRAW */
+
+function draw(){
+
+list.innerHTML=""
+
+channels.forEach((c,i)=>{
+
+let div=document.createElement("div")
+div.className="channel"
+
+div.innerHTML=
+'<img src="'+c.logo+'">'+
+'<span>'+c.name+'</span>'+
+'<span class="fav">⭐</span>'
+
+div.onclick=()=>play(i)
+
+list.appendChild(div)
+
+})
+
+}
+
+/* CHANNEL INFO OVERLAY */
+
+function showInfo(c){
+
+let box=document.getElementById("info")
+
+box.innerHTML='<img src="'+c.logo+'"><span>'+c.name+'</span>'
+box.style.display="flex"
+
+setTimeout(()=>{
+box.style.display="none"
+},3000)
+
+}
+
+/* PLAY */
+
+function play(i){
+
+let c=channels[i]
+index=i
+
+localStorage.setItem("lastChannel",i)
+
+if(hls)hls.destroy()
+
+if(Hls.isSupported()){
+
+hls=new Hls()
+hls.loadSource(c.link)
+hls.attachMedia(video)
+
+hls.on(Hls.Events.MANIFEST_PARSED,function(){
+
+qualitySelect.innerHTML=""
+
+hls.levels.forEach((l,i)=>{
+
+let o=document.createElement("option")
+o.value=i
+o.textContent=l.height+"p"
+
+qualitySelect.appendChild(o)
+
+})
+
+})
+
+}else{
+video.src=c.link
+}
+
+video.play()
+
+showInfo(c)
+
+}
+
+/* QUALITY */
+
+qualitySelect.onchange=()=>{
+
+if(hls){
+hls.currentLevel=parseInt(qualitySelect.value)
+}
+
+}
+
+/* PLAY BUTTON */
+
+document.getElementById("playBtn").onclick=()=>{
+
+if(video.paused){
+video.play()
+}else{
+video.pause()
+}
+
+}
+
+/* TIMESHIFT */
+
+document.getElementById("timeshift").onclick=()=>{
+
+video.currentTime=Math.max(0,video.currentTime-30)
+
+}
+
+/* NAVIGATION */
+
+document.getElementById("next").onclick=()=>play((index+1)%channels.length)
+document.getElementById("prev").onclick=()=>play((index-1+channels.length)%channels.length)
+
+document.getElementById("random").onclick=()=>{
+play(Math.floor(Math.random()*channels.length))
+}
+
+/* MUTE */
+
+document.getElementById("muteBtn").onclick=()=>{
+
+video.muted=!video.muted
+document.getElementById("muteBtn").textContent=video.muted?"🔇":"🔊"
+
+}
+
+/* SEARCH */
+
+document.getElementById("searchBtn").onclick=()=>{
+search.style.display=search.style.display==="none"?"block":"none"
+}
+
+search.oninput=render
+
+/* LIST */
+
+document.getElementById("listBtn").onclick=()=>{
+list.classList.toggle("show")
+}
+
+/* IMPORT MULTIPLE M3U */
+
+document.getElementById("importBtn").onclick=()=>{
+document.getElementById("fileInput").click()
+}
+
+document.getElementById("fileInput").onchange=e=>{
+
+let files=e.target.files
+
+Array.from(files).forEach(f=>{
+
+let r=new FileReader()
+
+r.onload=()=>{
+
+parseM3U(r.result)
+render()
+
+}
+
+r.readAsText(f)
+
+})
+
+}
+
+/* FULLSCREEN */
+
+document.getElementById("fullscreenBtn").onclick=()=>{
+
+if(!document.fullscreenElement){
+video.requestFullscreen()
+}else{
+document.exitFullscreen()
+}
+
+}
+
+/* AUTOPLAY LAST CHANNEL */
+
+setTimeout(()=>{
+
+if(lastChannel){
+play(parseInt(lastChannel))
+}
+
+},1500)
+
+/* START */
+
+load(servers[0].url)
+
+</script>
+</body>
+</html>
