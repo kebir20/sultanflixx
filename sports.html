@@ -807,7 +807,7 @@ channel.classList.add('selected')
 const channelId = channel.dataset.id
 const video = document.getElementById("videoPlayer")
 
-const url = BASE_URL + channelId
+const url = "proxy.php?id=" + channelId
 
 if (Hls.isSupported()) {
 
