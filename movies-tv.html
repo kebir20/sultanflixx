@@ -1,5 +1,4 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<!DOCTYPE html><html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -19,43 +18,27 @@
       background: black;
     }
     video {
-      object-fit: contain;
-      background: #000;
-      border-radius: 20px;
-      transition: all 0.3s ease-in-out;
       width: 100%;
       height: 100%;
-      background: black;
       object-fit: contain;
+      background: black;
+      border-radius: 20px;
     }
     .controls {
       position: fixed;
       bottom: 10px;
-      right: 0;
       left: 0;
+      right: 0;
       margin: auto;
-      width: fit-content;
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(10px);
-      border-radius: 16px;
-      padding: 10px 15px;
-      animation: fadeIn 0.5s ease-in-out;
       display: flex;
       flex-wrap: wrap;
-      justify-content: center;
-      z-index: 20;
-      position: absolute;
-      bottom: 10px;
-      left: 0;
-      right: 0;
-      display: flex;
       justify-content: center;
       gap: 8px;
-      flex-wrap: wrap;
-      background: rgba(0, 0, 0, 0.5);
+      background: rgba(0, 0, 0, 0.6);
       padding: 10px;
+      border-radius: 16px;
       z-index: 10;
-      transition: opacity 0.5s ease;
+      transition: opacity 0.3s ease;
     }
     .controls.hidden {
       opacity: 0;
@@ -63,15 +46,19 @@
     }
     .controls button {
       background: #222;
-      border: none;
       color: white;
-      font-size: 18px;
+      border: none;
       padding: 10px 12px;
       border-radius: 6px;
       cursor: pointer;
+      font-size: 16px;
     }
-    .controls button:focus {
-      outline: 2px solid #00aaff;
+    .controls input[type="text"] {
+      padding: 8px;
+      border-radius: 6px;
+      border: none;
+      width: 180px;
+      display: none;
     }
     .channel-list {
       position: absolute;
@@ -81,747 +68,66 @@
       width: 240px;
       background: rgba(20,20,20,0.8);
       overflow-y: auto;
-      z-index: 9;
       padding: 10px;
       display: none;
+      z-index: 9;
     }
-    .channel-list.show {
-      display: block;
-    }
+    .channel-list.show { display: block; }
     .channel-item {
       background: rgba(255,255,255,0.1);
       margin-bottom: 6px;
       padding: 8px;
       border-radius: 4px;
       cursor: pointer;
+      transition: 0.2s;
     }
-    .channel-item.selected {
-      background: #007bff;
+    .channel-item:hover {
+      background: rgba(0,123,255,0.5);
+      transform: scale(1.02);
     }
-    .channel-item .fav-star {
-      color: gold;
-      float: left;
-      margin-left: 6px;
+    .channel-item.selected { background: #007bff; }
+
+    #channelTitle {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(0,0,0,0.6);
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-size: 18px;
+      z-index: 11;
+      max-width: 70%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    .channel-item:focus {
-      outline: 2px solid #00aaff;
-    }
-  
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    </style>
+  </style>
 </head>
 <body>
-<div class="player-container" id="playerContainer">
-  <video id="videoPlayer" autoplay muted playsinline></video>
-
-  <div class="controls" id="controls">
-    <button id="favToggleBtn" tabindex="0">⭐</button>
-    <button id="viewFavBtn" tabindex="0">⭐ عرض المفضلة</button>
-    <button id="randomBtn" tabindex="0">🎲</button>
-    <button id="nextBtn" tabindex="0">⏭</button>
-    <button id="prevBtn" tabindex="0">⏮</button>
-    <button id="muteBtn" tabindex="0">🔊</button>
-    <button id="playPauseBtn" tabindex="0">⏯</button>
-    <button id="fullscreenBtn" tabindex="0">⛶</button>
-    <button id="toggleListBtn" tabindex="0">📺</button>
+  <div class="player-container">
+    <video id="videoPlayer" autoplay muted playsinline></video>
+    <div id="channelTitle"></div>
+    <div class="controls" id="controls">
+      <select id="serverSelect"></select>
+      <select id="categorySelect"><option value="all">كل التصنيفات</option></select>
+      <button id="searchToggle">🔍</button>
+      <input type="text" id="searchInput" placeholder="ابحث عن قناة...">
+      <button id="favToggleBtn">⭐</button>
+      <button id="viewFavBtn">⭐ عرض المفضلة</button>
+      <button id="randomBtn">🎲</button>
+      <button id="nextBtn">⏭</button>
+      <button id="prevBtn">⏮</button>
+      <button id="muteBtn">🔊</button>
+      <button id="playPauseBtn">⏯</button>
+      <button id="fullscreenBtn">⛶</button>
+      <button id="toggleListBtn">📺</button>
+    </div>
+    <div class="channel-list" id="channelList"></div>
   </div>
-
-  <div class="channel-list" id="channelList">
-    <div class="channel-item" data-id="31553" tabindex="0">VF Вестерн</div>
-<div class="channel-item" data-id="31555" tabindex="0">VF Король и Шут</div>
-<div class="channel-item" data-id="31447" tabindex="0">TV 1000 World Kino</div>
-<div class="channel-item" data-id="16018" tabindex="0">KinoLiving</div>
-<div class="channel-item" data-id="2037" tabindex="0">Romance HD</div>
-<div class="channel-item" data-id="2049" tabindex="0">Suspense HD</div>
-<div class="channel-item" data-id="2163" tabindex="0">Sumiko HD</div>
-<div class="channel-item" data-id="2034" tabindex="0">Лавстори HD</div>
-<div class="channel-item" data-id="2146" tabindex="0">Советская киноклассика HD</div>
-<div class="channel-item" data-id="2105" tabindex="0">Viva Premium HD IL</div>
-<div class="channel-item" data-id="2151" tabindex="0">HOT Cinema Family HD IL</div>
-<div class="channel-item" data-id="2002" tabindex="0">Viju TV1000 Новелла HD</div>
-<div class="channel-item" data-id="17022" tabindex="0">Мосфильм. Золотая коллекция HD (+4)</div>
-<div class="channel-item" data-id="16154" tabindex="0">Феникс плюс Кино HD</div>
-<div class="channel-item" data-id="16031" tabindex="0">Viju TV1000 Action HD (+2)</div>
-<div class="channel-item" data-id="16030" tabindex="0">Viju TV1000 Русское HD (+2)</div>
-<div class="channel-item" data-id="16029" tabindex="0">Viju TV1000 HD (+2)</div>
-<div class="channel-item" data-id="16006" tabindex="0">FX Life Baltic EE</div>
-<div class="channel-item" data-id="5006" tabindex="0">VHS-ка HD</div>
-<div class="channel-item" data-id="14141" tabindex="0">Viasat Kino Megahit HD</div>
-<div class="channel-item" data-id="17056" tabindex="0">Viasat Serial HD</div>
-<div class="channel-item" data-id="20019" tabindex="0">.black HD</div>
-<div class="channel-item" data-id="20020" tabindex="0">.sci-fi HD</div>
-<div class="channel-item" data-id="20021" tabindex="0">Scream HD</div>
-<div class="channel-item" data-id="20022" tabindex="0">Shot TV HD</div>
-<div class="channel-item" data-id="20023" tabindex="0">О!Кино</div>
-<div class="channel-item" data-id="17051" tabindex="0">4Ever Drama HD UA</div>
-<div class="channel-item" data-id="17044" tabindex="0">Kino 1 HD</div>
-<div class="channel-item" data-id="15102" tabindex="0">NOW Series HD</div>
-<div class="channel-item" data-id="20024" tabindex="0">FilmZone HD LV</div>
-<div class="channel-item" data-id="20025" tabindex="0">FilmZone+ HD EE</div>
-<div class="channel-item" data-id="20026" tabindex="0">Duo 3 HD LT</div>
-<div class="channel-item" data-id="14220" tabindex="0">Turkish Dramas 3 HD IL</div>
-<div class="channel-item" data-id="14208" tabindex="0">Turkish Dramas 2 HD IL</div>
-<div class="channel-item" data-id="14207" tabindex="0">Turkish Dramas Plus HD IL</div>
-<div class="channel-item" data-id="16089" tabindex="0">Citrus Holiday</div>
-<div class="channel-item" data-id="16092" tabindex="0">Kinoshka Christmas HD</div>
-<div class="channel-item" data-id="9242" tabindex="0">VF Счастливы Вместе</div>
-<div class="channel-item" data-id="10075" tabindex="0">VF Бесстыжие</div>
-<div class="channel-item" data-id="10062" tabindex="0">VF Два с половиной человека</div>
-<div class="channel-item" data-id="15524" tabindex="0">VF С новым годом!</div>
-<div class="channel-item" data-id="14222" tabindex="0">VF Ёлки</div>
-<div class="channel-item" data-id="15522" tabindex="0">VF New Year</div>
-<div class="channel-item" data-id="17035" tabindex="0">VF Новогодний</div>
-<div class="channel-item" data-id="14230" tabindex="0">VF Гарри Поттер</div>
-<div class="channel-item" data-id="14221" tabindex="0">VF Карточный домик</div>
-<div class="channel-item" data-id="14224" tabindex="0">VF Секс в большом городе</div>
-<div class="channel-item" data-id="15010" tabindex="0">VF Disney Movie</div>
-<div class="channel-item" data-id="15009" tabindex="0">VF Теория большого взрыва</div>
-<div class="channel-item" data-id="10066" tabindex="0">VF Владимир Высоцкий</div>
-<div class="channel-item" data-id="14006" tabindex="0">Timeless Dizi Channel</div>
-<div class="channel-item" data-id="14022" tabindex="0">TV Rus</div>
-<div class="channel-item" data-id="6516" tabindex="0">FX</div>
-<div class="channel-item" data-id="9232" tabindex="0">FX Life</div>
-<div class="channel-item" data-id="19280" tabindex="0">BOX M.Serial HD</div>
-<div class="channel-item" data-id="19281" tabindex="0">BOX Serial HD</div>
-<div class="channel-item" data-id="17054" tabindex="0">BCU TruMotion HD</div>
-<div class="channel-item" data-id="101" tabindex="0">Viju TV1000 Русское</div>
-<div class="channel-item" data-id="19216" tabindex="0">FX HD</div>
-<div class="channel-item" data-id="6107" tabindex="0">FOX COMEDY PL</div>
-<div class="channel-item" data-id="6137" tabindex="0">beIN Drama QA</div>
-<div class="channel-item" data-id="6152" tabindex="0">CINEMAXX MORE MAXX US</div>
-<div class="channel-item" data-id="6154" tabindex="0">CINEMAX OUTER MAX US</div>
-<div class="channel-item" data-id="6155" tabindex="0">CINEMAX MOVIEMAX US</div>
-<div class="channel-item" data-id="6008" tabindex="0">Canal+ Series FR</div>
-<div class="channel-item" data-id="102" tabindex="0">Ностальгия</div>
-<div class="channel-item" data-id="103" tabindex="0">СТС Love</div>
-<div class="channel-item" data-id="110" tabindex="0">.sci-fi</div>
-<div class="channel-item" data-id="509" tabindex="0">Киномикс</div>
-<div class="channel-item" data-id="125" tabindex="0">Киносемья</div>
-<div class="channel-item" data-id="126" tabindex="0">Родное Кино</div>
-<div class="channel-item" data-id="131" tabindex="0">Viju TV1000 Action</div>
-<div class="channel-item" data-id="516" tabindex="0">Кинохит</div>
-<div class="channel-item" data-id="510" tabindex="0">Amedia 2</div>
-<div class="channel-item" data-id="517" tabindex="0">Наше Новое Кино</div>
-<div class="channel-item" data-id="525" tabindex="0">TV XXI</div>
-<div class="channel-item" data-id="145" tabindex="0">Кинокомедия</div>
-<div class="channel-item" data-id="146" tabindex="0">Индийское Кино</div>
-<div class="channel-item" data-id="148" tabindex="0">Киносерия</div>
-<div class="channel-item" data-id="547" tabindex="0">Русский Иллюзион</div>
-<div class="channel-item" data-id="549" tabindex="0">Еврокино</div>
-<div class="channel-item" data-id="550" tabindex="0">Кинеко</div>
-<div class="channel-item" data-id="553" tabindex="0">Сапфир</div>
-<div class="channel-item" data-id="154" tabindex="0">Дом Кино</div>
-<div class="channel-item" data-id="554" tabindex="0">Amedia 1</div>
-<div class="channel-item" data-id="555" tabindex="0">Amedia Premium</div>
-<div class="channel-item" data-id="556" tabindex="0">Amedia Hit</div>
-<div class="channel-item" data-id="132" tabindex="0">Viju TV1000</div>
-<div class="channel-item" data-id="164" tabindex="0">Мужское Кино</div>
-<div class="channel-item" data-id="557" tabindex="0">Hollywood</div>
-<div class="channel-item" data-id="559" tabindex="0">.red</div>
-<div class="channel-item" data-id="702" tabindex="0">2x2</div>
-<div class="channel-item" data-id="708" tabindex="0">.black</div>
-<div class="channel-item" data-id="905" tabindex="0">Русский бестселлер</div>
-<div class="channel-item" data-id="906" tabindex="0">Русский роман</div>
-<div class="channel-item" data-id="907" tabindex="0">Русский детектив</div>
-<div class="channel-item" data-id="722" tabindex="0">Любимое Кино</div>
-<div class="channel-item" data-id="728" tabindex="0">Киносвидание</div>
-<div class="channel-item" data-id="732" tabindex="0">Кино ТВ</div>
-<div class="channel-item" data-id="733" tabindex="0">Русская Комедия</div>
-<div class="channel-item" data-id="20220" tabindex="0">Eye Cyber HD</div>
-<div class="channel-item" data-id="734" tabindex="0">FAN</div>
-<div class="channel-item" data-id="741" tabindex="0">НТВ Хит</div>
-<div class="channel-item" data-id="16021" tabindex="0">FAN HD</div>
-<div class="channel-item" data-id="744" tabindex="0">НТВ Сериал</div>
-<div class="channel-item" data-id="726" tabindex="0">НСТ</div>
-<div class="channel-item" data-id="1001" tabindex="0">Индия</div>
-<div class="channel-item" data-id="1071" tabindex="0">FilmBox ArtHouse</div>
-<div class="channel-item" data-id="1066" tabindex="0">Дорама</div>
-<div class="channel-item" data-id="856" tabindex="0">Мир Сериала</div>
-<div class="channel-item" data-id="2018" tabindex="0">Ретро</div>
-<div class="channel-item" data-id="2038" tabindex="0">Иллюзион+</div>
-<div class="channel-item" data-id="2039" tabindex="0">Феникс плюс Кино</div>
-<div class="channel-item" data-id="2062" tabindex="0">.red HD</div>
-<div class="channel-item" data-id="2121" tabindex="0">Киноман</div>
-<div class="channel-item" data-id="5051" tabindex="0">Cinema</div>
-<div class="channel-item" data-id="2483" tabindex="0">Sky Cinema Fun DE</div>
-<div class="channel-item" data-id="2484" tabindex="0">Sky Cinema HD DE</div>
-<div class="channel-item" data-id="2485" tabindex="0">Sky Cinema Special HD DE</div>
-<div class="channel-item" data-id="2488" tabindex="0">Sky Atlantic HD DE</div>
-<div class="channel-item" data-id="2489" tabindex="0">Sky Cinema Family HD DE</div>
-<div class="channel-item" data-id="2490" tabindex="0">Sky Cinema Nostalgie DE</div>
-<div class="channel-item" data-id="2491" tabindex="0">Sky Krimi DE</div>
-<div class="channel-item" data-id="2494" tabindex="0">Sky Arts HD DE</div>
-<div class="channel-item" data-id="2486" tabindex="0">Sky Hits HD DE</div>
-<div class="channel-item" data-id="2568" tabindex="0">Зал 1</div>
-<div class="channel-item" data-id="2569" tabindex="0">Зал 2</div>
-<div class="channel-item" data-id="2570" tabindex="0">Зал 3</div>
-<div class="channel-item" data-id="2571" tabindex="0">Зал 4</div>
-<div class="channel-item" data-id="2572" tabindex="0">Зал 5</div>
-<div class="channel-item" data-id="2573" tabindex="0">Зал 6</div>
-<div class="channel-item" data-id="2574" tabindex="0">Зал 7</div>
-<div class="channel-item" data-id="2575" tabindex="0">Зал 8</div>
-<div class="channel-item" data-id="2576" tabindex="0">Зал 9</div>
-<div class="channel-item" data-id="2577" tabindex="0">Зал 10</div>
-<div class="channel-item" data-id="2578" tabindex="0">Зал 11</div>
-<div class="channel-item" data-id="2579" tabindex="0">Зал 12</div>
-<div class="channel-item" data-id="6392" tabindex="0">Мосфильм. Золотая коллекция</div>
-<div class="channel-item" data-id="6396" tabindex="0">Trash HD</div>
-<div class="channel-item" data-id="7065" tabindex="0">Movistar Accion ES</div>
-<div class="channel-item" data-id="7066" tabindex="0">Movistar Comedia ES</div>
-<div class="channel-item" data-id="7067" tabindex="0">Movistar Drama ES</div>
-<div class="channel-item" data-id="7222" tabindex="0">Премиальное HD</div>
-<div class="channel-item" data-id="7230" tabindex="0">RTL Passion HD DE</div>
-<div class="channel-item" data-id="7231" tabindex="0">Sky Romance TV FHD DE</div>
-<div class="channel-item" data-id="7244" tabindex="0">Киносемья HD</div>
-<div class="channel-item" data-id="7245" tabindex="0">Киносвидание HD</div>
-<div class="channel-item" data-id="7247" tabindex="0">Страшное HD</div>
-<div class="channel-item" data-id="7248" tabindex="0">Кинокомедия HD</div>
-<div class="channel-item" data-id="7249" tabindex="0">Киномикс HD</div>
-<div class="channel-item" data-id="7250" tabindex="0">Кинохит HD</div>
-<div class="channel-item" data-id="7260" tabindex="0">KinoJam 1 HD</div>
-<div class="channel-item" data-id="7261" tabindex="0">KinoJam 2 HD</div>
-<div class="channel-item" data-id="7281" tabindex="0">TVP Seriale PL</div>
-<div class="channel-item" data-id="7291" tabindex="0">Kino Polska PL</div>
-<div class="channel-item" data-id="7347" tabindex="0">Мосфильм. Золотая коллекция HD</div>
-<div class="channel-item" data-id="10000" tabindex="0">VF Adventure</div>
-<div class="channel-item" data-id="10001" tabindex="0">VF Anime</div>
-<div class="channel-item" data-id="10002" tabindex="0">VF Cartoon</div>
-<div class="channel-item" data-id="10003" tabindex="0">VF Comedy</div>
-<div class="channel-item" data-id="10004" tabindex="0">VF Family</div>
-<div class="channel-item" data-id="10005" tabindex="0">VF Fantasy</div>
-<div class="channel-item" data-id="10006" tabindex="0">VF Melodrama</div>
-<div class="channel-item" data-id="10007" tabindex="0">VF Mystic</div>
-<div class="channel-item" data-id="10008" tabindex="0">VF Ужасы</div>
-<div class="channel-item" data-id="10009" tabindex="0">VF VHS MIX</div>
-<div class="channel-item" data-id="10010" tabindex="0">VF Ужасы VHS</div>
-<div class="channel-item" data-id="10051" tabindex="0">VF Премьера</div>
-<div class="channel-item" data-id="10052" tabindex="0">VF Premiere</div>
-<div class="channel-item" data-id="10053" tabindex="0">VF Классика</div>
-<div class="channel-item" data-id="10054" tabindex="0">VF Classic</div>
-<div class="channel-item" data-id="10055" tabindex="0">VF Комедия</div>
-<div class="channel-item" data-id="10080" tabindex="0">VF Катастрофы</div>
-<div class="channel-item" data-id="10081" tabindex="0">VF Marvel</div>
-<div class="channel-item" data-id="10082" tabindex="0">VF Военные</div>
-<div class="channel-item" data-id="10083" tabindex="0">VF Наша победа</div>
-<div class="channel-item" data-id="10084" tabindex="0">VF Мосфильм</div>
-<div class="channel-item" data-id="10085" tabindex="0">VF Фильмы СССР</div>
-<div class="channel-item" data-id="10086" tabindex="0">VF Мультфильмы СССР</div>
-<div class="channel-item" data-id="10087" tabindex="0">VF Боевик</div>
-<div class="channel-item" data-id="10060" tabindex="0">Flix Snip</div>
-<div class="channel-item" data-id="10061" tabindex="0">Backus TV Dark HD</div>
-<div class="channel-item" data-id="526" tabindex="0">Shot TV</div>
-<div class="channel-item" data-id="11004" tabindex="0">CineMan</div>
-<div class="channel-item" data-id="11005" tabindex="0">CineMan Top</div>
-<div class="channel-item" data-id="11006" tabindex="0">CineMan Action</div>
-<div class="channel-item" data-id="11007" tabindex="0">CineMan Thriller</div>
-<div class="channel-item" data-id="11008" tabindex="0">CineMan Мелодрама</div>
-<div class="channel-item" data-id="11009" tabindex="0">CineMan Marvel</div>
-<div class="channel-item" data-id="11010" tabindex="0">CineMan Ужасы</div>
-<div class="channel-item" data-id="11011" tabindex="0">CineMan Комедия</div>
-<div class="channel-item" data-id="11012" tabindex="0">CineMan VHS</div>
-<div class="channel-item" data-id="11013" tabindex="0">CineMan РуКино</div>
-<div class="channel-item" data-id="11014" tabindex="0">CineMan Сваты</div>
-<div class="channel-item" data-id="15106" tabindex="0">CineMan Катастрофы</div>
-<div class="channel-item" data-id="16063" tabindex="0">CineMan Ментовские войны</div>
-<div class="channel-item" data-id="16064" tabindex="0">CineMan ПёС + Лихач</div>
-<div class="channel-item" data-id="16065" tabindex="0">CineMan Лесник</div>
-<div class="channel-item" data-id="11055" tabindex="0">The X-Files</div>
-<div class="channel-item" data-id="11060" tabindex="0">Кинозал! Интерны ТВ</div>
-<div class="channel-item" data-id="11061" tabindex="0">Кинозал! СССР</div>
-<div class="channel-item" data-id="11062" tabindex="0">Кинозал! Сваты</div>
-<div class="channel-item" data-id="11063" tabindex="0">Кинозал! Универ ТВ</div>
-<div class="channel-item" data-id="11102" tabindex="0">USSR</div>
-<div class="channel-item" data-id="15000" tabindex="0">VHS HD</div>
-<div class="channel-item" data-id="19429" tabindex="0">VB VHS Classic</div>
-<div class="channel-item" data-id="11116" tabindex="0">VF TOP Series</div>
-<div class="channel-item" data-id="11118" tabindex="0">VF VHS Cartoon</div>
-<div class="channel-item" data-id="11119" tabindex="0">VF Art house</div>
-<div class="channel-item" data-id="11120" tabindex="0">VF Detective</div>
-<div class="channel-item" data-id="11121" tabindex="0">VF Fantastic</div>
-<div class="channel-item" data-id="11122" tabindex="0">VF Оскар</div>
-<div class="channel-item" data-id="11123" tabindex="0">VF Малыш</div>
-<div class="channel-item" data-id="13001" tabindex="0">TOP Великолепный Век HD</div>
-<div class="channel-item" data-id="13002" tabindex="0">TOP 80 S HD</div>
-<div class="channel-item" data-id="13003" tabindex="0">TOP BUDO HD</div>
-<div class="channel-item" data-id="13004" tabindex="0">TOP Cinema HD</div>
-<div class="channel-item" data-id="13005" tabindex="0">TOP USSR HD</div>
-<div class="channel-item" data-id="13006" tabindex="0">TOP MIX HD</div>
-<div class="channel-item" data-id="13009" tabindex="0">MM 007 HD</div>
-<div class="channel-item" data-id="13010" tabindex="0">MM Love HD</div>
-<div class="channel-item" data-id="13011" tabindex="0">MM NewFilm 1 HD</div>
-<div class="channel-item" data-id="13012" tabindex="0">MM NewFilm 2 HD</div>
-<div class="channel-item" data-id="13013" tabindex="0">MM NewFilm 3 HD</div>
-<div class="channel-item" data-id="13014" tabindex="0">MM NewFilm RU HD</div>
-<div class="channel-item" data-id="13015" tabindex="0">MM Rock HD</div>
-<div class="channel-item" data-id="13016" tabindex="0">MM Tom and Jerry HD</div>
-<div class="channel-item" data-id="13017" tabindex="0">MM UFO HD</div>
-<div class="channel-item" data-id="13018" tabindex="0">MM USSR 1941-1945 HD</div>
-<div class="channel-item" data-id="13019" tabindex="0">MM USSR Комедия HD</div>
-<div class="channel-item" data-id="13020" tabindex="0">MM USSR Мультфильм HD</div>
-<div class="channel-item" data-id="13021" tabindex="0">MM USSR Сказки HD</div>
-<div class="channel-item" data-id="13022" tabindex="0">MM USSR Драма HD</div>
-<div class="channel-item" data-id="13023" tabindex="0">MM World Hits HD</div>
-<div class="channel-item" data-id="13024" tabindex="0">MM Агата Кристи HD</div>
-<div class="channel-item" data-id="13025" tabindex="0">MM Грайндхаус HD</div>
-<div class="channel-item" data-id="13026" tabindex="0">MM Honey HD</div>
-<div class="channel-item" data-id="13027" tabindex="0">MM Боевик Classic HD</div>
-<div class="channel-item" data-id="13028" tabindex="0">MM Боевик HD</div>
-<div class="channel-item" data-id="13029" tabindex="0">MM Вестерн HD</div>
-<div class="channel-item" data-id="13031" tabindex="0">MM Воронины HD</div>
-<div class="channel-item" data-id="13032" tabindex="0">MM Затмение HD</div>
-<div class="channel-item" data-id="13033" tabindex="0">MM История HD</div>
-<div class="channel-item" data-id="13034" tabindex="0">MM Катастрофа HD</div>
-<div class="channel-item" data-id="13035" tabindex="0">MM Квартирник HD</div>
-<div class="channel-item" data-id="13036" tabindex="0">MM Киберпанк HD</div>
-<div class="channel-item" data-id="13037" tabindex="0">MM Комедия Classic HD</div>
-<div class="channel-item" data-id="13038" tabindex="0">MM Комедия HD</div>
-<div class="channel-item" data-id="13039" tabindex="0">MM Криминал HD</div>
-<div class="channel-item" data-id="13040" tabindex="0">MM Крутые 90-е HD</div>
-<div class="channel-item" data-id="13041" tabindex="0">MM Кунг-Фу HD</div>
-<div class="channel-item" data-id="13042" tabindex="0">MM Lesson HD</div>
-<div class="channel-item" data-id="13043" tabindex="0">MM Smile HD</div>
-<div class="channel-item" data-id="13044" tabindex="0">MM Мифология HD</div>
-<div class="channel-item" data-id="13045" tabindex="0">MM Нуар HD</div>
-<div class="channel-item" data-id="13046" tabindex="0">MM Ситком 2.0 HD</div>
-<div class="channel-item" data-id="13047" tabindex="0">MM Погружение HD</div>
-<div class="channel-item" data-id="13048" tabindex="0">MM Приключения HD</div>
-<div class="channel-item" data-id="13049" tabindex="0">MM Полицейский с Рублёвки HD</div>
-<div class="channel-item" data-id="13050" tabindex="0">MM Роскино HD</div>
-<div class="channel-item" data-id="13051" tabindex="0">MM Сваты HD</div>
-<div class="channel-item" data-id="13052" tabindex="0">MM Ситком HD</div>
-<div class="channel-item" data-id="13053" tabindex="0">MM Скорость HD</div>
-<div class="channel-item" data-id="13054" tabindex="0">MM Спорт HD</div>
-<div class="channel-item" data-id="13055" tabindex="0">MM Стивен Кинг HD</div>
-<div class="channel-item" data-id="13056" tabindex="0">MM Супергерои HD</div>
-<div class="channel-item" data-id="13057" tabindex="0">MM Flip UHD</div>
-<div class="channel-item" data-id="13058" tabindex="0">MM Триллер HD</div>
-<div class="channel-item" data-id="13059" tabindex="0">MM Ужастик HD</div>
-<div class="channel-item" data-id="13060" tabindex="0">MM USSR Приключения HD</div>
-<div class="channel-item" data-id="13061" tabindex="0">MM Синематограф HD</div>
-<div class="channel-item" data-id="13062" tabindex="0">MM Фантастика HD</div>
-<div class="channel-item" data-id="13063" tabindex="0">MM Фобия HD</div>
-<div class="channel-item" data-id="13064" tabindex="0">MM Walt Disney HD</div>
-<div class="channel-item" data-id="13095" tabindex="0">MM Live Planet HD</div>
-<div class="channel-item" data-id="13096" tabindex="0">MM USSR Детектив HD</div>
-<div class="channel-item" data-id="13097" tabindex="0">MM Семейный 1 HD</div>
-<div class="channel-item" data-id="13098" tabindex="0">MM Семейный 2 HD</div>
-<div class="channel-item" data-id="13099" tabindex="0">MM Ужасы HD</div>
-<div class="channel-item" data-id="14128" tabindex="0">MM Ужасы Classic HD</div>
-<div class="channel-item" data-id="16084" tabindex="0">MM Celebrity HD</div>
-<div class="channel-item" data-id="16085" tabindex="0">MM Classic HD</div>
-<div class="channel-item" data-id="16086" tabindex="0">MM Драма HD</div>
-<div class="channel-item" data-id="13080" tabindex="0">VF Сваты</div>
-<div class="channel-item" data-id="13081" tabindex="0">VF Солдаты</div>
-<div class="channel-item" data-id="13082" tabindex="0">VF Тайны следствия</div>
-<div class="channel-item" data-id="13083" tabindex="0">VF Воронины</div>
-<div class="channel-item" data-id="13084" tabindex="0">VF Универ</div>
-<div class="channel-item" data-id="13085" tabindex="0">VF Series</div>
-<div class="channel-item" data-id="13086" tabindex="0">VF След</div>
-<div class="channel-item" data-id="13087" tabindex="0">VF Сериал</div>
-<div class="channel-item" data-id="13088" tabindex="0">VF Мыльные оперы</div>
-<div class="channel-item" data-id="13089" tabindex="0">VF Thriller</div>
-<div class="channel-item" data-id="13090" tabindex="0">VF Индия</div>
-<div class="channel-item" data-id="13091" tabindex="0">VF История</div>
-<div class="channel-item" data-id="13092" tabindex="0">VF Comics</div>
-<div class="channel-item" data-id="13093" tabindex="0">VF Криминал</div>
-<div class="channel-item" data-id="13094" tabindex="0">VF Клиника</div>
-<div class="channel-item" data-id="17000" tabindex="0">VF Луи де Фюнес</div>
-<div class="channel-item" data-id="17001" tabindex="0">VF Чернобыль</div>
-<div class="channel-item" data-id="17002" tabindex="0">VF The X-Files</div>
-<div class="channel-item" data-id="17003" tabindex="0">VF Сверхъестественное</div>
-<div class="channel-item" data-id="17004" tabindex="0">VF Леонид Гайдай</div>
-<div class="channel-item" data-id="17005" tabindex="0">VF Американская история ужасов</div>
-<div class="channel-item" data-id="17006" tabindex="0">VF Друзья</div>
-<div class="channel-item" data-id="17008" tabindex="0">VF СашаТаня</div>
-<div class="channel-item" data-id="17009" tabindex="0">VF Джеки Чан</div>
-<div class="channel-item" data-id="17010" tabindex="0">VF Наша Раша</div>
-<div class="channel-item" data-id="17011" tabindex="0">VF Привет из 90х</div>
-<div class="channel-item" data-id="17012" tabindex="0">VF Эльдар Рязанов</div>
-<div class="channel-item" data-id="17013" tabindex="0">VF Универ новая общага</div>
-<div class="channel-item" data-id="17014" tabindex="0">VF Ходячие мертвецы</div>
-<div class="channel-item" data-id="17015" tabindex="0">VF Реальные пацаны</div>
-<div class="channel-item" data-id="17016" tabindex="0">VF Доктор Хаус</div>
-<div class="channel-item" data-id="17017" tabindex="0">VF Без цензуры</div>
-<div class="channel-item" data-id="18097" tabindex="0">VF Городок</div>
-<div class="channel-item" data-id="18101" tabindex="0">VF Comedy Woman</div>
-<div class="channel-item" data-id="18119" tabindex="0">VF Игра престолов</div>
-<div class="channel-item" data-id="18120" tabindex="0">VF Одесская киностудия</div>
-<div class="channel-item" data-id="18121" tabindex="0">VF Ленфильм</div>
-<div class="channel-item" data-id="18122" tabindex="0">VF Киностудия им. Горького</div>
-<div class="channel-item" data-id="18123" tabindex="0">VF Рижская киностудия</div>
-<div class="channel-item" data-id="18124" tabindex="0">VF Свердловская киностудия</div>
-<div class="channel-item" data-id="18125" tabindex="0">VF Беларусьфильм</div>
-<div class="channel-item" data-id="19286" tabindex="0">VF Однажды в России</div>
-<div class="channel-item" data-id="19427" tabindex="0">VF Netflix</div>
-<div class="channel-item" data-id="19428" tabindex="0">VF HBO</div>
-<div class="channel-item" data-id="14134" tabindex="0">Z! Channel HD</div>
-<div class="channel-item" data-id="14135" tabindex="0">Z! Comedy HD</div>
-<div class="channel-item" data-id="14136" tabindex="0">Z! Crime HD</div>
-<div class="channel-item" data-id="14137" tabindex="0">Z! Horror HD</div>
-<div class="channel-item" data-id="14161" tabindex="0">Akudji TV HD</div>
-<div class="channel-item" data-id="14171" tabindex="0">Yosso TV Grand</div>
-<div class="channel-item" data-id="14172" tabindex="0">Yosso TV VHS</div>
-<div class="channel-item" data-id="14174" tabindex="0">Yosso TV Русские Фильмы</div>
-<div class="channel-item" data-id="14175" tabindex="0">Yosso TV Советские Фильмы</div>
-<div class="channel-item" data-id="14177" tabindex="0">Yosso TV New Кино</div>
-<div class="channel-item" data-id="14179" tabindex="0">Yosso TV Music Hits</div>
-<div class="channel-item" data-id="14219" tabindex="0">Yosso TV Трагичное</div>
-<div class="channel-item" data-id="14234" tabindex="0">Yosso TV Забавное</div>
-<div class="channel-item" data-id="14235" tabindex="0">Yosso TV Ковбойское</div>
-<div class="channel-item" data-id="14236" tabindex="0">Yosso TV Best</div>
-<div class="channel-item" data-id="15105" tabindex="0">Yosso TV Adrenaline</div>
-<div class="channel-item" data-id="15168" tabindex="0">Yosso TV Thriller</div>
-<div class="channel-item" data-id="15509" tabindex="0">Yosso TV Oblivion</div>
-<div class="channel-item" data-id="15510" tabindex="0">Yosso TV Adventure</div>
-<div class="channel-item" data-id="19434" tabindex="0">Yosso TV Мелодрама</div>
-<div class="channel-item" data-id="20163" tabindex="0">Yosso TV Netflix</div>
-<div class="channel-item" data-id="20164" tabindex="0">Yosso TV Disney</div>
-<div class="channel-item" data-id="20165" tabindex="0">Yosso TV Best 60 FPS</div>
-<div class="channel-item" data-id="16151" tabindex="0">Citrus Comedy</div>
-<div class="channel-item" data-id="16152" tabindex="0">Citrus Inquest</div>
-<div class="channel-item" data-id="18139" tabindex="0">Citrus History</div>
-<div class="channel-item" data-id="14209" tabindex="0">Dosug TV Comedy HD</div>
-<div class="channel-item" data-id="14210" tabindex="0">Dosug TV Fantastic HD</div>
-<div class="channel-item" data-id="14211" tabindex="0">Dosug TV History HD</div>
-<div class="channel-item" data-id="14212" tabindex="0">Dosug TV Hit HD</div>
-<div class="channel-item" data-id="14213" tabindex="0">Dosug TV Horror HD</div>
-<div class="channel-item" data-id="14214" tabindex="0">Dosug TV Kids HD</div>
-<div class="channel-item" data-id="14215" tabindex="0">Dosug TV Marvel HD</div>
-<div class="channel-item" data-id="14216" tabindex="0">Dosug TV New HD</div>
-<div class="channel-item" data-id="14217" tabindex="0">Dosug TV Russian HD</div>
-<div class="channel-item" data-id="14218" tabindex="0">Dosug TV СССР HD</div>
-<div class="channel-item" data-id="14225" tabindex="0">Dosug TV VHS</div>
-<div class="channel-item" data-id="14226" tabindex="0">Dosug TV Ходячие мертвецы</div>
-<div class="channel-item" data-id="14227" tabindex="0">Dosug TV Сериал</div>
-<div class="channel-item" data-id="14228" tabindex="0">Dosug TV Сваты</div>
-<div class="channel-item" data-id="14229" tabindex="0">Твое ТВ HD</div>
-<div class="channel-item" data-id="14240" tabindex="0">SKY HIGH SERIES HD</div>
-<div class="channel-item" data-id="14242" tabindex="0">SKY HIGH HEROES HD</div>
-<div class="channel-item" data-id="14243" tabindex="0">SKY HIGH EPOCH HD</div>
-<div class="channel-item" data-id="14244" tabindex="0">SKY HIGH FRESH HD</div>
-<div class="channel-item" data-id="14246" tabindex="0">SKY HIGH MIX 3D</div>
-<div class="channel-item" data-id="14249" tabindex="0">SKY HIGH SPIRIT HD</div>
-<div class="channel-item" data-id="15103" tabindex="0">SKY HIGH FUTURE HD</div>
-<div class="channel-item" data-id="15166" tabindex="0">SKY HIGH ADULT HD</div>
-<div class="channel-item" data-id="16060" tabindex="0">SKY HIGH RUSSIAN HD</div>
-<div class="channel-item" data-id="16061" tabindex="0">SKY HIGH NOIR HD</div>
-<div class="channel-item" data-id="16066" tabindex="0">SKY HIGH FRESH HDR</div>
-<div class="channel-item" data-id="16142" tabindex="0">SKY HIGH ЧБУ HD</div>
-<div class="channel-item" data-id="17058" tabindex="0">SKY HIGH VHS UHD</div>
-<div class="channel-item" data-id="17059" tabindex="0">SKY HIGH UHD HDR</div>
-<div class="channel-item" data-id="19310" tabindex="0">SKY HIGH ORIG HD</div>
-<div class="channel-item" data-id="19311" tabindex="0">SKY HIGH STANDUP HD</div>
-<div class="channel-item" data-id="19312" tabindex="0">SKY HIGH LO FI HD</div>
-<div class="channel-item" data-id="19404" tabindex="0">SKY HIGH BRAIN HD</div>
-<div class="channel-item" data-id="19405" tabindex="0">SKY HIGH ANIME HD</div>
-<div class="channel-item" data-id="15024" tabindex="0">BCU Media HD OLD</div>
-<div class="channel-item" data-id="15025" tabindex="0">BCU Marvel HD</div>
-<div class="channel-item" data-id="15026" tabindex="0">BCU Comedy HD</div>
-<div class="channel-item" data-id="16083" tabindex="0">BCU Reality OLD</div>
-<div class="channel-item" data-id="17020" tabindex="0">BCU Survival OLD</div>
-<div class="channel-item" data-id="18052" tabindex="0">BCU Romantic OLD</div>
-<div class="channel-item" data-id="15087" tabindex="0">Liberty DC FHD</div>
-<div class="channel-item" data-id="15088" tabindex="0">Liberty Ужасы 4K</div>
-<div class="channel-item" data-id="15089" tabindex="0">Liberty Триллер 4K</div>
-<div class="channel-item" data-id="15090" tabindex="0">Liberty Марвел FHD</div>
-<div class="channel-item" data-id="15091" tabindex="0">Liberty Короткометражное FHD</div>
-<div class="channel-item" data-id="15095" tabindex="0">Liberty Мелодрамы FHD</div>
-<div class="channel-item" data-id="15096" tabindex="0">Liberty Боевики FHD</div>
-<div class="channel-item" data-id="15110" tabindex="0">Liberty Кино Микс 4K</div>
-<div class="channel-item" data-id="15111" tabindex="0">Liberty Симпсоны FHD</div>
-<div class="channel-item" data-id="15164" tabindex="0">Liberty Сваты FHD</div>
-<div class="channel-item" data-id="16053" tabindex="0">Liberty SouthPark FHD</div>
-<div class="channel-item" data-id="16054" tabindex="0">Liberty Комедии FHD</div>
-<div class="channel-item" data-id="16055" tabindex="0">Liberty Сериалы FHD</div>
-<div class="channel-item" data-id="17060" tabindex="0">Liberty Кино ENG 4K</div>
-<div class="channel-item" data-id="17061" tabindex="0">Liberty Мульт ENG 4K</div>
-<div class="channel-item" data-id="18044" tabindex="0">Liberty Мульт UKR 4K</div>
-<div class="channel-item" data-id="18045" tabindex="0">Liberty Кино UKR 4K</div>
-<div class="channel-item" data-id="18046" tabindex="0">Liberty РусФильм 4K</div>
-<div class="channel-item" data-id="18051" tabindex="0">Liberty Мульт 4K</div>
-<div class="channel-item" data-id="18160" tabindex="0">Liberty Индия 4K</div>
-<div class="channel-item" data-id="18161" tabindex="0">Liberty Куб 4K</div>
-<div class="channel-item" data-id="18178" tabindex="0">Liberty Семейный 4K</div>
-<div class="channel-item" data-id="15100" tabindex="0">CineMan Скорая Помощь</div>
-<div class="channel-item" data-id="15101" tabindex="0">CineMan Симпсоны</div>
-<div class="channel-item" data-id="19437" tabindex="0">CineMan MiniSeries</div>
-<div class="channel-item" data-id="15137" tabindex="0">MS Prisons HD</div>
-<div class="channel-item" data-id="15138" tabindex="0">MS Toons HD</div>
-<div class="channel-item" data-id="16143" tabindex="0">MS Magic HD</div>
-<div class="channel-item" data-id="16147" tabindex="0">MS Young Blood HD</div>
-<div class="channel-item" data-id="17024" tabindex="0">MS Animated HD</div>
-<div class="channel-item" data-id="16009" tabindex="0">Премьера Трейлеры</div>
-<div class="channel-item" data-id="16049" tabindex="0">Видеокассета VHS</div>
-<div class="channel-item" data-id="16051" tabindex="0">Citrus Marvel</div>
-<div class="channel-item" data-id="16050" tabindex="0">Citrus Cartoon</div>
-<div class="channel-item" data-id="19287" tabindex="0">Fresh Cinema</div>
-<div class="channel-item" data-id="19288" tabindex="0">Fresh Kids</div>
-<div class="channel-item" data-id="19289" tabindex="0">Fresh Comedy</div>
-<div class="channel-item" data-id="19290" tabindex="0">Fresh Premiere</div>
-<div class="channel-item" data-id="19291" tabindex="0">Fresh Family</div>
-<div class="channel-item" data-id="19292" tabindex="0">Fresh Rating</div>
-<div class="channel-item" data-id="19293" tabindex="0">Fresh VHS</div>
-<div class="channel-item" data-id="19294" tabindex="0">Fresh Fantastic</div>
-<div class="channel-item" data-id="19295" tabindex="0">Fresh Series</div>
-<div class="channel-item" data-id="19296" tabindex="0">Fresh Horror</div>
-<div class="channel-item" data-id="19297" tabindex="0">Fresh Adventure</div>
-<div class="channel-item" data-id="19298" tabindex="0">Fresh Romantic</div>
-<div class="channel-item" data-id="19299" tabindex="0">Fresh Russian</div>
-<div class="channel-item" data-id="19300" tabindex="0">Fresh Thriller</div>
-<div class="channel-item" data-id="19301" tabindex="0">Fresh Soviet</div>
-<div class="channel-item" data-id="16078" tabindex="0">KLI Cinema HD</div>
-<div class="channel-item" data-id="16080" tabindex="0">KLI Comedy HD</div>
-<div class="channel-item" data-id="18047" tabindex="0">KLI History HD</div>
-<div class="channel-item" data-id="18048" tabindex="0">KLI Premium HD</div>
-<div class="channel-item" data-id="18049" tabindex="0">KLI Russian HD</div>
-<div class="channel-item" data-id="18050" tabindex="0">KLI Fantastic HD</div>
-<div class="channel-item" data-id="18173" tabindex="0">KLI VHS HD</div>
-<div class="channel-item" data-id="18174" tabindex="0">KLI Thriller HD</div>
-<div class="channel-item" data-id="18175" tabindex="0">KLI СССР HD</div>
-<div class="channel-item" data-id="18176" tabindex="0">KLI Family HD</div>
-<div class="channel-item" data-id="18177" tabindex="0">KLI Retro HD</div>
-<div class="channel-item" data-id="19319" tabindex="0">KLI Club FHD</div>
-<div class="channel-item" data-id="19400" tabindex="0">KLI Киносерия FHD</div>
-<div class="channel-item" data-id="17039" tabindex="0">Cine + Classic FR</div>
-<div class="channel-item" data-id="17064" tabindex="0">Eye Media HD</div>
-<div class="channel-item" data-id="17065" tabindex="0">Eye Oscar HD</div>
-<div class="channel-item" data-id="17066" tabindex="0">Eye Frozen HD</div>
-<div class="channel-item" data-id="17067" tabindex="0">Eye Criminal HD</div>
-<div class="channel-item" data-id="17068" tabindex="0">Eye Modern HD</div>
-<div class="channel-item" data-id="18036" tabindex="0">START Air HD</div>
-<div class="channel-item" data-id="18043" tabindex="0">VB Российские Сериалы</div>
-<div class="channel-item" data-id="18055" tabindex="0">Kinoshka Thriller HD</div>
-<div class="channel-item" data-id="18056" tabindex="0">Kinoshka Kids HD</div>
-<div class="channel-item" data-id="18057" tabindex="0">Kinoshka Comedy HD</div>
-<div class="channel-item" data-id="18058" tabindex="0">Kinoshka Russian HD</div>
-<div class="channel-item" data-id="18059" tabindex="0">Kinoshka Mystic HD</div>
-<div class="channel-item" data-id="18117" tabindex="0">Kinoshka Premiere HD</div>
-<div class="channel-item" data-id="18118" tabindex="0">Kinoshka Action HD</div>
-<div class="channel-item" data-id="18150" tabindex="0">Kinoshka Drama HD</div>
-<div class="channel-item" data-id="18061" tabindex="0">Magic Karate HD</div>
-<div class="channel-item" data-id="18062" tabindex="0">Magic VHS HD</div>
-<div class="channel-item" data-id="18063" tabindex="0">Magic Comedy HD</div>
-<div class="channel-item" data-id="18064" tabindex="0">Magic Disney HD</div>
-<div class="channel-item" data-id="18065" tabindex="0">Magic Thriller HD</div>
-<div class="channel-item" data-id="18066" tabindex="0">Magic Action HD</div>
-<div class="channel-item" data-id="18067" tabindex="0">Magic Galaxy HD</div>
-<div class="channel-item" data-id="18068" tabindex="0">Magic Horror HD</div>
-<div class="channel-item" data-id="18170" tabindex="0">Magic Family HD</div>
-<div class="channel-item" data-id="18171" tabindex="0">Magic Love HD</div>
-<div class="channel-item" data-id="18069" tabindex="0">Кино 1 HD</div>
-<div class="channel-item" data-id="18070" tabindex="0">Кино 2 HD</div>
-<div class="channel-item" data-id="18071" tabindex="0">Кино 1 International</div>
-<div class="channel-item" data-id="18072" tabindex="0">Военное кино HD</div>
-<div class="channel-item" data-id="18073" tabindex="0">Детское кино HD</div>
-<div class="channel-item" data-id="18074" tabindex="0">Детское кино International</div>
-<div class="channel-item" data-id="18126" tabindex="0">Кинозал 1</div>
-<div class="channel-item" data-id="18127" tabindex="0">Кинозал 2</div>
-<div class="channel-item" data-id="18128" tabindex="0">Кинозал 3</div>
-<div class="channel-item" data-id="18129" tabindex="0">Кинозал 4</div>
-<div class="channel-item" data-id="18130" tabindex="0">Кинозал 5</div>
-<div class="channel-item" data-id="18131" tabindex="0">Кинозал 6</div>
-<div class="channel-item" data-id="18132" tabindex="0">Кинозал 7</div>
-<div class="channel-item" data-id="18133" tabindex="0">Кинозал 8</div>
-<div class="channel-item" data-id="18134" tabindex="0">Кинозал 9</div>
-<div class="channel-item" data-id="18135" tabindex="0">Кинозал 10</div>
-<div class="channel-item" data-id="18136" tabindex="0">Кинозал 11</div>
-<div class="channel-item" data-id="18137" tabindex="0">Кинозал 12</div>
-<div class="channel-item" data-id="18140" tabindex="0">Prokop TV Criminal</div>
-<div class="channel-item" data-id="18142" tabindex="0">Prokop TV History</div>
-<div class="channel-item" data-id="18143" tabindex="0">Prokop TV Comedy</div>
-<div class="channel-item" data-id="18144" tabindex="0">Prokop TV Fantazy</div>
-<div class="channel-item" data-id="18145" tabindex="0">Prokop TV Horror</div>
-<div class="channel-item" data-id="18147" tabindex="0">Prokop TV Cinema Best</div>
-<div class="channel-item" data-id="18148" tabindex="0">Prokop TV Music</div>
-<div class="channel-item" data-id="19270" tabindex="0">Prokop TV Peters Pop Show</div>
-<div class="channel-item" data-id="19271" tabindex="0">Prokop TV Serial</div>
-<div class="channel-item" data-id="19272" tabindex="0">Prokop TV Netflix</div>
-<div class="channel-item" data-id="19315" tabindex="0">Prokop TV Cinema 60 fps</div>
-<div class="channel-item" data-id="19316" tabindex="0">Prokop TV Вторая Мировая</div>
-<div class="channel-item" data-id="19317" tabindex="0">Prokop TV Сказки СССР</div>
-<div class="channel-item" data-id="19258" tabindex="0">Миллет HD</div>
-<div class="channel-item" data-id="19274" tabindex="0">BOX Franchise HD</div>
-<div class="channel-item" data-id="19275" tabindex="0">BOX Hybrid HD</div>
-<div class="channel-item" data-id="19276" tabindex="0">BOX Anime HD</div>
-<div class="channel-item" data-id="19277" tabindex="0">BOX Gangster HD</div>
-<div class="channel-item" data-id="19278" tabindex="0">BOX Oscar HD</div>
-<div class="channel-item" data-id="19279" tabindex="0">BOX Memory HD</div>
-<div class="channel-item" data-id="19284" tabindex="0">BOX Game HD</div>
-<div class="channel-item" data-id="19285" tabindex="0">BOX Spy HD</div>
-<div class="channel-item" data-id="19418" tabindex="0">BOX Travel HD</div>
-<div class="channel-item" data-id="19419" tabindex="0">BOX Western HD</div>
-<div class="channel-item" data-id="19420" tabindex="0">BOX Zombie HD</div>
-<div class="channel-item" data-id="19421" tabindex="0">BOX Cyber HD</div>
-<div class="channel-item" data-id="19395" tabindex="0">Prokop TV Simpsons UA</div>
-<div class="channel-item" data-id="19398" tabindex="0">Insomnia HD</div>
-<div class="channel-item" data-id="19399" tabindex="0">Prokop TV UA</div>
-<div class="channel-item" data-id="19407" tabindex="0">MYTV</div>
-<div class="channel-item" data-id="19408" tabindex="0">MYTV 2</div>
-<div class="channel-item" data-id="19410" tabindex="0">MYTV HIT</div>
-<div class="channel-item" data-id="19411" tabindex="0">MYTV 3</div>
-<div class="channel-item" data-id="19413" tabindex="0">MM OldSchool HD</div>
-<div class="channel-item" data-id="19414" tabindex="0">MM Family Guy HD</div>
-<div class="channel-item" data-id="19436" tabindex="0">Citrus Live HD</div>
-<div class="channel-item" data-id="31621" tabindex="0">MM Кинофестиваль HD</div>
-<div class="channel-item" data-id="31624" tabindex="0">VB Сваты HD</div>
-<div class="channel-item" data-id="31626" tabindex="0">CineMan Глухарь + Карпов</div>
-<div class="channel-item" data-id="31627" tabindex="0">CineMan Интерны</div>
-<div class="channel-item" data-id="31628" tabindex="0">CineMan Универ</div>
-<div class="channel-item" data-id="31629" tabindex="0">CineMan Фитнес</div>
-<div class="channel-item" data-id="31630" tabindex="0">Magic Russian HD</div>
-<div class="channel-item" data-id="31631" tabindex="0">KLI Millennium HD</div>
-<div class="channel-item" data-id="31632" tabindex="0">KLI Marvel HD</div>
-<div class="channel-item" data-id="31634" tabindex="0">KLI Franchise HD</div>
-<div class="channel-item" data-id="31636" tabindex="0">KLI Relax HD</div>
-<div class="channel-item" data-id="31637" tabindex="0">VeleS 60FPS</div>
-<div class="channel-item" data-id="31638" tabindex="0">VeleS Киноплёнка</div>
-<div class="channel-item" data-id="31640" tabindex="0">VeleS Киносерия</div>
-<div class="channel-item" data-id="31641" tabindex="0">VeleS Premiere</div>
-<div class="channel-item" data-id="31642" tabindex="0">VeleS Страшное</div>
-<div class="channel-item" data-id="31643" tabindex="0">VeleS СССР</div>
-<div class="channel-item" data-id="31644" tabindex="0">VeleS Movie Hits</div>
-<div class="channel-item" data-id="31647" tabindex="0">Kinoshka Ukraine HD</div>
-<div class="channel-item" data-id="31655" tabindex="0">BOX Apocalypse HD</div>
-<div class="channel-item" data-id="31658" tabindex="0">BCU Russia 90s HD</div>
-<div class="channel-item" data-id="31659" tabindex="0">Liberty Мульт UKR FHD</div>
-<div class="channel-item" data-id="31660" tabindex="0">Liberty Кино UKR FHD</div>
-<div class="channel-item" data-id="31667" tabindex="0">Prokop TV New Films HD</div>
-<div class="channel-item" data-id="31668" tabindex="0">Prokop TV Kung Fu</div>
-<div class="channel-item" data-id="31669" tabindex="0">Prokop TV Show HD</div>
-<div class="channel-item" data-id="31673" tabindex="0">Cobra Drama HD</div>
-<div class="channel-item" data-id="31683" tabindex="0">Prokop TV Кулинар</div>
-<div class="channel-item" data-id="31693" tabindex="0">Z!Thriller HD</div>
-<div class="channel-item" data-id="31694" tabindex="0">Z!Action HD</div>
-<div class="channel-item" data-id="31698" tabindex="0">Z!Adventure HD</div>
-<div class="channel-item" data-id="31699" tabindex="0">Z!Detective HD</div>
-<div class="channel-item" data-id="31700" tabindex="0">Z!Drama HD</div>
-<div class="channel-item" data-id="31701" tabindex="0">Z!Family HD</div>
-<div class="channel-item" data-id="31702" tabindex="0">Z!Fantastic HD</div>
-<div class="channel-item" data-id="31703" tabindex="0">Z!Fantasy HD</div>
-<div class="channel-item" data-id="31704" tabindex="0">Z!Russian HD</div>
-<div class="channel-item" data-id="31706" tabindex="0">Z!Fun HD</div>
-<div class="channel-item" data-id="31708" tabindex="0">HORROR HD (тест)</div>
-<div class="channel-item" data-id="31711" tabindex="0">Байки из склепа</div>
-<div class="channel-item" data-id="31712" tabindex="0">Громовы</div>
-<div class="channel-item" data-id="31713" tabindex="0">Коломбо</div>
-<div class="channel-item" data-id="31714" tabindex="0">КИНОДРОМ HD</div>
-<div class="channel-item" data-id="31715" tabindex="0">Кинозал! Bond 007</div>
-<div class="channel-item" data-id="31717" tabindex="0">Однажды в милиции</div>
-<div class="channel-item" data-id="31718" tabindex="0">Ольга HD</div>
-<div class="channel-item" data-id="31719" tabindex="0">Репка HD</div>
-<div class="channel-item" data-id="31720" tabindex="0">СТРАХ FHD (2.0)</div>
-<div class="channel-item" data-id="31633" tabindex="0">KLI Новинки HD</div>
-<div class="channel-item" data-id="31722" tabindex="0">ФАНТАСТИКА FHD (2.0)</div>  </div>
-</div>
-
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 <script>
-const BASE_URL = "http://d91de342.rostelekom.xyz:80/iptv/QQZC3E76HQU9KFKANG2M9KM4/";
-const video = document.getElementById('videoPlayer');
 const controls = document.getElementById('controls');
-const listToggle = document.getElementById('toggleListBtn');
-const channelList = document.getElementById('channelList');
-const allChannels = [...document.querySelectorAll('.channel-item')];
-const favBtn = document.getElementById('favToggleBtn');
-const viewFavBtn = document.getElementById('viewFavBtn');
-let hls, currentIndex = 0, hideTimeout;
-let favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
-let showOnlyFav = false;
-
-function playChannel(index) {
-  const visibleChannels = getVisibleChannels();
-  const channel = visibleChannels[index];
-  if (!channel) return;
-  visibleChannels.forEach(c => c.classList.remove('selected'));
-  channel.classList.add('selected');
-  const id = channel.dataset.id;
-  const src = `${BASE_URL}${id}/index.m3u8`;
-  if (hls) hls.destroy();
-  hls = new Hls();
-  hls.loadSource(src);
-  hls.attachMedia(video);
-  hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
-  currentIndex = index;
-  localStorage.setItem('lastPlayed', id);
-  updateFavIcon(id);
-}
-
-function updateFavIcon(id) {
-  favBtn.textContent = favorites.includes(id) ? '⭐ إزالة' : '⭐ إضافة';
-}
-
-function getVisibleChannels() {
-  return [...document.querySelectorAll('.channel-item')].filter(ch =>
-    !showOnlyFav || favorites.includes(ch.dataset.id)
-  );
-}
-
-function refreshChannelList() {
-  allChannels.forEach(ch => {
-    const id = ch.dataset.id;
-    const name = ch.textContent.replace(/⭐/g, '').trim();
-    ch.innerHTML = `${favorites.includes(id) ? '<span class="fav-star">⭐</span>' : ''}${name}`;
-    ch.style.display = (!showOnlyFav || favorites.includes(id)) ? 'block' : 'none';
-  });
-}
-
-document.getElementById('nextBtn').onclick = () => {
-  playChannel((currentIndex + 1) % getVisibleChannels().length);
-};
-document.getElementById('prevBtn').onclick = () => {
-  const visible = getVisibleChannels();
-  playChannel((currentIndex - 1 + visible.length) % visible.length);
-};
-document.getElementById('randomBtn').onclick = () => {
-  const visible = getVisibleChannels();
-  playChannel(Math.floor(Math.random() * visible.length));
-};
-document.getElementById('muteBtn').onclick = () => {
-  video.muted = !video.muted;
-};
-document.getElementById('playPauseBtn').onclick = () => {
-  if (video.paused) video.play();
-  else video.pause();
-};
-document.getElementById('fullscreenBtn').onclick = () => {
-  const el = document.documentElement;
-  if (!document.fullscreenElement) el.requestFullscreen();
-  else document.exitFullscreen();
-};
-listToggle.onclick = () => {
-  channelList.classList.toggle("show");
-  if (channelList.classList.contains("show")) {
-    const firstVisible = getVisibleChannels()[0];
-    firstVisible && firstVisible.focus();
-  } else {
-    document.getElementById("playPauseBtn").focus();
-  }
-  resetHideControls();
-};
-favBtn.onclick = () => {
-  const current = getVisibleChannels()[currentIndex];
-  const id = current.dataset.id;
-  const i = favorites.indexOf(id);
-  if (i === -1) favorites.push(id);
-  else favorites.splice(i, 1);
-  localStorage.setItem('favorites', JSON.stringify(favorites));
-  refreshChannelList();
-  updateFavIcon(id);
-};
-viewFavBtn.onclick = () => {
-  showOnlyFav = !showOnlyFav;
-  viewFavBtn.textContent = showOnlyFav ? "📺 عرض الكل" : "⭐ عرض المفضلة";
-  refreshChannelList();
-};
-
-allChannels.forEach((c, i) => c.onclick = () => {
-  currentIndex = getVisibleChannels().indexOf(c);
-  playChannel(currentIndex);
-});
-
+let hideTimeout;
 function resetHideControls() {
   controls.classList.remove('hidden');
   clearTimeout(hideTimeout);
@@ -829,28 +135,199 @@ function resetHideControls() {
     if (document.fullscreenElement) controls.classList.add('hidden');
   }, 5000);
 }
+['mousemove', 'keydown', 'click', 'touchstart'].forEach(evt => document.addEventListener(evt, resetHideControls));
 
-['mousemove', 'touchstart', 'keydown'].forEach(ev =>
-  document.addEventListener(ev, resetHideControls)
-);
+const servers = [
+  {"name": "جميع القنوات", "url": "https://iptv-org.github.io/iptv/index.m3u"},
+  {"name": "قنوات رياضية", "url": "https://iptv-org.github.io/iptv/categories/sports.m3u"},
+  {"name": "أفلام", "url": "https://iptv-org.github.io/iptv/categories/movies.m3u"},
+  {"name": "مسلسلات", "url": "https://iptv-org.github.io/iptv/categories/series.m3u"},
+  {"name": "أخبار", "url": "https://iptv-org.github.io/iptv/categories/news.m3u"},
+  {"name": "موسيقى", "url": "https://iptv-org.github.io/iptv/categories/music.m3u"},
+  {"name": "أطفال", "url": "https://iptv-org.github.io/iptv/categories/kids.m3u"},
+  {"name": "وثائقيات", "url": "https://iptv-org.github.io/iptv/categories/documentary.m3u"},
+  {"name": "قنوات عربية", "url": "https://iptv-org.github.io/iptv/regions/arab.m3u"},
+  {"name": "فرنسا", "url": "https://iptv-org.github.io/iptv/countries/fr.m3u"},
+  {"name": "مصر", "url": "https://iptv-org.github.io/iptv/countries/eg.m3u"},
+  {"name": "السعودية", "url": "https://iptv-org.github.io/iptv/countries/sa.m3u"},
+  {"name": "الولايات المتحدة", "url": "https://iptv-org.github.io/iptv/countries/us.m3u"},
+  {"name": "المملكة المتحدة", "url": "https://iptv-org.github.io/iptv/countries/gb.m3u"}
+];
 
-// Arrow key navigation between controls and channel list
-document.addEventListener('keydown', e => {
-  const active = document.activeElement;
-  if (e.key === "ArrowRight" && controls.contains(active)) {
-    const firstVisible = getVisibleChannels()[0];
-    firstVisible && firstVisible.focus();
-  }
-  if (e.key === "ArrowLeft" && channelList.contains(active)) {
-    document.getElementById("playPauseBtn").focus();
-  }
+const video = document.getElementById('videoPlayer');
+const channelList = document.getElementById('channelList');
+const serverSelect = document.getElementById('serverSelect');
+const categorySelect = document.getElementById('categorySelect');
+const favBtn = document.getElementById('favToggleBtn');
+const viewFavBtn = document.getElementById('viewFavBtn');
+const channelTitle = document.getElementById('channelTitle');
+const searchInput = document.getElementById("searchInput");
+const searchToggle = document.getElementById("searchToggle");
+
+let hls, currentIndex = 0;
+let channels = [], allChannels = [], favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+let showOnlyFav = false, currentCategory = "all";
+
+servers.forEach((s, i) => {
+  const option = document.createElement("option");
+  option.value = s.url;
+  option.textContent = s.name;
+  serverSelect.appendChild(option);
 });
+serverSelect.onchange = () => loadM3U(serverSelect.value);
+categorySelect.onchange = () => {
+  currentCategory = categorySelect.value;
+  renderChannels();
+};
 
-refreshChannelList();
-resetHideControls();
-const lastId = localStorage.getItem('lastPlayed');
-const lastIndex = allChannels.findIndex(c => c.dataset.id === lastId);
-playChannel(lastIndex !== -1 ? lastIndex : 0);
+searchToggle.onclick = () => {
+  searchInput.style.display =
+    searchInput.style.display === "block" ? "none" : "block";
+  searchInput.focus();
+};
+
+searchInput.oninput = () => {
+  const q = searchInput.value.toLowerCase();
+  document.querySelectorAll(".channel-item").forEach(el => {
+    el.style.display = el.textContent.toLowerCase().includes(q)
+      ? "block"
+      : "none";
+  });
+};
+
+async function loadM3U(url) {
+  const res = await fetch(url);
+  const text = await res.text();
+  const lines = text.split('\n');
+  allChannels = [];
+  let group = "";
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].startsWith("#EXTINF")) {
+      const match = lines[i].match(/group-title="(.*?)"/);
+      group = match ? match[1] : "غير مصنف";
+      const name = lines[i].split(',')[1] || 'No Name';
+      const link = lines[i + 1];
+      if (link && link.startsWith('http')) {
+        allChannels.push({ name, link, group });
+      }
+    }
+  }
+  fillCategories();
+  renderChannels();
+
+  const last = localStorage.getItem('lastPlayed');
+  if (last) {
+    const index = channels.findIndex(c => c.link === last);
+    if (index !== -1) {
+      currentIndex = index;
+      playChannel(index);
+    }
+  }
+}
+
+function fillCategories() {
+  const groups = [...new Set(allChannels.map(ch => ch.group))];
+  categorySelect.innerHTML = '<option value="all">كل التصنيفات</option>';
+  groups.forEach(g => {
+    const opt = document.createElement("option");
+    opt.value = g;
+    opt.textContent = g;
+    categorySelect.appendChild(opt);
+  });
+}
+
+function renderChannels() {
+  channelList.innerHTML = "";
+  channels = allChannels.filter(ch => {
+    return (!showOnlyFav || favorites.includes(ch.link)) && (currentCategory === "all" || ch.group === currentCategory);
+  });
+  channels.forEach((ch, i) => {
+    const div = document.createElement("div");
+    div.className = 'channel-item';
+    div.dataset.id = ch.link;
+    div.textContent = `${favorites.includes(ch.link) ? '⭐ ' : ''}${ch.name}`;
+    div.onclick = () => {
+      currentIndex = i;
+      playChannel(i);
+    };
+    channelList.appendChild(div);
+  });
+}
+
+function playChannel(index) {
+  const ch = channels[index];
+  if (!ch) return;
+
+  document.querySelectorAll('.channel-item')
+    .forEach(e => e.classList.remove('selected'));
+
+  document.querySelectorAll('.channel-item')[index]
+    ?.classList.add('selected');
+
+  if (hls) hls.destroy();
+
+  if (video.canPlayType('application/vnd.apple.mpegurl')) {
+    video.src = ch.link;
+    video.play();
+  } else if (Hls.isSupported()) {
+    hls = new Hls({
+      maxBufferLength: 30,
+      enableWorker: true
+    });
+
+    hls.loadSource(ch.link);
+    hls.attachMedia(video);
+
+    hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
+
+    hls.on(Hls.Events.ERROR, (_, data) => {
+      console.log("HLS Error:", data);
+    });
+  }
+
+  channelTitle.textContent = ch.name;
+  localStorage.setItem('lastPlayed', ch.link);
+
+  favBtn.textContent =
+    favorites.includes(ch.link) ? '⭐ إزالة' : '⭐ إضافة';
+}
+
+favBtn.onclick = () => {
+  const current = channels[currentIndex];
+  if (!current) return;
+  const i = favorites.indexOf(current.link);
+  if (i === -1) favorites.push(current.link);
+  else favorites.splice(i, 1);
+  localStorage.setItem('favorites', JSON.stringify(favorites));
+  renderChannels();
+};
+
+viewFavBtn.onclick = () => {
+  showOnlyFav = !showOnlyFav;
+  viewFavBtn.textContent = showOnlyFav ? "📺 عرض الكل" : "⭐ عرض المفضلة";
+  renderChannels();
+};
+
+document.getElementById("toggleListBtn").onclick = () => {
+  channelList.classList.toggle("show");
+};
+document.getElementById("nextBtn").onclick = () => {
+  if (!channels.length) return;
+  playChannel((currentIndex + 1) % channels.length);
+};
+document.getElementById("prevBtn").onclick = () => {
+  if (!channels.length) return;
+  playChannel((currentIndex - 1 + channels.length) % channels.length);
+};
+document.getElementById("randomBtn").onclick = () => {
+  if (!channels.length) return;
+  playChannel(Math.floor(Math.random() * channels.length));
+};
+document.getElementById("muteBtn").onclick = () => video.muted = !video.muted;
+document.getElementById("playPauseBtn").onclick = () => video.paused ? video.play() : video.pause();
+document.getElementById("fullscreenBtn").onclick = () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+
+loadM3U(servers[0].url);
 </script>
 </body>
 </html>
