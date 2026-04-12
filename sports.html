@@ -806,33 +806,31 @@ channel.classList.add('selected')
 
 const channelId = channel.dataset.id
 const video = document.getElementById("videoPlayer")
-const url = `${BASE_URL}${channelId}/index.m3u8`
+
+const url = BASE_URL + channelId + "/index.m3u8"
 
 if (Hls.isSupported()) {
 
-const hls = new Hls()
-hls.loadSource(url)
-hls.attachMedia(video)
+if (window.hls) {
+window.hls.destroy()
+}
 
-} else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+window.hls = new Hls()
+window.hls.loadSource(url)
+window.hls.attachMedia(video)
+
+} else if (video.canPlayType("application/vnd.apple.mpegurl")) {
 
 video.src = url
 
 }
 
-channel.scrollIntoView({
-behavior: 'smooth',
-block: 'center'
-})
-
-video.scrollIntoView({ behavior: 'smooth' })
+video.play().catch(() => {})
 
 currentIndex = currentChannels.findIndex(c => c === channel)
 
-video.play().catch(console.error)
-
-}
-
+        }
+    
         function init() {
             document.querySelectorAll('.channel-item').forEach(ch => {
                 const id = ch.dataset.id;
