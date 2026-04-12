@@ -533,7 +533,7 @@ const channelCount = document.getElementById('channelCount');
 let hls, currentIndex = 0, hideTimeout;
 let favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
 let showOnlyFav = false;
-const BASE_URL = "http://d91de342.rostelekom.xyz:80/iptv/QQZC3E76HQU9KFKANG2M9KM4/";
+const BASE_URL = "https://d91de342.rostelekom.xyz:80/iptv/QQZC3E76HQU9KFKANG2M9KM4/";
 function resetHideControls() {
   controls.classList.remove('hidden');
   clearTimeout(hideTimeout);
