@@ -670,6 +670,7 @@
 <div class="channel-item" data-id="31756" data-quality="Standard">Setanta Sports+</div>
 <div class="channel-item" data-id="31756" data-quality="HD">Setanta Sports+ HD</div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <script>
         // متغيرات التحكم في الإظهار/الإخفاء
         let hideTimeout;
@@ -730,7 +731,7 @@
             "31565": "sports",
             "31566": "sports"
         };
-        const BASE_URL = "http://f335f3de.ottclub.xyz:80/iptv/QPRSSCLKLK6HZ2/";
+        const BASE_URL = "https://f335f3de.ottclub.xyz:80/iptv/QPRSSCLKLK6HZ2/";
         let currentChannels = [];
         let currentIndex = 0;
         let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
@@ -800,7 +801,20 @@
             channel.classList.add('selected');
             const channelId = channel.dataset.id;
             const video = document.getElementById('videoPlayer');
-            video.src = `${BASE_URL}${channelId}/index.m3u8`;
+            const video = document.getElementById("videoPlayer")
+const url = `${BASE_URL}${channelId}/index.m3u8`
+
+if (Hls.isSupported()) {
+
+const hls = new Hls()
+hls.loadSource(url)
+hls.attachMedia(video)
+
+} else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+
+video.src = url
+
+}
             channel.scrollIntoView({
                 behavior: 'smooth',
                 block: 'center'
