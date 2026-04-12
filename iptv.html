@@ -1,521 +1,465 @@
-<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>IPTV Player v8.1.7</title>
+<!DOCTYPE html><html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>IPTV Player</title>
   <style>
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
+    body { margin:0; font-family:'Segoe UI',sans-serif; background:#000; color:#fff; overflow:hidden; }
+    .player-container { position:relative; width:100%; height:100vh; background:black; }
+    video { width:100%; height:100%; object-fit:contain; background:black; border-radius:20px; transition:opacity .28s ease; opacity:1; }
+    video.switching { opacity:.15; }
 
-*{
-  box-sizing:border-box;
-}
+    .now-playing {
+      position:absolute; top:14px; left:14px;
+      background:rgba(0,0,0,.35);
+      backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+      padding:8px 12px; border-radius:10px; z-index:12; font-size:14px;
+      max-width:70%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+      border:1px solid rgba(255,255,255,.12);
+    }
 
-body{
-  margin:0;
-  font-family:'Cairo',sans-serif;
-  background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
-  color:#fff;
-  overflow:hidden;
-}
+    .controls {
+      position:fixed; bottom:10px; left:0; right:0; margin:auto;
+      display:flex; flex-wrap:wrap; justify-content:center; gap:8px;
+      background:rgba(0,0,0,.35);
+      backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+      padding:10px; border-radius:16px; z-index:10;
+      transition:opacity .3s ease; border:1px solid rgba(255,255,255,.1);
+    }
+    .controls.hidden { opacity:0; pointer-events:none; }
+    .controls button,.controls select{
+      background:rgba(34,34,34,.8); color:#fff; border:1px solid rgba(255,255,255,.08);
+      padding:10px 12px; border-radius:6px; cursor:pointer; font-size:16px;
+    }
+    .controls input[type="text"], .controls input[type="file"]{
+      padding:6px; border-radius:6px; border:none; background:#111; color:#fff; display:none;
+    }
 
-/* Player Container */
-.player-container{
-  position:relative;
-  width:100%;
-  height:100vh;
-  background:black;
-}
+    .channel-list{
+      position:absolute; top:0; bottom:0; right:0; width:280px;
+      background:rgba(20,20,20,.55);
+      backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+      overflow-y:auto; padding:10px; z-index:9;
+      transform:translateX(105%); transition:transform .28s ease;
+      will-change:transform; border-left:1px solid rgba(255,255,255,.1);
+    }
+    .channel-list.show{ transform:translateX(0); }
 
-/* Video */
-video{
-  width:100%;
-  height:100%;
-  object-fit:contain;
-  background:black;
-  border-radius:24px;
-  box-shadow:0 0 40px rgba(0,0,0,0.7);
-}
+    .channel-item{
+      background:rgba(255,255,255,.1); margin-bottom:6px; padding:8px; border-radius:6px;
+      cursor:pointer; display:flex; align-items:center; gap:8px; min-height:38px;
+      transition:transform .15s ease, background .15s ease, box-shadow .15s ease;
+      outline:none;
+    }
+    .channel-item img{ width:26px; height:26px; object-fit:contain; border-radius:4px; background:#000; flex:0 0 auto; }
+    .channel-item.selected{ background:#007bff; }
+    .channel-item.focused{
+      background:rgba(0,123,255,.35);
+      box-shadow:0 0 0 2px rgba(0,123,255,.6);
+      transform:translateX(-2px) scale(1.01);
+    }
 
-/* Controls Bar */
-.controls{
-  position:fixed;
-  bottom:20px;
-  left:0;
-  right:0;
-  margin:auto;
-  width:95%;
-  display:flex;
-  flex-wrap:wrap;
-  justify-content:center;
-  gap:10px;
-  backdrop-filter:blur(20px);
-  background:rgba(0,0,0,0.55);
-  padding:14px;
-  border-radius:20px;
-  z-index:10;
-  transition:opacity .3s ease,transform .3s ease;
-  box-shadow:0 10px 40px rgba(0,0,0,0.5);
-}
+    .hint{
+      display:none; position:absolute; bottom:80px; left:12px;
+      background:rgba(0,0,0,.55); padding:6px 10px; border-radius:8px;
+      font-size:12px; z-index:12; opacity:.8;
+    }
+  </style>
+</head>
+<body>
+  <div class="player-container">
+    <video id="videoPlayer" autoplay muted playsinline></video>
+    <div class="now-playing" id="nowPlaying">📺 لا توجد قناة</div>
+    <div class="hint">⌨️ Space تشغيل/إيقاف • ← السابق • → التالي • F ملء الشاشة</div>
 
-.controls.hidden{
-  opacity:0;
-  transform:translateY(20px);
-  pointer-events:none;
-}
+    <div class="controls" id="controls">
+      <button id="fileBtn">📂 ملف M3U</button>
+      <input type="file" id="fileInput" accept=".m3u,.m3u8">
+      <button id="urlToggleBtn">🌐 رابط M3U</button>
+      <input type="text" id="m3uUrlInput" placeholder="أدخل رابط M3U">
+      <button id="loadUrlBtn">تحميل الرابط</button>
 
-/* Buttons */
-.controls button{
-  background:linear-gradient(135deg,#1e3c72,#2a5298);
-  color:#fff;
-  border:none;
-  padding:10px 16px;
-  border-radius:12px;
-  cursor:pointer;
-  font-size:15px;
-  font-weight:600;
-  transition:all .25s ease;
-  box-shadow:0 4px 12px rgba(0,0,0,0.4);
-}
+      <select id="categorySelect"><option value="all">كل التصنيفات</option></select>
+      <button id="searchToggle">🔍</button>
+      <input type="text" id="searchInput" placeholder="ابحث عن قناة...">
 
-.controls button:hover{
-  transform:translateY(-2px);
-  background:linear-gradient(135deg,#00c6ff,#0072ff);
-  box-shadow:0 6px 16px rgba(0,123,255,0.6);
-}
+      <select id="qualitySelect" title="جودة البث">
+        <option value="-1">Auto Quality</option>
+      </select>
 
-.controls button:active{
-  transform:scale(0.95);
-}
+      <button id="favToggleBtn">⭐</button>
+      <button id="viewFavBtn">⭐ عرض المفضلة</button>
+      <button id="randomBtn">🎲</button>
+      <button id="nextBtn">⏭</button>
+      <button id="prevBtn">⏮</button>
+      <button id="muteBtn">🔊</button>
+      <button id="playPauseBtn">⏯</button>
+      <button id="castBtn">📺 Cast</button>
+      <button id="fullscreenBtn">⛶</button>
+      <button id="toggleListBtn">📺</button>
+    </div>
+    <div class="channel-list" id="channelList"></div>
+  </div>
 
-/* Select */
-.controls select{
-  background:rgba(255,255,255,0.1);
-  color:#fff;
-  border:none;
-  padding:8px 12px;
-  border-radius:10px;
-  font-weight:600;
-  cursor:pointer;
-  backdrop-filter:blur(10px);
-}
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <script>
+const Storage = (() => ({
+  get(key, fallback){ try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } },
+  set(key, value){ localStorage.setItem(key, JSON.stringify(value)); }
+}))();
 
-/* Search Input */
-.controls input[type="text"]{
-  padding:8px 12px;
-  border-radius:10px;
-  border:none;
-  width:200px;
-  background:rgba(255,255,255,0.15);
-  color:#fff;
-  outline:none;
-  transition:.3s;
-}
-
-.controls input[type="text"]:focus{
-  background:rgba(0,123,255,0.3);
-  box-shadow:0 0 8px rgba(0,123,255,0.6);
-}
-
-/* Channel List */
-.channel-list{
-  position:absolute;
-  top:0;
-  bottom:0;
-  right:0;
-  width:280px;
-  backdrop-filter:blur(25px);
-  background:rgba(0,0,0,0.7);
-  overflow-y:auto;
-  padding:15px;
-  display:none;
-  z-index:9;
-  border-left:1px solid rgba(255,255,255,0.1);
-}
-
-.channel-list.show{
-  display:block;
-}
-
-/* Custom Scroll */
-.channel-list::-webkit-scrollbar{
-  width:6px;
-}
-
-.channel-list::-webkit-scrollbar-thumb{
-  background:#0072ff;
-  border-radius:10px;
-}
-
-/* Channel Item */
-.channel-item{
-  background:rgba(255,255,255,.08);
-  margin-bottom:8px;
-  padding:10px;
-  border-radius:10px;
-  cursor:pointer;
-  transition:all .25s ease;
-  font-size:14px;
-  font-weight:600;
-}
-
-.channel-item:hover{
-  background:linear-gradient(135deg,#0072ff,#00c6ff);
-  transform:translateX(-4px);
-}
-
-.channel-item.selected{
-  background:linear-gradient(135deg,#ff512f,#dd2476);
-}
-
-.focused{
-  outline:2px solid #00c6ff;
-  transform:scale(1.05);
-}
-
-/* Channel Title */
-#channelTitle{
-  position:absolute;
-  top:20px;
-  right:20px;
-  background:rgba(0,0,0,.6);
-  backdrop-filter:blur(20px);
-  padding:10px 18px;
-  border-radius:14px;
-  font-size:20px;
-  font-weight:700;
-  z-index:11;
-  max-width:70%;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  box-shadow:0 6px 20px rgba(0,0,0,0.5);
-}
-
-/* Overlay */
-#channelOverlay{
-  position:absolute;
-  top:80px;
-  right:20px;
-  background:rgba(0,0,0,.7);
-  backdrop-filter:blur(20px);
-  padding:14px 18px;
-  border-radius:14px;
-  font-size:15px;
-  z-index:12;
-  opacity:0;
-  transform:translateY(-8px);
-  transition:opacity .3s ease,transform .3s ease;
-  pointer-events:none;
-  max-width:75%;
-  line-height:1.6;
-  box-shadow:0 6px 20px rgba(0,0,0,0.5);
-}
-
-#channelOverlay.show{
-  opacity:1;
-  transform:translateY(0);
-}
-
-/* Fullscreen Enhancement */
-:fullscreen video{
-  border-radius:0;
-}
-
-/* Responsive */
-@media(max-width:768px){
-  .controls{
-    width:98%;
-    gap:6px;
+const Utils = (() => ({
+  debounce(fn, wait=300){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), wait); }; },
+  isValidHttpUrl(url){ try{ const u=new URL(url); return ['http:','https:'].includes(u.protocol);}catch{ return false; } },
+  normalize(s){ return (s||'').toString().toLowerCase().trim(); },
+  fuzzyMatch(text, query){
+    text=Utils.normalize(text); query=Utils.normalize(query);
+    if(!query) return true;
+    if(text.includes(query)) return true;
+    let ti=0;
+    for(let qi=0; qi<query.length; qi++){
+      const ch=query[qi];
+      ti=text.indexOf(ch, ti);
+      if(ti===-1) return false;
+      ti++;
+    }
+    return true;
   }
-  .controls button{
-    font-size:13px;
-    padding:8px 10px;
-  }
-  .channel-list{
-    width:220px;
-  }
-}
-</style></head><body>
-<div class="player-container">
-<video id="videoPlayer" autoplay muted playsinline></video>
-<div id="channelTitle"></div><div id="channelOverlay"></div>
-<div class="controls" id="controls">
-<select id="serverSelect"></select>
-<select id="categorySelect"><option value="all">كل التصنيفات</option></select>
-<button id="searchToggle">🔍</button><input type="text" id="searchInput" placeholder="ابحث عن قناة...">
-<button id="favToggleBtn">⭐</button><button id="viewFavBtn">⭐ عرض المفضلة</button>
-<button id="historyBtn">🕓 آخر مشاهدة</button>
-<button id="addServerBtn">➕ سيرفر</button>
-<input type="file" id="m3uFileInput" accept=".m3u,.m3u8,text/plain" style="display:none">
-<button id="uploadServerBtn">📂 ملف M3U</button>
-<button id="randomBtn">🎲</button><button id="nextBtn">⏭</button><button id="prevBtn">⏮</button>
-<button id="muteBtn">🔊</button><button id="playPauseBtn">⏯</button><button id="fullscreenBtn">⛶</button><button id="toggleListBtn">📺</button>
-</div><div class="channel-list" id="channelList"></div></div>
-<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-<script>
-const controls=document.getElementById('controls');let hideTimeout;
-function resetHideControls(){controls.classList.remove('hidden');clearTimeout(hideTimeout);hideTimeout=setTimeout(()=>{if(document.fullscreenElement)controls.classList.add('hidden')},5000)}
-['mousemove','keydown','click','touchstart'].forEach(evt=>document.addEventListener(evt,resetHideControls));
+}))();
 
-const servers=[{"name":"جميع القنوات","url":"https://iptv-org.github.io/iptv/index.m3u"},{"name":"قنوات رياضية","url":"https://iptv-org.github.io/iptv/categories/sports.m3u"},{"name":"أفلام","url":"https://iptv-org.github.io/iptv/categories/movies.m3u"},{"name":"مسلسلات","url":"https://iptv-org.github.io/iptv/categories/series.m3u"},{"name":"أخبار","url":"https://iptv-org.github.io/iptv/categories/news.m3u"},{"name":"موسيقى","url":"https://iptv-org.github.io/iptv/categories/music.m3u"},{"name":"أطفال","url":"https://iptv-org.github.io/iptv/categories/kids.m3u"},{"name":"وثائقيات","url":"https://iptv-org.github.io/iptv/categories/documentary.m3u"},{"name":"قنوات عربية","url":"https://iptv-org.github.io/iptv/regions/arab.m3u"},{"name":"فرنسا","url":"https://iptv-org.github.io/iptv/countries/fr.m3u"},{"name":"مصر","url":"https://iptv-org.github.io/iptv/countries/eg.m3u"},{"name":"السعودية","url":"https://iptv-org.github.io/iptv/countries/sa.m3u"},{"name":"الولايات المتحدة","url":"https://iptv-org.github.io/iptv/countries/us.m3u"},{"name":"المملكة المتحدة","url":"https://iptv-org.github.io/iptv/countries/gb.m3u"}];
+const IPTVPlayer = (() => {
+  const video=document.getElementById('videoPlayer');
+  const channelList=document.getElementById('channelList');
+  const categorySelect=document.getElementById('categorySelect');
+  const favBtn=document.getElementById('favToggleBtn');
+  const viewFavBtn=document.getElementById('viewFavBtn');
+  const urlToggleBtn=document.getElementById('urlToggleBtn');
+  const m3uUrlInput=document.getElementById('m3uUrlInput');
+  const fileBtn=document.getElementById('fileBtn');
+  const fileInput=document.getElementById('fileInput');
+  const searchInput=document.getElementById('searchInput');
+  const searchToggle=document.getElementById('searchToggle');
+  const qualitySelect=document.getElementById('qualitySelect');
+  const nowPlaying=document.getElementById('nowPlaying');
+  const controls=document.getElementById('controls');
 
-const video=document.getElementById('videoPlayer'),channelList=document.getElementById('channelList'),serverSelect=document.getElementById('serverSelect'),categorySelect=document.getElementById('categorySelect'),favBtn=document.getElementById('favToggleBtn'),viewFavBtn=document.getElementById('viewFavBtn'),channelTitle=document.getElementById('channelTitle'),channelOverlay=document.getElementById('channelOverlay'),historyBtn=document.getElementById('historyBtn'),searchInput=document.getElementById('searchInput'),searchToggle=document.getElementById('searchToggle');
-const addServerBtn=document.getElementById('addServerBtn');
-const uploadServerBtn=document.getElementById('uploadServerBtn');
-const m3uFileInput=document.getElementById('m3uFileInput');
-
-let hls,currentIndex=0,channels=[],allChannels=[],favorites=JSON.parse(localStorage.getItem('favorites')||'[]'),showOnlyFav=false,currentCategory='all';
-let historyList=JSON.parse(localStorage.getItem('historyList')||'[]'),showOnlyHistory=false;
-
-/* AI stats */
-let watchStats=JSON.parse(localStorage.getItem('watchStats')||'{}');
-
-/* Smart TV focus */
-let focusedIndex=0;
-
-/* Virtual list */
-const VIRTUAL_ITEM_HEIGHT=44,VIRTUAL_BUFFER=12;
-
-/* Lazy parsing cache */
-let m3uLines=[], channelPointers=[];
-
-/* custom servers persistence */
-let customServers=JSON.parse(localStorage.getItem('customServers')||'[]');
-customServers.forEach(s=>servers.push(s));
-
-function rebuildServerSelect(){
-  serverSelect.innerHTML='';
-  servers.forEach(s=>{const o=document.createElement('option');o.value=s.url;o.textContent=s.name;serverSelect.appendChild(o)});
-}
-rebuildServerSelect();
-
-serverSelect.onchange=()=>{showOnlyHistory=false;historyBtn.textContent='🕓 آخر مشاهدة';loadM3U(serverSelect.value)};
-categorySelect.onchange=()=>{currentCategory=categorySelect.value;renderChannels()};
-searchToggle.onclick=()=>{searchInput.style.display=searchInput.style.display==='block'?'none':'block';searchInput.focus()};
-searchInput.oninput=()=>renderChannels();
-
-/* add server manually */
-addServerBtn.onclick=()=>{
-  const name=prompt('اسم السيرفر:');
-  const url=prompt('رابط M3U:');
-  if(!name||!url) return;
-  const s={name,url};
-  servers.push(s);
-  customServers.push(s);
-  localStorage.setItem('customServers',JSON.stringify(customServers));
-  rebuildServerSelect();
-  serverSelect.value=url;
-  loadM3U(url);
-};
-
-/* upload m3u file */
-uploadServerBtn.onclick=()=>m3uFileInput.click();
-m3uFileInput.onchange=(e)=>{
-  const file=e.target.files&&e.target.files[0];
-  if(!file) return;
-  const reader=new FileReader();
-  reader.onload=()=>{
-    const text=String(reader.result||'');
-    loadM3UFromText(text);
-  };
-  reader.readAsText(file);
-};
-
-function loadM3UFromText(text){
-  m3uLines=text.split('\n');
-  channelPointers=[];
-  allChannels=[];
-  for(let i=0;i<m3uLines.length;i++){
-    if(m3uLines[i].startsWith('#EXTINF')) channelPointers.push(i);
-  }
-  for(let i=0;i<channelPointers.length;i++){
-    const ch=parseChannelAt(channelPointers[i]);
-    if(ch) allChannels.push(ch);
-  }
-  fillCategories();
-  renderChannels();
-}
-
-/* Lazy parse channel from EXTINF line index */
-function parseChannelAt(extinfIndex){
-  const line=m3uLines[extinfIndex]||'';
-  const match=line.match(/group-title="(.*?)"/);
-  const group=match?match[1]:'غير مصنف';
-  const name=(line.split(',')[1]||'No Name').trim();
-  const link=(m3uLines[extinfIndex+1]||'').trim();
-  if(!link.startsWith('http')) return null;
-  return {name,link,group};
-}
-
-async function loadM3U(url){
-  const res=await fetch(url),text=await res.text();
-  m3uLines=text.split('\n');
-  channelPointers=[];
-  allChannels=[];
-  for(let i=0;i<m3uLines.length;i++){
-    if(m3uLines[i].startsWith('#EXTINF')) channelPointers.push(i);
-  }
-  for(let i=0;i<channelPointers.length;i++){
-    const ch=parseChannelAt(channelPointers[i]);
-    if(ch) allChannels.push(ch);
+  let hideTimeout, listHideTimeout;
+  ['mousemove','keydown','click','touchstart'].forEach(evt=>document.addEventListener(evt, resetHideControls));
+  function resetHideControls(){
+    controls.classList.remove('hidden');
+    clearTimeout(hideTimeout); clearTimeout(listHideTimeout);
+    hideTimeout=setTimeout(()=>{ if(document.fullscreenElement) controls.classList.add('hidden'); }, 5000);
+    listHideTimeout=setTimeout(()=>{ if(document.fullscreenElement) channelList.classList.remove('show'); }, 7000);
   }
 
-  fillCategories();
-  renderChannels();
+  let hls=null, currentIndex=0;
+  let channels=[], allChannels=[];
+  let favorites=Storage.get('favorites', []);
+  let showOnlyFav=false, currentCategory='all', searchTerm='';
+  let loadedCount=0; const CHUNK=120;
+  let lastFilterKey="", cachedFiltered=[];
+  let randomHistory=Storage.get('randomHistory', []);
+  let focusIndex=-1;
+  const playlists=Storage.get('playlists', []);
 
-  const last=localStorage.getItem('lastPlayed');
-  if(last){
-    const idx=channels.findIndex(c=>c.link===last);
-    if(idx!==-1){currentIndex=idx;playChannel(idx)}
+  function ensureHls(){
+    if(hls) return hls;
+    if(window.Hls && Hls.isSupported()){
+      hls=new Hls();
+      hls.on(Hls.Events.ERROR, (e,data)=>{ if(data && data.fatal) playChannel((currentIndex+1)%Math.max(1,channels.length)); });
+      hls.on(Hls.Events.MANIFEST_PARSED, ()=>{ video.classList.remove('switching'); video.play().catch(()=>{}); fillQualities(); });
+      return hls;
+    }
+    return null;
+  }
+
+  function fillQualities(){
+    if(!hls || !hls.levels) return;
+    const current=qualitySelect.value;
+    qualitySelect.innerHTML='<option value="-1">Auto Quality</option>';
+    hls.levels.forEach((lvl,i)=>{
+      const opt=document.createElement('option');
+      opt.value=i; opt.textContent=(lvl.height?lvl.height+'p':'Level '+i);
+      qualitySelect.appendChild(opt);
+    });
+    if(current) qualitySelect.value=current;
+  }
+  qualitySelect.onchange=()=>{ if(hls) hls.currentLevel=parseInt(qualitySelect.value,10); };
+
+  urlToggleBtn.onclick=()=>{ m3uUrlInput.style.display = m3uUrlInput.style.display==='inline-block' ? 'none':'inline-block'; };
+  searchToggle.onclick=()=>{ searchInput.style.display = searchInput.style.display==='inline-block' ? 'none':'inline-block'; if(searchInput.style.display==='inline-block') searchInput.focus(); };
+  fileBtn.onclick=()=>fileInput.click();
+
+  fileInput.addEventListener('change', e=>{
+    const file=e.target.files[0]; if(!file) return;
+    const reader=new FileReader();
+    reader.onload=()=>parseM3U(reader.result);
+    reader.readAsText(file);
+  });
+
+  document.getElementById('loadUrlBtn').addEventListener('click', ()=>{
+    const url=m3uUrlInput.value.trim();
+    if(!Utils.isValidHttpUrl(url)) return alert('رابط غير صالح.');
+    loadM3U(url);
+  });
+
+  async function loadM3U(url) {
+  try {
+
+    // 🔥 تحويل روابط GitHub تلقائيًا
+    if (url.includes("github.com")) {
+      url = url
+        .replace("github.com", "raw.githubusercontent.com")
+        .replace("/blob/", "/");
+    }
+
+    // محاولة تحميل مباشرة
+    let res = await fetch(url);
+
+    // ⚡ fallback proxy (سر مطوري IPTV)
+    if (!res.ok) {
+      const proxy = "https://corsproxy.io/?";
+      res = await fetch(proxy + encodeURIComponent(url));
+    }
+
+    const text = await res.text();
+    parseM3U(text);
+
+    if (!playlists.includes(url)) {
+      playlists.push(url);
+      Storage.set("playlists", playlists);
+    }
+
+    Storage.set("lastPlaylist", url);
+
+  } catch (err) {
+    alert("فشل تحميل الرابط.");
   }
 }
 
-function fillCategories(){
-  const groups=[...new Set(allChannels.map(ch=>ch.group))];
-  categorySelect.innerHTML='<option value="all">كل التصنيفات</option>';
-  groups.forEach(g=>{const o=document.createElement('option');o.value=g;o.textContent=g;categorySelect.appendChild(o)})
-}
-
-function getFilteredChannels(){
-  const q=(searchInput.value||'').toLowerCase().trim();
-  let base=allChannels.filter(ch=>(!showOnlyFav||favorites.includes(ch.link))&&(currentCategory==='all'||ch.group===currentCategory));
-
-  if(showOnlyHistory){
-    const set=new Set(historyList.map(h=>h.link));
-    base=base.filter(ch=>set.has(ch.link));
-    base.sort((a,b)=>historyList.findIndex(h=>h.link===a.link)-historyList.findIndex(h=>h.link===b.link));
+  function detectCategory(name, current){
+    if(current && current!=='غير مصنف') return current;
+    const n=Utils.normalize(name);
+    if(/sport|bein|espn|nba|football|soccer|liga|uefa|رياض/.test(n)) return 'رياضة';
+    if(/movie|film|cinema|flix|aflam/.test(n)) return 'أفلام';
+    if(/news|cnn|bbc|aljazeera|خبر/.test(n)) return 'أخبار';
+    if(/kids|cartoon|anime|baby|طفل|كرتون/.test(n)) return 'أطفال';
+    if(/music|mtv|song/.test(n)) return 'موسيقى';
+    return 'غير مصنف';
   }
 
-  if(!showOnlyHistory){
-    base.sort((a,b)=>(watchStats[b.link]||0)-(watchStats[a.link]||0));
-  }
+  function parseM3U(text){
+    const lines=text.split('\n');
+    allChannels=[]; let group='';
+    for(let i=0;i<lines.length;i++){
+      const line=lines[i];
+      if(line.startsWith('#EXTINF')){
+        const gm=line.match(/group-title="(.*?)"/);
+        const lm=line.match(/tvg-logo="(.*?)"/);
+        group=gm?gm[1]:'غير مصنف';
+        const name=(line.split(',')[1]||'No Name').trim();
+        const link=(lines[i+1]||'').trim();
+        if(link && link.startsWith('http')){
+          allChannels.push({ name, link, group:detectCategory(name,group), logo: lm?lm[1]:'' });
+        }
+      }
+    }
 
-  if(q) base=base.filter(ch=>ch.name.toLowerCase().includes(q));
-  return base;
-}
+    allChannels.sort((a,b)=> a.group===b.group ? a.name.localeCompare(b.name,'ar') : a.group.localeCompare(b.group,'ar'));
 
-function renderChannels(){
-  channelList.innerHTML='';
-  channels=getFilteredChannels();
+    fillCategories();
+    renderChannels(true);
 
-  const viewport=document.createElement('div');
-  viewport.style.position='relative';
-  viewport.style.height=(channels.length*VIRTUAL_ITEM_HEIGHT)+'px';
-  channelList.appendChild(viewport);
+    const smart=Storage.get('smartStart', null);
+    if(smart){
+      if(typeof smart.volume==='number') video.volume=smart.volume;
+      if(typeof smart.muted==='boolean') video.muted=smart.muted;
+      if(smart.search){ searchTerm=smart.search; searchInput.value=smart.search; }
+      if(smart.category){ currentCategory=smart.category; categorySelect.value=smart.category; }
+      renderChannels(true);
+    }
 
-  function draw(){
-    const st=channelList.scrollTop,vh=channelList.clientHeight||400,
-      start=Math.max(0,Math.floor(st/VIRTUAL_ITEM_HEIGHT)-VIRTUAL_BUFFER),
-      end=Math.min(channels.length,Math.ceil((st+vh)/VIRTUAL_ITEM_HEIGHT)+VIRTUAL_BUFFER);
-
-    viewport.innerHTML='';
-    for(let i=start;i<end;i++){
-      const ch=channels[i],div=document.createElement('div');
-      div.className='channel-item'+(i===currentIndex?' selected':'')+(i===focusedIndex?' focused':'');
-      div.style.position='absolute';div.style.right='0';div.style.left='0';div.style.top=(i*VIRTUAL_ITEM_HEIGHT)+'px';
-      div.textContent=`${favorites.includes(ch.link)?'⭐ ':''}${ch.name}`;
-      div.onclick=()=>{currentIndex=i;focusedIndex=i;playChannel(i)};
-      viewport.appendChild(div);
+    const last=localStorage.getItem('lastPlayed');
+    if(last){
+      const i2 = (()=>{ channels=filteredChannels(); return channels.findIndex(c=>c.link===last); })();
+      if(i2>=0){ currentIndex=i2; playChannel(i2); }
     }
   }
-  channelList.onscroll=draw;
-  draw();
-}
 
-function ensureFocusedVisible(){
-  const top=focusedIndex*VIRTUAL_ITEM_HEIGHT;
-  const bottom=top+VIRTUAL_ITEM_HEIGHT;
-  const viewTop=channelList.scrollTop;
-  const viewBottom=viewTop+channelList.clientHeight;
-  if(top<viewTop) channelList.scrollTop=top;
-  else if(bottom>viewBottom) channelList.scrollTop=bottom-channelList.clientHeight;
-}
-
-function showOverlay(ch,index){
-  channelOverlay.innerHTML=`📺 ${ch.name}<br>📂 ${ch.group||'غير مصنف'}<br># ${index+1}`;
-  channelOverlay.classList.add('show');
-  clearTimeout(showOverlay._t);
-  showOverlay._t=setTimeout(()=>channelOverlay.classList.remove('show'),3000);
-}
-
-function pushHistory(ch){
-  historyList=historyList.filter(h=>h.link!==ch.link);
-  historyList.unshift({name:ch.name,link:ch.link,group:ch.group,ts:Date.now()});
-  if(historyList.length>30)historyList=historyList.slice(0,30);
-  localStorage.setItem('historyList',JSON.stringify(historyList));
-}
-
-let preloaded={link:null,hls:null};
-function preloadNext(){
-  if(!channels.length) return;
-  const nextIndex=(currentIndex+1)%channels.length;
-  const next=channels[nextIndex];
-  if(!next || preloaded.link===next.link) return;
-  if(preloaded.hls){try{preloaded.hls.destroy()}catch(e){}}
-  if(Hls.isSupported()){
-    const v=document.createElement('video');
-    v.muted=true; v.playsInline=true;
-    const ph=new Hls({maxBufferLength:20,enableWorker:true,lowLatencyMode:true});
-    ph.loadSource(next.link);
-    ph.attachMedia(v);
-    preloaded={link:next.link,hls:ph};
-  }
-}
-
-function playChannel(index){
-  const ch=channels[index]; if(!ch) return;
-  currentIndex=index; focusedIndex=index;
-
-  if(hls){hls.destroy();hls=null}
-
-  if(video.canPlayType('application/vnd.apple.mpegurl')){
-    video.src=ch.link; video.play();
-  }else if(Hls.isSupported()){
-    hls=new Hls({maxBufferLength:60,maxMaxBufferLength:120,enableWorker:true,lowLatencyMode:true});
-    hls.loadSource(ch.link);
-    hls.attachMedia(video);
-    hls.on(Hls.Events.MANIFEST_PARSED,()=>{hls.currentLevel=-1;video.play()});
-    hls.on(Hls.Events.ERROR,(_,data)=>{if(data&&data.fatal)setTimeout(()=>playChannel(currentIndex),3000)});
+  function fillCategories(){
+    const groups=[...new Set(allChannels.map(ch=>ch.group))];
+    categorySelect.innerHTML='<option value="all">كل التصنيفات</option>';
+    groups.forEach(g=>{ const opt=document.createElement('option'); opt.value=g; opt.textContent=g; categorySelect.appendChild(opt); });
   }
 
-  watchStats[ch.link]=(watchStats[ch.link]||0)+1;
-  localStorage.setItem('watchStats',JSON.stringify(watchStats));
+  function filteredChannels(){
+    const key=JSON.stringify([showOnlyFav,currentCategory,Utils.normalize(searchTerm),favorites.length,allChannels.length]);
+    if(key===lastFilterKey) return cachedFiltered;
+    const s=Utils.normalize(searchTerm);
+    cachedFiltered=allChannels.filter(ch=>{
+      const okFav=!showOnlyFav || favorites.includes(ch.link);
+      const okCat=currentCategory==='all' || ch.group===currentCategory;
+      const okSearch=!s || Utils.fuzzyMatch(ch.name,s) || Utils.fuzzyMatch(ch.group,s);
+      return okFav && okCat && okSearch;
+    });
+    lastFilterKey=key;
+    return cachedFiltered;
+  }
 
-  channelTitle.textContent=ch.name;
-  showOverlay(ch,index);
-  pushHistory(ch);
-  localStorage.setItem('lastPlayed',ch.link);
-  favBtn.textContent=favorites.includes(ch.link)?'⭐ إزالة':'⭐ إضافة';
+  function renderChannels(reset=false){
+    if(reset){ channelList.innerHTML=''; loadedCount=0; focusIndex=-1; }
+    channels=filteredChannels();
+    if(!channels.length){ channelList.innerHTML='<div style="opacity:.7;padding:8px">لا توجد قنوات</div>'; return; }
 
-  renderChannels();
-  preloadNext();
-}
+    const end=Math.min(loadedCount+CHUNK, channels.length);
+    const frag=document.createDocumentFragment();
+    for(let i=loadedCount;i<end;i++){
+      const ch=channels[i];
+      const div=document.createElement('div');
+      div.className='channel-item';
+      div.dataset.index=i; div.dataset.id=ch.link; div.setAttribute('tabindex','0');
 
-video.addEventListener('error',()=>{if(!channels.length)return;setTimeout(()=>playChannel(currentIndex),3000)});
+      const img=document.createElement('img');
+      img.loading='lazy'; img.referrerPolicy='no-referrer'; img.src=ch.logo||''; img.onerror=()=>img.style.display='none';
 
-document.addEventListener('keydown',e=>{
-  if(!channels.length) return;
-  if(e.key==='ArrowDown'){focusedIndex=Math.min(channels.length-1,focusedIndex+1);ensureFocusedVisible();renderChannels();e.preventDefault();}
-  if(e.key==='ArrowUp'){focusedIndex=Math.max(0,focusedIndex-1);ensureFocusedVisible();renderChannels();e.preventDefault();}
-  if(e.key==='Enter'){playChannel(focusedIndex);e.preventDefault();}
-  if(e.key==='ArrowRight'){playChannel((currentIndex+1)%channels.length);e.preventDefault();}
-  if(e.key==='ArrowLeft'){playChannel((currentIndex-1+channels.length)%channels.length);e.preventDefault();}
-});
+      const span=document.createElement('span');
+      span.textContent=`${favorites.includes(ch.link)?'⭐ ':''}${ch.name}`;
 
-favBtn.onclick=()=>{
-  const current=channels[currentIndex];if(!current)return;
-  const i=favorites.indexOf(current.link);
-  if(i===-1)favorites.push(current.link);else favorites.splice(i,1);
-  localStorage.setItem('favorites',JSON.stringify(favorites));
-  renderChannels();
-};
+      div.appendChild(img); div.appendChild(span);
+      frag.appendChild(div);
+    }
+    channelList.appendChild(frag);
+    loadedCount=end;
+  }
 
-viewFavBtn.onclick=()=>{showOnlyFav=!showOnlyFav;viewFavBtn.textContent=showOnlyFav?'📺 عرض الكل':'⭐ عرض المفضلة';renderChannels()};
-historyBtn.onclick=()=>{showOnlyHistory=!showOnlyHistory;historyBtn.textContent=showOnlyHistory?'📺 رجوع للقنوات':'🕓 آخر مشاهدة';renderChannels()};
+  channelList.addEventListener('scroll', ()=>{
+    if(channelList.scrollTop + channelList.clientHeight >= channelList.scrollHeight - 120) renderChannels(false);
+  });
 
-document.getElementById('toggleListBtn').onclick=()=>channelList.classList.toggle('show');
-document.getElementById('nextBtn').onclick=()=>{if(!channels.length)return;playChannel((currentIndex+1)%channels.length)};
-document.getElementById('prevBtn').onclick=()=>{if(!channels.length)return;playChannel((currentIndex-1+channels.length)%channels.length)};
-document.getElementById('randomBtn').onclick=()=>{if(!channels.length)return;playChannel(Math.floor(Math.random()*channels.length))};
-document.getElementById('muteBtn').onclick=()=>video.muted=!video.muted;
-document.getElementById('playPauseBtn').onclick=()=>video.paused?video.play():video.pause();
-document.getElementById('fullscreenBtn').onclick=()=>document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen();
+  channelList.addEventListener('click', e=>{
+    const item=e.target.closest('.channel-item'); if(!item) return;
+    const idx=parseInt(item.dataset.index,10); if(Number.isNaN(idx)) return;
+    currentIndex=idx; playChannel(idx);
+  });
 
-loadM3U(servers[0].url);
-</script></body></html>
+  function setFocus(index){
+    document.querySelectorAll('.channel-item.focused').forEach(el=>el.classList.remove('focused'));
+    const el=channelList.querySelector(`.channel-item[data-index="${index}"]`);
+    if(el){ el.classList.add('focused'); el.scrollIntoView({block:'nearest'}); focusIndex=index; }
+  }
+
+  function selectItem(index){
+    document.querySelectorAll('.channel-item').forEach(e=>e.classList.remove('selected'));
+    const el=channelList.querySelector(`.channel-item[data-index="${index}"]`);
+    if(el) el.classList.add('selected');
+  }
+
+  function playNative(url){
+    video.src=url; video.play().catch(()=>{});
+    setTimeout(()=>video.classList.remove('switching'), 250);
+  }
+
+  function playChannel(index){
+    if(!channels.length) return;
+    const ch=channels[index]; if(!ch) return;
+    video.classList.add('switching');
+    selectItem(index); setFocus(index);
+    nowPlaying.textContent=`📺 ${ch.name}`;
+
+    if(video.canPlayType('application/vnd.apple.mpegurl')){
+      if(hls) hls.detachMedia();
+      playNative(ch.link);
+    }else{
+      const instance=ensureHls();
+      if(instance){ instance.loadSource(ch.link); instance.attachMedia(video); }
+      else playNative(ch.link);
+    }
+
+    localStorage.setItem('lastPlayed', ch.link);
+    favBtn.textContent=favorites.includes(ch.link)?'⭐ إزالة':'⭐ إضافة';
+  }
+
+  function saveSmartStart(){
+    Storage.set('smartStart', {
+      volume:video.volume, muted:video.muted,
+      category:currentCategory, search:searchTerm, quality:qualitySelect.value
+    });
+  }
+  video.addEventListener('volumechange', Utils.debounce(saveSmartStart, 200));
+
+  favBtn.onclick=()=>{
+    if(!channels.length) return;
+    const current=channels[currentIndex]; if(!current) return;
+    const i=favorites.indexOf(current.link);
+    if(i===-1) favorites.push(current.link); else favorites.splice(i,1);
+    Storage.set('favorites', favorites);
+    renderChannels(true);
+  };
+
+  viewFavBtn.onclick=()=>{
+    showOnlyFav=!showOnlyFav;
+    viewFavBtn.textContent=showOnlyFav?'📺 عرض الكل':'⭐ عرض المفضلة';
+    renderChannels(true);
+  };
+
+  document.getElementById('toggleListBtn').onclick=()=>channelList.classList.toggle('show');
+  document.getElementById('nextBtn').onclick=()=>{ if(channels.length) playChannel((currentIndex+1)%channels.length); };
+  document.getElementById('prevBtn').onclick=()=>{ if(channels.length) playChannel((currentIndex-1+channels.length)%channels.length); };
+
+  document.getElementById('randomBtn').onclick=()=>{
+    if(!channels.length) return;
+    const pool=channels.map((_,i)=>i).filter(i=>!randomHistory.includes(channels[i].link));
+    let idx;
+    if(pool.length) idx=pool[Math.floor(Math.random()*pool.length)];
+    else { randomHistory=[]; idx=Math.floor(Math.random()*channels.length); }
+    randomHistory.push(channels[idx].link);
+    if(randomHistory.length>100) randomHistory.shift();
+    Storage.set('randomHistory', randomHistory);
+    playChannel(idx);
+  };
+
+  document.getElementById('muteBtn').onclick=()=>{ video.muted=!video.muted; saveSmartStart(); };
+  document.getElementById('playPauseBtn').onclick=()=> video.paused ? video.play() : video.pause();
+  document.getElementById('fullscreenBtn').onclick=()=> document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+
+  document.getElementById('castBtn').onclick=()=>{
+    if('presentation' in navigator) alert('Chromecast يحتاج تكامل Google Cast SDK. هذه نقطة بداية فقط.');
+    else alert('المتصفح لا يدعم Cast API مباشرة.');
+  };
+
+  categorySelect.onchange=()=>{ currentCategory=categorySelect.value; saveSmartStart(); renderChannels(true); };
+
+  searchInput.addEventListener('input', Utils.debounce(()=>{
+    searchTerm=searchInput.value; saveSmartStart(); renderChannels(true);
+  }, 250));
+
+  document.addEventListener('keydown', e=>{
+    if(e.target && (e.target.tagName==='INPUT' || e.target.tagName==='SELECT')) return;
+    if(e.code==='Space'){ e.preventDefault(); video.paused ? video.play() : video.pause(); }
+    if(e.code==='ArrowRight'){ if(channels.length) playChannel((currentIndex+1)%channels.length); }
+    if(e.code==='ArrowLeft'){ if(channels.length) playChannel((currentIndex-1+channels.length)%channels.length); }
+
+    if(channelList.classList.contains('show')){
+      if(e.code==='ArrowDown'){ e.preventDefault(); if(focusIndex<0) setFocus(0); else setFocus(Math.min(channels.length-1, focusIndex+1)); }
+      if(e.code==='ArrowUp'){ e.preventDefault(); if(focusIndex<0) setFocus(0); else setFocus(Math.max(0, focusIndex-1)); }
+      if(e.code==='Enter' && focusIndex>=0){ e.preventDefault(); currentIndex=focusIndex; playChannel(focusIndex); }
+    }
+
+    if(e.key.toLowerCase()==='f'){
+      document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+    }
+  });
+
+  const AUTO_PLAYLIST_URL='';
+  if(AUTO_PLAYLIST_URL) loadM3U(AUTO_PLAYLIST_URL);
+  else {
+    const lastPl=Storage.get('lastPlaylist','');
+    if(lastPl) loadM3U(lastPl);
+    else if(playlists.length) loadM3U(playlists[playlists.length-1]);
+  }
+
+  return { loadM3U, parseM3U };
+})();
+  </script>
+</body>
+</html>
