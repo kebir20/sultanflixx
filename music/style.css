@@ -1,34 +1,17 @@
 body{
-
-background:#0f0f0f;
+background:#000;
 color:white;
-font-family:Arial;
-
+font-family:sans-serif;
 }
 
 .grid{
-
 display:grid;
-grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+grid-template-columns:repeat(auto-fill,150px);
 gap:20px;
-
-}
-
-.card{
-
-cursor:pointer;
-
+padding:20px;
 }
 
 .card img{
-
-width:100%;
+width:150px;
 border-radius:10px;
-
-}
-
-.card:hover{
-
-transform:scale(1.08);
-
 }
