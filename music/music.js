@@ -1,3 +1,4 @@
+console.log("Music JS Loaded")
 async function getToken(){
 
 const res = await fetch("spotify.php")
