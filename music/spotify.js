@@ -3,13 +3,11 @@ const client_secret="0ba52b56f6724128ba9dc447c00ce187"
 
 async function getToken(){
 
-const res = await fetch(
-"https://accounts.spotify.com/api/token",
-{
+const res = await fetch("https://accounts.spotify.com/api/token",{
 method:"POST",
 headers:{
 "Content-Type":"application/x-www-form-urlencoded",
-"Authorization":"Basic "+btoa(client_id+":"+client_secret)
+"Authorization":"Basic "+btoa(CLIENT_ID+":"+CLIENT_SECRET)
 },
 body:"grant_type=client_credentials"
 })
