@@ -1,5 +1,5 @@
-const client_id="PUT_CLIENT_ID"
-const client_secret="PUT_CLIENT_SECRET"
+const client_id="3f7c081894114ff0ae4139fb0e633ba2"
+const client_secret="0ba52b56f6724128ba9dc447c00ce187"
 
 async function getToken(){
 
