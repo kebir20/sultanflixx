@@ -1,4 +1,11 @@
-async function loadTrending(){
+async function getToken(){
+
+const res = await fetch("spotify.php")
+const data = await res.json()
+
+return data.access_token
+
+}
 
 const token = await getToken()
 
