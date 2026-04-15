@@ -1,4 +1,5 @@
 console.log("Music JS Loaded")
+
 async function getToken(){
 
 const res = await fetch("spotify.php")
@@ -7,6 +8,8 @@ const data = await res.json()
 return data.access_token
 
 }
+
+async function loadTrending(){
 
 const token = await getToken()
 
@@ -28,7 +31,7 @@ const card=document.createElement("div")
 card.className="card"
 
 card.innerHTML=`
-<img src="${album.images[0].url}">
+<img src="${album.images[0].url}" width="150">
 <p>${album.name}</p>
 `
 
