@@ -1,5 +1,3 @@
-console.log("Music JS Loaded")
-
 async function getToken(){
 
 const res = await fetch("spotify.php")
@@ -23,14 +21,13 @@ Authorization:"Bearer "+token
 
 const data = await res.json()
 
-const container=document.getElementById("albums")
+const container = document.getElementById("albums")
 
 data.albums.items.forEach(album=>{
 
-const card=document.createElement("div")
-card.className="card"
+const card = document.createElement("div")
 
-card.innerHTML=`
+card.innerHTML = `
 <img src="${album.images[0].url}" width="150">
 <p>${album.name}</p>
 `
