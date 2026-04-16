@@ -1,1 +1,195 @@
-tools/iptv-scanner/index.html
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>IPTV Scanner</title>
+
+<style>
+
+body{
+background:#0f0f0f;
+color:white;
+font-family:Arial;
+text-align:center;
+}
+
+input,button{
+padding:10px;
+margin:10px;
+border:none;
+border-radius:6px;
+}
+
+button{
+background:#e50914;
+color:white;
+}
+
+table{
+width:100%;
+margin-top:20px;
+border-collapse:collapse;
+}
+
+td,th{
+padding:10px;
+border-bottom:1px solid #333;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h2>📡 IPTV Scanner</h2>
+
+<input id="server" placeholder="IPTV Server URL">
+
+<button onclick="scanServer()">Scan Server</button>
+
+<button onclick="exportM3U()">Export M3U</button>
+
+<table>
+
+<thead>
+<tr>
+<th>#</th>
+<th>Channel</th>
+<th>Status</th>
+</tr>
+</thead>
+
+<tbody id="list"></tbody>
+
+</table>
+
+<script>
+
+let channels=[]
+
+async function scanServer(){
+
+let url=document.getElementById("server").value
+
+let res=await fetch(url)
+
+let text=await res.text()
+
+channels=parseM3U(text)
+
+render()
+
+checkChannels()
+
+}
+
+function parseM3U(text){
+
+let lines=text.split("\n")
+
+let result=[]
+let name=""
+
+for(let line of lines){
+
+line=line.trim()
+
+if(line.startsWith("#EXTINF")){
+
+name=line.split(",")[1]
+
+}
+
+else if(line && !line.startsWith("#")){
+
+result.push({
+
+name:name,
+url:line,
+status:"checking"
+
+})
+
+}
+
+}
+
+return result
+
+}
+
+function render(){
+
+let list=document.getElementById("list")
+
+list.innerHTML=""
+
+channels.forEach((c,i)=>{
+
+list.innerHTML+=`
+
+<tr>
+
+<td>${i+1}</td>
+<td>${c.name}</td>
+<td id="s${i}">🔍</td>
+
+</tr>
+
+`
+
+})
+
+}
+
+async function checkChannels(){
+
+for(let i=0;i<channels.length;i++){
+
+try{
+
+let res=await fetch(channels[i].url,{method:"HEAD"})
+
+channels[i].status=res.ok
+
+}catch{
+
+channels[i].status=false
+
+}
+
+document.getElementById("s"+i).innerHTML=
+
+channels[i].status?"✅":"❌"
+
+}
+
+}
+
+function exportM3U(){
+
+let text="#EXTM3U\n"
+
+channels.filter(c=>c.status).forEach(c=>{
+
+text+=`#EXTINF:-1,${c.name}\n${c.url}\n`
+
+})
+
+let blob=new Blob([text])
+
+let a=document.createElement("a")
+
+a.href=URL.createObjectURL(blob)
+
+a.download="scanned_channels.m3u"
+
+a.click()
+
+}
+
+</script>
+
+</body>
+</html>
