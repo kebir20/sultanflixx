@@ -1,1 +1,50 @@
-tools/iptv-speed/index.html
+<!DOCTYPE html>
+<html>
+<head>
+<title>IPTV Speed Test</title>
+<style>
+body{background:#111;color:white;font-family:sans-serif;text-align:center}
+input,button{padding:10px;margin:10px}
+</style>
+</head>
+
+<body>
+
+<h2>⚡ IPTV Speed Test</h2>
+
+<input type="text" id="url" placeholder="ضع رابط القناة">
+
+<button onclick="testSpeed()">اختبار السرعة</button>
+
+<p id="result"></p>
+
+<script>
+
+async function testSpeed(){
+
+let url=document.getElementById("url").value
+
+let start=performance.now()
+
+try{
+
+await fetch(url,{method:"HEAD"})
+
+let end=performance.now()
+
+let time=(end-start).toFixed(0)
+
+document.getElementById("result").innerHTML="⏱ السرعة: "+time+" ms"
+
+}catch{
+
+document.getElementById("result").innerHTML="❌ السيرفر لا يعمل"
+
+}
+
+}
+
+</script>
+
+</body>
+</html>
