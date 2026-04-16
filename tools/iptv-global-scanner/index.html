@@ -1,9 +1,12 @@
 <!DOCTYPE html>
 <html>
+
 <head>
 
 <meta charset="UTF-8">
-<title>IPTV Global Scanner</title>
+<title>IPTV Global Scanner PRO</title>
+
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
 <style>
 
@@ -15,31 +18,34 @@ text-align:center;
 }
 
 button{
-padding:12px;
 background:#e50914;
 border:none;
+padding:10px 20px;
 color:white;
 margin:10px;
 cursor:pointer;
+border-radius:6px;
 }
 
-#channels{
-margin-top:30px;
-max-width:800px;
-margin-left:auto;
-margin-right:auto;
+#results{
+max-width:700px;
+margin:auto;
 }
 
 .channel{
 background:#1a1a1a;
-padding:10px;
 margin:10px;
+padding:15px;
 border-radius:8px;
 }
 
-a{
-color:#00d0ff;
-text-decoration:none;
+.channel:hover{
+background:#e50914;
+}
+
+video{
+width:80%;
+margin-top:20px;
 }
 
 </style>
@@ -48,15 +54,160 @@ text-decoration:none;
 
 <body>
 
-<h1>🌍 IPTV Global Scanner</h1>
+<h1>🌍 IPTV Global Scanner PRO</h1>
 
-<button onclick="scan()">Scan Internet</button>
+<button onclick="scanGitHub()">Search GitHub</button>
+<button onclick="scanReddit()">Search Reddit</button>
+<button onclick="scanPastebin()">Search Pastebin</button>
+<button onclick="scanInternet()">Scan Internet</button>
 
-<div id="channels"></div>
+<br><br>
+
+<input id="search" placeholder="🔎 Search Channel" onkeyup="searchChannel()">
+
+<br>
+
+<video id="player" controls></video>
+
+<div id="results"></div>
 
 <script>
 
-const sources=[
+let channels=[]
+
+async function loadM3U(url){
+
+try{
+
+let res = await fetch(url)
+let text = await res.text()
+
+parseM3U(text)
+
+}catch(e){
+console.log("failed",url)
+}
+
+}
+
+function parseM3U(data){
+
+let lines = data.split("\n")
+
+for(let i=0;i<lines.length;i++){
+
+if(lines[i].startsWith("#EXTINF")){
+
+let name = lines[i].split(",")[1]
+
+let url = lines[i+1]
+
+channels.push({name,url})
+
+createChannel(name,url)
+
+}
+
+}
+
+}
+
+function createChannel(name,url){
+
+let div=document.createElement("div")
+div.className="channel"
+
+div.innerHTML=`
+${name}
+<br>
+<button onclick="play('${url}')">▶ Play</button>
+`
+
+document.getElementById("results").appendChild(div)
+
+}
+
+function play(url){
+
+let video=document.getElementById("player")
+
+if(Hls.isSupported()){
+
+let hls=new Hls()
+hls.loadSource(url)
+hls.attachMedia(video)
+
+}else{
+
+video.src=url
+
+}
+
+}
+
+function searchChannel(){
+
+let input=document.getElementById("search").value.toLowerCase()
+
+let cards=document.querySelectorAll(".channel")
+
+cards.forEach(card=>{
+
+card.style.display=
+card.innerText.toLowerCase().includes(input)
+?"block":"none"
+
+})
+
+}
+
+async function scanGitHub(){
+
+let res=await fetch(
+"https://api.github.com/search/code?q=extension:m3u+iptv"
+)
+
+let data=await res.json()
+
+data.items.slice(0,10).forEach(item=>{
+
+let url=item.html_url
+console.log(url)
+
+})
+
+}
+
+async function scanReddit(){
+
+let res=await fetch(
+"https://www.reddit.com/search.json?q=iptv+m3u"
+)
+
+let data=await res.json()
+
+data.data.children.forEach(p=>{
+
+console.log(p.data.url)
+
+})
+
+}
+
+async function scanPastebin(){
+
+let urls=[
+"https://pastebin.com/raw/iptv",
+"https://pastebin.com/raw/m3u"
+]
+
+urls.forEach(loadM3U)
+
+}
+
+function scanInternet(){
+
+let lists=[
 
 "https://iptv-org.github.io/iptv/index.m3u",
 "https://iptv-org.github.io/iptv/languages/ara.m3u",
@@ -64,67 +215,12 @@ const sources=[
 
 ]
 
-async function scan(){
-
-channels.innerHTML="Scanning playlists..."
-
-let results=[]
-
-for(const src of sources){
-
-try{
-
-let res=await fetch(src)
-
-let text=await res.text()
-
-let lines=text.split("\n")
-
-for(let i=0;i<lines.length;i++){
-
-if(lines[i].startsWith("#EXTINF")){
-
-let name=lines[i].split(",")[1]
-
-let url=lines[i+1]
-
-results.push({name,url})
-
-}
-
-}
-
-}catch{}
-
-}
-
-show(results)
-
-}
-
-function show(list){
-
-channels.innerHTML=""
-
-list.slice(0,200).forEach(ch=>{
-
-let div=document.createElement("div")
-
-div.className="channel"
-
-div.innerHTML=
-`
-<b>${ch.name}</b><br>
-<a href="${ch.url}" target="_blank">Play</a>
-`
-
-channels.appendChild(div)
-
-})
+lists.forEach(loadM3U)
 
 }
 
 </script>
 
 </body>
+
 </html>
