@@ -1,0 +1,21 @@
+<input id="server" placeholder="Server URL">
+
+<button onclick="test()">Test</button>
+
+<div id="result"></div>
+
+<script>
+
+async function test(){
+
+let start=Date.now()
+
+await fetch(server.value)
+
+let speed=Date.now()-start
+
+result.innerText="Response: "+speed+"ms"
+
+}
+
+</script>
