@@ -3,18 +3,18 @@
 
 <head>
 <meta charset="UTF-8">
-<title>Xtream Player</title>
+<title>IPTV Panel</title>
 </head>
 
 <body style="background:black;color:white;text-align:center">
 
-<h2>Xtream Player</h2>
+<h2>📺 IPTV Panel</h2>
 
-<input id="server" placeholder="Server">
+<input id="server" placeholder="Server URL">
 <input id="user" placeholder="Username">
 <input id="pass" placeholder="Password">
 
-<button onclick="load()">Load</button>
+<button onclick="load()">Load Channels</button>
 
 <ul id="channels"></ul>
 
@@ -36,7 +36,7 @@ let list=document.getElementById("channels")
 
 list.innerHTML=""
 
-data.slice(0,50).forEach(ch=>{
+data.slice(0,100).forEach(ch=>{
 
 let li=document.createElement("li")
 
