@@ -1,0 +1,25 @@
+<input id="stream" placeholder="Stream URL">
+
+<button onclick="check()">Check</button>
+
+<div id="status"></div>
+
+<script>
+
+async function check(){
+
+try{
+
+await fetch(stream.value,{method:"HEAD"})
+
+status.innerText="Stream Working"
+
+}catch{
+
+status.innerText="Stream Dead"
+
+}
+
+}
+
+</script>
