@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>IPTV Auto Finder</title>
+
+<style>
+
+body{
+background:#111;
+color:white;
+font-family:sans-serif;
+text-align:center;
+}
+
+button{
+padding:10px 20px;
+background:#e50914;
+color:white;
+border:none;
+margin:20px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h2>🔎 IPTV Auto Finder</h2>
+
+<button onclick="findPlaylists()">Search IPTV Lists</button>
+
+<ul id="lists"></ul>
+
+<script>
+
+async function findPlaylists(){
+
+const url="https://api.github.com/search/code?q=extension:m3u+iptv"
+
+let res=await fetch(url)
+
+let data=await res.json()
+
+let container=document.getElementById("lists")
+
+container.innerHTML=""
+
+data.items.slice(0,20).forEach(item=>{
+
+let li=document.createElement("li")
+
+li.innerHTML=`
+
+<a href="https://raw.githubusercontent.com/${item.repository.full_name}/master/${item.path}" target="_blank">
+
+${item.repository.full_name}
+
+</a>
+
+`
+
+container.appendChild(li)
+
+})
+
+}
+
+</script>
+
+</body>
+</html>
