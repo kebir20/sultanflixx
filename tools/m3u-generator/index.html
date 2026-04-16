@@ -2,32 +2,31 @@
 <html>
 
 <head>
+<meta charset="UTF-8">
 <title>M3U Generator</title>
 </head>
 
-<body style="background:#111;color:white;text-align:center">
+<body style="background:black;color:white;text-align:center">
 
-<h2>📄 M3U Generator</h2>
+<h2>M3U Generator</h2>
 
-<textarea id="channels" style="width:90%;height:200px"></textarea>
+<textarea id="input" style="width:90%;height:200px"></textarea>
 
 <br><br>
 
-<button onclick="generate()">Generate M3U</button>
+<button onclick="generate()">Generate</button>
 
 <script>
 
 function generate(){
 
-let text=document.getElementById("channels").value
-
-let lines=text.split("\n")
+let lines=document.getElementById("input").value.split("\n")
 
 let m3u="#EXTM3U\n"
 
-lines.forEach(l=>{
+lines.forEach(url=>{
 
-m3u+=`#EXTINF:-1,Channel\n${l}\n`
+m3u+=`#EXTINF:-1,Channel\n${url}\n`
 
 })
 
@@ -46,5 +45,4 @@ a.click()
 </script>
 
 </body>
-
 </html>
