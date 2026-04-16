@@ -1,20 +1,84 @@
+<!DOCTYPE html>
+<html lang="ar">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<title>SultanFlix IPTV Auto Scanner</title>
+
+<style>
+
+body{
+background:#0f0f0f;
+color:white;
+font-family:sans-serif;
+text-align:center;
+}
+
+button{
+background:#e50914;
+color:white;
+border:none;
+padding:12px;
+margin:10px;
+cursor:pointer;
+border-radius:6px;
+}
+
+ul{
+list-style:none;
+padding:0;
+max-width:800px;
+margin:auto;
+}
+
+li{
+background:#1a1a1a;
+margin:8px;
+padding:12px;
+border-radius:6px;
+}
+
+a{
+color:#00d0ff;
+text-decoration:none;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>📡 IPTV Auto Scanner</h1>
+
+<button onclick="scanGithub()">Search GitHub</button>
+
+<button onclick="scanReddit()">Search Reddit</button>
+
+<h2>Results</h2>
+
+<ul id="results"></ul>
+
 <script>
 
 const results = document.getElementById("results")
 
 function addResult(name,url){
 
-let li = document.createElement("li")
+let li=document.createElement("li")
 
-li.innerHTML = `<a href="${url}" target="_blank">${name}</a>`
+li.innerHTML=`<a href="${url}" target="_blank">${name}</a>`
 
 results.appendChild(li)
 
 }
 
-/* =========================
-GITHUB IPTV SEARCH
-========================= */
+/* ======================
+GITHUB SEARCH
+====================== */
 
 async function scanGithub(){
 
@@ -32,9 +96,6 @@ results.innerHTML=""
 
 data.items.slice(0,20).forEach(repo=>{
 
-const playlist =
-`https://raw.githubusercontent.com/${repo.full_name}/master/playlist.m3u`
-
 addResult(repo.full_name,repo.html_url)
 
 })
@@ -47,9 +108,9 @@ results.innerHTML="GitHub search failed"
 
 }
 
-/* =========================
-REDDIT IPTV SEARCH
-========================= */
+/* ======================
+REDDIT SEARCH
+====================== */
 
 async function scanReddit(){
 
@@ -65,9 +126,8 @@ results.innerHTML=""
 
 data.data.children.slice(0,20).forEach(post=>{
 
-let url = post.data.url
-
 let title = post.data.title
+let url = post.data.url
 
 addResult(title,url)
 
@@ -76,3 +136,7 @@ addResult(title,url)
 }
 
 </script>
+
+</body>
+
+</html>
