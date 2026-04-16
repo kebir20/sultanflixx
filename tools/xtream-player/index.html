@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<title>Xtream Player</title>
+</head>
+
+<body style="background:#111;color:white;text-align:center">
+
+<h2>📺 Xtream Codes Player</h2>
+
+<input id="server" placeholder="Server URL">
+<input id="user" placeholder="Username">
+<input id="pass" placeholder="Password">
+
+<button onclick="load()">Load Channels</button>
+
+<ul id="channels"></ul>
+
+<script>
+
+async function load(){
+
+let server=document.getElementById("server").value
+let user=document.getElementById("user").value
+let pass=document.getElementById("pass").value
+
+let url=`${server}/player_api.php?username=${user}&password=${pass}&action=get_live_streams`
+
+let res=await fetch(url)
+
+let data=await res.json()
+
+let list=document.getElementById("channels")
+
+list.innerHTML=""
+
+data.slice(0,50).forEach(ch=>{
+
+let li=document.createElement("li")
+
+li.innerText=ch.name
+
+list.appendChild(li)
+
+})
+
+}
+
+</script>
+
+</body>
+
+</html>
