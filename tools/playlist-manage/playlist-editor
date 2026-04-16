@@ -1,0 +1,13 @@
+<textarea id="playlist"></textarea>
+
+<button onclick="save()">Save</button>
+
+<script>
+
+function save(){
+
+localStorage.setItem("playlist",playlist.value)
+
+}
+
+</script>
