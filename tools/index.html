@@ -1,38 +1,53 @@
 <!DOCTYPE html>
 <html lang="ar">
+
 <head>
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 
-<title>SultanFlix IPTV Toolkit</title>
+<title>SultanFlix IPTV Checker</title>
 
 <style>
 
 body{
-background:#0f0f0f;
+background:#000;
 color:white;
-font-family:sans-serif;
+font-family:Arial;
 text-align:center;
 }
 
-.grid{
-display:grid;
-grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-gap:20px;
-padding:40px;
+input,button{
+padding:10px;
+margin:8px;
+border-radius:6px;
+border:none;
 }
 
-.card{
-background:#1a1a1a;
-padding:30px;
-border-radius:10px;
-cursor:pointer;
-transition:.3s;
-}
-
-.card:hover{
+button{
 background:#e50914;
+color:white;
+cursor:pointer;
+}
+
+table{
+width:100%;
+margin-top:20px;
+border-collapse:collapse;
+}
+
+td,th{
+padding:10px;
+border-bottom:1px solid #333;
+}
+
+video{
+width:80%;
+margin-top:20px;
+}
+
+.logo{
+width:40px;
 }
 
 </style>
@@ -41,43 +56,262 @@ background:#e50914;
 
 <body>
 
-<h1>📡 SultanFlix IPTV Toolkit</h1>
+<h1>📡 SultanFlix IPTV Checker</h1>
 
-<div class="grid">
+<input type="file" id="fileInput" accept=".m3u,.m3u8">
 
-<div class="card" onclick="location.href='iptv-checker/'">
-IPTV Checker
-</div>
+<br>
 
-<div class="card" onclick="location.href='iptv-editor/'">
-IPTV Editor
-</div>
+<input id="m3uUrl" placeholder="🔗 رابط M3U">
 
-<div class="card" onclick="location.href='iptv-speed/'">
-IPTV Speed Analyzer
-</div>
+<button onclick="loadM3U()">تحميل القائمة</button>
 
-<div class="card" onclick="location.href='iptv-scanner/'">
-IPTV Scanner
-</div>
+<br>
 
-<div class="card" onclick="location.href='xtream-player/'">
-Xtream Player
-</div>
+<button onclick="downloadWorking()">تحميل القنوات الشغالة</button>
 
-<div class="card" onclick="location.href='m3u-generator/'">
-M3U Generator
-</div>
+<input id="search" placeholder="🔎 بحث عن قناة" oninput="searchChannel()">
 
-<div class="card" onclick="location.href='logo-downloader/'">
-Logo Downloader
-</div>
+<br>
 
-<div class="card" onclick="location.href='auto-finder/'">
-IPTV Auto Finder
-</div>
+<video id="player" controls></video>
 
-</div>
+<table>
+
+<thead>
+
+<tr>
+<th>#</th>
+<th>Logo</th>
+<th>القناة</th>
+<th>تشغيل</th>
+<th>الحالة</th>
+</tr>
+
+</thead>
+
+<tbody id="list"></tbody>
+
+</table>
+
+<script>
+
+let channels=[]
+
+const proxy="https://api.allorigins.win/raw?url="
+
+/* رفع ملف M3U */
+
+document.getElementById("fileInput").addEventListener("change",function(e){
+
+const file=e.target.files[0]
+
+if(!file) return
+
+const reader=new FileReader()
+
+reader.onload=function(event){
+
+parseM3U(event.target.result)
+
+}
+
+reader.readAsText(file)
+
+})
+
+/* تحميل رابط M3U */
+
+async function loadM3U(){
+
+const url=document.getElementById("m3uUrl").value
+
+if(!url){
+
+alert("أدخل رابط M3U")
+
+return
+
+}
+
+try{
+
+const res=await fetch(proxy+encodeURIComponent(url))
+
+const text=await res.text()
+
+parseM3U(text)
+
+}catch{
+
+alert("فشل تحميل القائمة")
+
+}
+
+}
+
+/* تحليل ملف M3U */
+
+function parseM3U(text){
+
+channels=[]
+
+let lines=text.split("\n")
+
+let name=""
+let logo=""
+
+for(let line of lines){
+
+line=line.trim()
+
+if(line.startsWith("#EXTINF")){
+
+let nameMatch=line.match(/,(.*)/)
+
+name=nameMatch?nameMatch[1]:"Channel"
+
+let logoMatch=line.match(/tvg-logo="(.*?)"/)
+
+logo=logoMatch?logoMatch[1]:""
+
+}
+
+else if(line && !line.startsWith("#")){
+
+channels.push({
+name:name,
+logo:logo,
+url:line,
+status:"checking"
+})
+
+}
+
+}
+
+render()
+
+checkChannels()
+
+}
+
+/* عرض القنوات */
+
+function render(){
+
+const list=document.getElementById("list")
+
+list.innerHTML=""
+
+channels.forEach((c,i)=>{
+
+list.innerHTML+=`
+
+<tr>
+
+<td>${i+1}</td>
+
+<td><img class="logo" src="${c.logo}"></td>
+
+<td>${c.name}</td>
+
+<td>
+<button onclick="play('${c.url}')">▶</button>
+</td>
+
+<td id="status${i}">🔍</td>
+
+</tr>
+
+`
+
+})
+
+}
+
+/* تشغيل القناة */
+
+function play(url){
+
+const player=document.getElementById("player")
+
+player.src=url
+
+player.play()
+
+}
+
+/* فحص القنوات */
+
+async function checkChannels(){
+
+for(let i=0;i<channels.length;i++){
+
+try{
+
+let res=await fetch(channels[i].url,{method:"HEAD"})
+
+channels[i].status=res.ok
+
+}catch{
+
+channels[i].status=false
+
+}
+
+document.getElementById("status"+i).innerHTML=
+
+channels[i].status?"✅":"❌"
+
+}
+
+}
+
+/* البحث */
+
+function searchChannel(){
+
+let value=document.getElementById("search").value.toLowerCase()
+
+let rows=document.querySelectorAll("#list tr")
+
+rows.forEach(row=>{
+
+let name=row.children[2].innerText.toLowerCase()
+
+row.style.display=name.includes(value)?"":"none"
+
+})
+
+}
+
+/* تحميل القنوات الشغالة */
+
+function downloadWorking(){
+
+let text="#EXTM3U\n"
+
+channels.filter(c=>c.status).forEach(c=>{
+
+text+=`#EXTINF:-1,${c.name}\n${c.url}\n`
+
+})
+
+let blob=new Blob([text])
+
+let a=document.createElement("a")
+
+a.href=URL.createObjectURL(blob)
+
+a.download="working_channels.m3u"
+
+a.click()
+
+}
+
+</script>
 
 </body>
+
 </html>
