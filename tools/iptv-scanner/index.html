@@ -6,45 +6,39 @@
 <title>IPTV Scanner</title>
 </head>
 
-<body style="background:black;color:white;text-align:center">
+<body style="background:#000;color:white;text-align:center">
 
-<h2>IPTV Scanner</h2>
+<h2>🔎 IPTV Scanner</h2>
 
-<input id="url" placeholder="M3U URL">
+<button onclick="scan()">Search IPTV Lists</button>
 
-<button onclick="scan()">Scan</button>
-
-<ul id="list"></ul>
+<ul id="lists"></ul>
 
 <script>
 
-const proxy="https://api.allorigins.win/raw?url="
-
 async function scan(){
 
-let url=document.getElementById("url").value
+const url="https://api.github.com/search/code?q=extension:m3u+iptv"
 
-let res=await fetch(proxy+encodeURIComponent(url))
+let res=await fetch(url)
 
-let text=await res.text()
+let data=await res.json()
 
-let lines=text.split("\n")
+let container=document.getElementById("lists")
 
-let list=document.getElementById("list")
+container.innerHTML=""
 
-list.innerHTML=""
-
-lines.forEach(line=>{
-
-if(line.startsWith("http")){
+data.items.slice(0,30).forEach(item=>{
 
 let li=document.createElement("li")
 
-li.innerText=line
+li.innerHTML=`
+<a href="https://raw.githubusercontent.com/${item.repository.full_name}/master/${item.path}" target="_blank">
+${item.repository.full_name}
+</a>
+`
 
-list.appendChild(li)
-
-}
+container.appendChild(li)
 
 })
 
