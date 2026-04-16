@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<title>M3U Generator</title>
+</head>
+
+<body style="background:#111;color:white;text-align:center">
+
+<h2>📄 M3U Generator</h2>
+
+<textarea id="channels" style="width:90%;height:200px"></textarea>
+
+<br><br>
+
+<button onclick="generate()">Generate M3U</button>
+
+<script>
+
+function generate(){
+
+let text=document.getElementById("channels").value
+
+let lines=text.split("\n")
+
+let m3u="#EXTM3U\n"
+
+lines.forEach(l=>{
+
+m3u+=`#EXTINF:-1,Channel\n${l}\n`
+
+})
+
+let blob=new Blob([m3u])
+
+let a=document.createElement("a")
+
+a.href=URL.createObjectURL(blob)
+
+a.download="playlist.m3u"
+
+a.click()
+
+}
+
+</script>
+
+</body>
+
+</html>
