@@ -1,0 +1,22 @@
+<h1>IPTV Playlist Merger</h1>
+
+<textarea id="list1" placeholder="Playlist 1"></textarea>
+<textarea id="list2" placeholder="Playlist 2"></textarea>
+
+<button onclick="merge()">Merge</button>
+
+<textarea id="result"></textarea>
+
+<script>
+
+function merge(){
+
+const a=document.getElementById("list1").value
+const b=document.getElementById("list2").value
+
+document.getElementById("result").value=
+"#EXTM3U\n"+a+"\n"+b
+
+}
+
+</script>
