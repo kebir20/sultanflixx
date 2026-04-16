@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="en">
 
 <head>
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 
-<title>SultanFlix IPTV Auto Scanner</title>
+<title>SultanFlix IPTV Global Scanner</title>
 
 <style>
 
@@ -27,17 +27,15 @@ cursor:pointer;
 border-radius:6px;
 }
 
-ul{
-list-style:none;
-padding:0;
-max-width:800px;
+#results{
+max-width:900px;
 margin:auto;
 }
 
-li{
+.card{
 background:#1a1a1a;
-margin:8px;
-padding:12px;
+margin:10px;
+padding:15px;
 border-radius:6px;
 }
 
@@ -52,84 +50,105 @@ text-decoration:none;
 
 <body>
 
-<h1>📡 IPTV Auto Scanner</h1>
+<h1>🌍 IPTV Global Scanner</h1>
 
-<button onclick="scanGithub()">Search GitHub</button>
-
-<button onclick="scanReddit()">Search Reddit</button>
+<button onclick="scanGithub()">GitHub</button>
+<button onclick="scanReddit()">Reddit</button>
+<button onclick="scanPastebin()">Pastebin</button>
 
 <h2>Results</h2>
 
-<ul id="results"></ul>
+<div id="results"></div>
 
 <script>
 
 const results = document.getElementById("results")
 
-function addResult(name,url){
+function add(title,url){
 
-let li=document.createElement("li")
+let card=document.createElement("div")
 
-li.innerHTML=`<a href="${url}" target="_blank">${name}</a>`
+card.className="card"
 
-results.appendChild(li)
+card.innerHTML=`
+<a href="${url}" target="_blank">
+${title}
+</a>
+`
+
+results.appendChild(card)
 
 }
 
-/* ======================
+/* =========================
 GITHUB SEARCH
-====================== */
+========================= */
 
 async function scanGithub(){
 
 results.innerHTML="Searching GitHub..."
 
-try{
-
-const res = await fetch(
+let res = await fetch(
 "https://api.github.com/search/repositories?q=iptv+m3u&sort=stars"
 )
 
-const data = await res.json()
+let data = await res.json()
 
 results.innerHTML=""
 
 data.items.slice(0,20).forEach(repo=>{
 
-addResult(repo.full_name,repo.html_url)
+add(repo.full_name,repo.html_url)
 
 })
 
-}catch(e){
-
-results.innerHTML="GitHub search failed"
-
 }
 
-}
-
-/* ======================
+/* =========================
 REDDIT SEARCH
-====================== */
+========================= */
 
 async function scanReddit(){
 
 results.innerHTML="Searching Reddit..."
 
-const res = await fetch(
+let res = await fetch(
 "https://www.reddit.com/search.json?q=iptv+m3u"
 )
 
-const data = await res.json()
+let data = await res.json()
 
 results.innerHTML=""
 
 data.data.children.slice(0,20).forEach(post=>{
 
-let title = post.data.title
-let url = post.data.url
+add(post.data.title,post.data.url)
 
-addResult(title,url)
+})
+
+}
+
+/* =========================
+PASTEBIN SEARCH
+========================= */
+
+async function scanPastebin(){
+
+results.innerHTML="Searching Pastebin..."
+
+const urls=[
+
+"https://pastebin.com/raw/8A0h2kF6",
+"https://pastebin.com/raw/Zm0pXQyQ",
+"https://pastebin.com/raw/tp4zjH1r"
+
+]
+
+results.innerHTML=""
+
+urls.forEach(u=>{
+
+add("M3U Playlist",u)
 
 })
 
@@ -138,5 +157,4 @@ addResult(title,url)
 </script>
 
 </body>
-
 </html>
