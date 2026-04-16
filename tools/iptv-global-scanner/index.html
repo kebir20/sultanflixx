@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<meta charset="UTF-8">
+<title>IPTV Global Scanner</title>
+
+<style>
+
+body{
+background:#0f0f0f;
+color:white;
+font-family:sans-serif;
+text-align:center;
+}
+
+button{
+padding:12px;
+background:#e50914;
+border:none;
+color:white;
+margin:10px;
+cursor:pointer;
+}
+
+#channels{
+margin-top:30px;
+max-width:800px;
+margin-left:auto;
+margin-right:auto;
+}
+
+.channel{
+background:#1a1a1a;
+padding:10px;
+margin:10px;
+border-radius:8px;
+}
+
+a{
+color:#00d0ff;
+text-decoration:none;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>🌍 IPTV Global Scanner</h1>
+
+<button onclick="scan()">Scan Internet</button>
+
+<div id="channels"></div>
+
+<script>
+
+const sources=[
+
+"https://iptv-org.github.io/iptv/index.m3u",
+"https://iptv-org.github.io/iptv/languages/ara.m3u",
+"https://iptv-org.github.io/iptv/categories/news.m3u"
+
+]
+
+async function scan(){
+
+channels.innerHTML="Scanning playlists..."
+
+let results=[]
+
+for(const src of sources){
+
+try{
+
+let res=await fetch(src)
+
+let text=await res.text()
+
+let lines=text.split("\n")
+
+for(let i=0;i<lines.length;i++){
+
+if(lines[i].startsWith("#EXTINF")){
+
+let name=lines[i].split(",")[1]
+
+let url=lines[i+1]
+
+results.push({name,url})
+
+}
+
+}
+
+}catch{}
+
+}
+
+show(results)
+
+}
+
+function show(list){
+
+channels.innerHTML=""
+
+list.slice(0,200).forEach(ch=>{
+
+let div=document.createElement("div")
+
+div.className="channel"
+
+div.innerHTML=
+`
+<b>${ch.name}</b><br>
+<a href="${ch.url}" target="_blank">Play</a>
+`
+
+channels.appendChild(div)
+
+})
+
+}
+
+</script>
+
+</body>
+</html>
