@@ -4,7 +4,7 @@
 <head>
 
 <meta charset="UTF-8">
-<title>IPTV Global Scanner PRO</title>
+<title>IPTV Global Scanner PRO MAX</title>
 
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
@@ -22,13 +22,20 @@ background:#e50914;
 border:none;
 padding:10px 20px;
 color:white;
-margin:10px;
+margin:6px;
 cursor:pointer;
 border-radius:6px;
 }
 
+input,select{
+padding:8px;
+margin:6px;
+border-radius:6px;
+border:none;
+}
+
 #results{
-max-width:700px;
+max-width:800px;
 margin:auto;
 }
 
@@ -44,8 +51,13 @@ background:#e50914;
 }
 
 video{
-width:80%;
+width:90%;
 margin-top:20px;
+}
+
+.status{
+font-size:12px;
+opacity:0.8;
 }
 
 </style>
@@ -54,16 +66,27 @@ margin-top:20px;
 
 <body>
 
-<h1>🌍 IPTV Global Scanner PRO</h1>
+<h1>🌍 IPTV Global Scanner PRO MAX</h1>
 
-<button onclick="scanGitHub()">Search GitHub</button>
-<button onclick="scanReddit()">Search Reddit</button>
-<button onclick="scanPastebin()">Search Pastebin</button>
+<button onclick="scanGitHub()">GitHub</button>
+<button onclick="scanReddit()">Reddit</button>
+<button onclick="scanPastebin()">Pastebin</button>
 <button onclick="scanInternet()">Scan Internet</button>
+<button onclick="downloadPlaylist()">Download M3U</button>
 
-<br><br>
+<br>
 
 <input id="search" placeholder="🔎 Search Channel" onkeyup="searchChannel()">
+
+<select onchange="filterQuality(this.value)">
+<option value="">All Quality</option>
+<option value="1080">1080p</option>
+<option value="720">720p</option>
+<option value="480">480p</option>
+<option value="360">360p</option>
+</select>
+
+<div id="count"></div>
 
 <br>
 
@@ -74,6 +97,7 @@ margin-top:20px;
 <script>
 
 let channels=[]
+let urls=new Set()
 
 async function loadM3U(url){
 
@@ -92,21 +116,60 @@ console.log("failed",url)
 
 function parseM3U(data){
 
-let lines = data.split("\n")
+let lines=data.split("\n")
 
 for(let i=0;i<lines.length;i++){
 
 if(lines[i].startsWith("#EXTINF")){
 
-let name = lines[i].split(",")[1]
+let name=lines[i].split(",")[1] || "Unknown"
 
-let url = lines[i+1]
+let url=lines[i+1]
+
+if(!url || urls.has(url)) continue
+
+urls.add(url)
+
+checkStream(url).then(ok=>{
+
+if(ok){
 
 channels.push({name,url})
 
 createChannel(name,url)
 
+updateCount()
+
 }
+
+})
+
+}
+
+}
+
+}
+
+async function checkStream(url){
+
+try{
+
+const controller=new AbortController()
+
+const timeout=setTimeout(()=>controller.abort(),4000)
+
+const res=await fetch(url,{
+method:"HEAD",
+signal:controller.signal
+})
+
+clearTimeout(timeout)
+
+return res.ok
+
+}catch{
+
+return false
 
 }
 
@@ -118,9 +181,15 @@ let div=document.createElement("div")
 div.className="channel"
 
 div.innerHTML=`
-${name}
+
+<b>${name}</b>
+
 <br>
+
 <button onclick="play('${url}')">▶ Play</button>
+
+<span class="status">🟢 Working</span>
+
 `
 
 document.getElementById("results").appendChild(div)
@@ -133,8 +202,10 @@ let video=document.getElementById("player")
 
 if(Hls.isSupported()){
 
-let hls=new Hls()
+const hls=new Hls()
+
 hls.loadSource(url)
+
 hls.attachMedia(video)
 
 }else{
@@ -154,34 +225,72 @@ let cards=document.querySelectorAll(".channel")
 cards.forEach(card=>{
 
 card.style.display=
+
 card.innerText.toLowerCase().includes(input)
+
 ?"block":"none"
 
 })
 
 }
 
-async function scanGitHub(){
+function filterQuality(q){
 
-let res=await fetch(
-"https://api.github.com/search/code?q=extension:m3u+iptv"
-)
+let cards=document.querySelectorAll(".channel")
 
-let data=await res.json()
+cards.forEach(card=>{
 
-data.items.slice(0,10).forEach(item=>{
-
-let url=item.html_url
-console.log(url)
+if(q=="" || card.innerText.includes(q))
+card.style.display="block"
+else
+card.style.display="none"
 
 })
+
+}
+
+function updateCount(){
+
+document.getElementById("count").innerHTML=
+
+"Channels Found: "+channels.length
+
+}
+
+function downloadPlaylist(){
+
+let m3u="#EXTM3U\n"
+
+channels.forEach(c=>{
+
+m3u+=`#EXTINF:-1,${c.name}\n${c.url}\n`
+
+})
+
+let blob=new Blob([m3u])
+
+let a=document.createElement("a")
+
+a.href=URL.createObjectURL(blob)
+
+a.download="sultanflix_playlist.m3u"
+
+a.click()
+
+}
+
+async function scanGitHub(){
+
+alert("GitHub scanner limited by API")
 
 }
 
 async function scanReddit(){
 
 let res=await fetch(
+
 "https://www.reddit.com/search.json?q=iptv+m3u"
+
 )
 
 let data=await res.json()
@@ -194,11 +303,13 @@ console.log(p.data.url)
 
 }
 
-async function scanPastebin(){
+function scanPastebin(){
 
 let urls=[
+
 "https://pastebin.com/raw/iptv",
 "https://pastebin.com/raw/m3u"
+
 ]
 
 urls.forEach(loadM3U)
@@ -211,7 +322,8 @@ let lists=[
 
 "https://iptv-org.github.io/iptv/index.m3u",
 "https://iptv-org.github.io/iptv/languages/ara.m3u",
-"https://iptv-org.github.io/iptv/categories/news.m3u"
+"https://iptv-org.github.io/iptv/categories/news.m3u",
+"https://iptv-org.github.io/iptv/categories/sports.m3u"
 
 ]
 
