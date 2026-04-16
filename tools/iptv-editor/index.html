@@ -1,1 +1,79 @@
-tools/iptv-editor/index.html
+<!DOCTYPE html>
+<html>
+<head>
+<title>IPTV Editor</title>
+<style>
+body{background:#111;color:white;font-family:sans-serif;text-align:center}
+textarea{width:90%;height:300px;margin:10px}
+button{padding:10px;background:#e50914;color:white;border:none}
+</style>
+</head>
+
+<body>
+
+<h2>✏ IPTV Editor</h2>
+
+<textarea id="m3uInput" placeholder="ضع ملف M3U هنا"></textarea>
+
+<br>
+
+<button onclick="removeDuplicates()">إزالة المكرر</button>
+<button onclick="sortChannels()">ترتيب القنوات</button>
+<button onclick="download()">تنزيل الملف</button>
+
+<textarea id="output"></textarea>
+
+<script>
+
+function removeDuplicates(){
+
+let lines=document.getElementById("m3uInput").value.split("\n")
+
+let seen=new Set()
+let result=[]
+
+for(let line of lines){
+
+if(!seen.has(line)){
+seen.add(line)
+result.push(line)
+}
+
+}
+
+document.getElementById("output").value=result.join("\n")
+
+}
+
+function sortChannels(){
+
+let text=document.getElementById("m3uInput").value
+
+let channels=text.split("#EXTINF")
+
+channels.shift()
+
+channels.sort()
+
+document.getElementById("output").value="#EXTM3U\n#EXTINF"+channels.join("#EXTINF")
+
+}
+
+function download(){
+
+let blob=new Blob([document.getElementById("output").value])
+
+let a=document.createElement("a")
+
+a.href=URL.createObjectURL(blob)
+
+a.download="clean_playlist.m3u"
+
+a.click()
+
+}
+
+</script>
+
+</body>
+</html>
