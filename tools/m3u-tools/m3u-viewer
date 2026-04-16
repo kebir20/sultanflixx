@@ -1,0 +1,19 @@
+<input id="url" placeholder="M3U URL">
+
+<button onclick="load()">Load</button>
+
+<div id="channels"></div>
+
+<script>
+
+async function load(){
+
+let res=await fetch(url.value)
+
+let text=await res.text()
+
+channels.innerText=text
+
+}
+
+</script>
