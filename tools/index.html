@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<title>IPTV Tools</title>
+
+<style>
+
+body{
+background:#0f0f0f;
+color:white;
+font-family:sans-serif;
+text-align:center;
+}
+
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+gap:20px;
+padding:40px;
+}
+
+.card{
+
+background:#1a1a1a;
+padding:30px;
+border-radius:10px;
+cursor:pointer;
+transition:.3s;
+
+}
+
+.card:hover{
+
+background:#e50914;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>📡 IPTV Tools</h1>
+
+<div class="grid">
+
+<div class="card" onclick="location.href='iptv-checker/'">
+IPTV Checker
+</div>
+
+<div class="card" onclick="location.href='iptv-editor/'">
+IPTV Editor
+</div>
+
+<div class="card" onclick="location.href='iptv-speed/'">
+IPTV Speed Test
+</div>
+
+<div class="card" onclick="location.href='iptv-scanner/'">
+IPTV Scanner
+</div>
+
+</div>
+
+</body>
+</html>
