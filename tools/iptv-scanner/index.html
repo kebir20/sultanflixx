@@ -1,44 +1,117 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="ar">
 <head>
+
 <meta charset="UTF-8">
-<title>IPTV Scanner</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<title>SultanFlix IPTV Auto Scanner</title>
+
+<style>
+
+body{
+background:#0f0f0f;
+color:white;
+font-family:sans-serif;
+text-align:center;
+}
+
+button{
+background:#e50914;
+color:white;
+border:none;
+padding:12px;
+margin:10px;
+cursor:pointer;
+border-radius:6px;
+}
+
+ul{
+list-style:none;
+padding:0;
+}
+
+li{
+background:#1a1a1a;
+margin:8px;
+padding:10px;
+border-radius:6px;
+}
+
+a{
+color:#00d0ff;
+text-decoration:none;
+}
+
+</style>
+
 </head>
 
-<body style="background:#000;color:white;text-align:center">
+<body>
 
-<h2>🔎 IPTV Scanner</h2>
+<h1>📡 IPTV Auto Scanner</h1>
 
-<button onclick="scan()">Search IPTV Lists</button>
+<button onclick="scanGithub()">Search GitHub</button>
 
-<ul id="lists"></ul>
+<button onclick="scanReddit()">Search Reddit</button>
+
+<h2>Results</h2>
+
+<ul id="results"></ul>
 
 <script>
 
-async function scan(){
+const results=document.getElementById("results")
 
-const url="https://api.github.com/search/code?q=extension:m3u+iptv"
-
-let res=await fetch(url)
-
-let data=await res.json()
-
-let container=document.getElementById("lists")
-
-container.innerHTML=""
-
-data.items.slice(0,30).forEach(item=>{
+function addResult(name,url){
 
 let li=document.createElement("li")
 
-li.innerHTML=`
-<a href="https://raw.githubusercontent.com/${item.repository.full_name}/master/${item.path}" target="_blank">
-${item.repository.full_name}
-</a>
-`
+li.innerHTML=`<a href="${url}" target="_blank">${name}</a>`
 
-container.appendChild(li)
+results.appendChild(li)
+
+}
+
+async function scanGithub(){
+
+results.innerHTML="Searching GitHub..."
+
+const api="https://api.github.com/search/code?q=extension:m3u+iptv"
+
+let res=await fetch(api)
+
+let data=await res.json()
+
+results.innerHTML=""
+
+data.items.slice(0,30).forEach(item=>{
+
+let raw=`https://raw.githubusercontent.com/${item.repository.full_name}/master/${item.path}`
+
+addResult(item.repository.full_name,raw)
+
+})
+
+}
+
+async function scanReddit(){
+
+results.innerHTML="Searching Reddit..."
+
+const api="https://www.reddit.com/search.json?q=iptv+m3u"
+
+let res=await fetch(api)
+
+let data=await res.json()
+
+results.innerHTML=""
+
+data.data.children.slice(0,20).forEach(post=>{
+
+let url=post.data.url
+
+addResult(post.data.title,url)
 
 })
 
