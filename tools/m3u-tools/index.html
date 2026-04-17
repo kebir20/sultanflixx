@@ -424,30 +424,26 @@
 
         async function loadM3U() {
             let m3uData = "";
-            const fileInput = document.getElementById('fileInput').files[0];
-            const m3uUrl = document.getElementById('m3uUrl').value;
+            const fileInput = document.getElementById("fileInput").files[0];
+            const m3uUrl = document.getElementById("m3uUrl").value;
+
             if (fileInput) {
-                m3uData = await new Promise(resolve => {
-                    const reader = new FileReader();
-                    reader.onload = e => resolve(e.target.result);
-                    reader.readAsText(fileInput);
-                });
+                const reader = new FileReader();
+                reader.onload = async function (e) {
+                    m3uData = e.target.result;
+                    await processM3U(m3uData);
+                };
+                reader.readAsText(fileInput);
             } else if (m3uUrl) {
-                try {
-                    const response = await fetch(m3uUrl);
-                    m3uData = await response.text();
-                } catch (error) {
-                    alert("❌ خطأ في تحميل الرابط: " + error);
-                    return;
+                m3uData = await fetchM3U(m3uUrl);
+                if (m3uData) {
+                    await processM3U(m3uData);
                 }
             } else {
-                alert("⚠️ يرجى إدخال رابط أو تحميل ملف");
-                return;
-            }
-            if (m3uData) {
-                await processM3U(m3uData);
+                alert("⚠️ يرجى إدخال رابط M3U أو تحميل ملف.");
             }
         }
+
 
         function toggleDarkMode() {
             document.body.classList.toggle('dark-mode');
