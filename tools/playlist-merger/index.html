@@ -1,22 +1,185 @@
-<h1>IPTV Playlist Merger</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPTV Server Tester</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            font-weight: bold;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background-color: #28a745;
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background-color: #218838;
+        }
+        .account-info, .channels-list {
+            margin-top: 20px;
+            padding: 10px;
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .account-info ul, .channels-list ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .account-info li, .channels-list li {
+            margin-bottom: 10px;
+        }
+        .account-info li span {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
 
-<textarea id="list1" placeholder="Playlist 1"></textarea>
-<textarea id="list2" placeholder="Playlist 2"></textarea>
+    <div class="container">
+        <h1>IPTV Server Tester</h1>
 
-<button onclick="merge()">Merge</button>
+        <!-- Form for login details -->
+        <form id="loginForm">
+            <div class="form-group">
+                <label>Host:Port</label>
+                <input type="text" id="hostPort" placeholder="http://example.com:8080/" required>
+            </div>
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="username" placeholder="your_username" required>
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="password" placeholder="your_password" required>
+            </div>
+            <button type="submit" class="btn">Sign In</button>
+        </form>
 
-<textarea id="result"></textarea>
+        <!-- File upload for M3U -->
+        <div class="form-group">
+            <label>Upload M3U File</label>
+            <input type="file" id="m3uFile" accept=".m3u">
+        </div>
 
-<script>
+        <!-- Account Info Section -->
+        <div id="accountInfo" class="account-info" style="display: none;">
+            <h2>Account Info</h2>
+            <ul>
+                <li><span>Username:</span> <span id="infoUsername"></span></li>
+                <li><span>Status:</span> <span id="infoStatus"></span></li>
+                <li><span>Created At:</span> <span id="infoCreatedAt"></span></li>
+                <li><span>Expiry Date:</span> <span id="infoExpiryDate"></span></li>
+                <li><span>Trial:</span> <span id="infoTrial"></span></li>
+                <li><span>Active Connections:</span> <span id="infoActiveConnections"></span></li>
+                <li><span>Max Connections:</span> <span id="infoMaxConnections"></span></li>
+            </ul>
+        </div>
 
-function merge(){
+        <!-- Channels List Section -->
+        <div id="channelsList" class="channels-list" style="display: none;">
+            <h2>Channels List</h2>
+            <ul id="channelItems"></ul>
+        </div>
+    </div>
 
-const a=document.getElementById("list1").value
-const b=document.getElementById("list2").value
+    <script>
+        // Function to handle form submission
+        document.getElementById('loginForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const hostPort = document.getElementById('hostPort').value;
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
 
-document.getElementById("result").value=
-"#EXTM3U\n"+a+"\n"+b
+            // Display account info (for demonstration purposes)
+            document.getElementById('infoUsername').textContent = username;
+            document.getElementById('infoStatus').textContent = 'Active';
+            document.getElementById('infoCreatedAt').textContent = '20 mai, 2024';
+            document.getElementById('infoExpiryDate').textContent = '15 avril, 2025';
+            document.getElementById('infoTrial').textContent = 'No';
+            document.getElementById('infoActiveConnections').textContent = '0';
+            document.getElementById('infoMaxConnections').textContent = '4';
 
-}
+            document.getElementById('accountInfo').style.display = 'block';
+        });
 
-</script>
+        // Function to handle M3U file upload
+        document.getElementById('m3uFile').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+
+                reader.onload = function(e) {
+                    const m3uContent = e.target.result;
+
+                    // Parse M3U content to extract channels
+                    const lines = m3uContent.split('\n');
+                    const channels = [];
+                    let currentChannel = null;
+
+                    lines.forEach(line => {
+                        if (line.startsWith('#EXTINF')) {
+                            currentChannel = { title: line.split(',')[1].trim() };
+                        } else if (currentChannel && line.startsWith('http')) {
+                            currentChannel.url = line.trim();
+                            channels.push(currentChannel);
+                            currentChannel = null;
+                        }
+                    });
+
+                    // Display channels
+                    const channelList = document.getElementById('channelItems');
+                    channelList.innerHTML = ''; // Clear previous channels
+
+                    channels.forEach(channel => {
+                        const li = document.createElement('li');
+                        li.textContent = `${channel.title} - ${channel.url}`;
+                        channelList.appendChild(li);
+                    });
+
+                    document.getElementById('channelsList').style.display = 'block';
+                };
+
+                reader.readAsText(file);
+            }
+        });
+    </script>
+
+</body>
+</html>
