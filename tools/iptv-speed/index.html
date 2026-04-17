@@ -1,46 +1,77 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="ar">
 <head>
-<meta charset="UTF-8">
-<title>IPTV Speed Test</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>فحص سيرفرات IPTV</title>
 </head>
+<body>
+    <h2>🔍 فحص سيرفرات IPTV (M3U Checker)</h2>
+    
+    <!-- إدخال رابط M3U -->
+    <input type="text" id="m3uUrl" placeholder="أدخل رابط M3U">
+    <button onclick="fetchM3U()">📂 تحميل وفحص</button>
 
-<body style="background:black;color:white;text-align:center">
+    <!-- رفع ملف M3U محلي -->
+    <input type="file" id="fileInput" accept=".m3u">
+    <button onclick="loadLocalFile()">📂 فحص الملف المحلي</button>
 
-<h2>IPTV Speed Test</h2>
+    <!-- عرض النتائج -->
+    <h3>📺 قائمة القنوات:</h3>
+    <pre id="output"></pre>
 
-<input id="url" placeholder="Stream URL">
+    <script>
+        function fetchM3U() {
+    let url = document.getElementById("m3uUrl").value.trim();
+    if (!url) {
+        alert("⚠️ الرجاء إدخال رابط M3U صحيح!");
+        return;
+    }
 
-<button onclick="test()">Test</button>
-
-<p id="result"></p>
-
-<script>
-
-async function test(){
-
-let url=document.getElementById("url").value
-
-let start=Date.now()
-
-try{
-
-await fetch(url,{method:"HEAD"})
-
-let speed=Date.now()-start
-
-document.getElementById("result").innerText="Speed "+speed+" ms"
-
-}catch{
-
-document.getElementById("result").innerText="Stream Offline"
-
+    let xhr = new XMLHttpRequest();
+    xhr.open("GET", url, true);
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+                processM3U(xhr.responseText);
+            } else {
+                alert("❌ خطأ في تحميل الملف: " + xhr.status);
+            }
+        }
+    };
+    xhr.send();
 }
 
-}
+        function loadLocalFile() {
+            let file = document.getElementById("fileInput").files[0];
+            if (!file) {
+                alert("⚠️ الرجاء اختيار ملف M3U!");
+                return;
+            }
 
-</script>
+            let reader = new FileReader();
+            reader.onload = function(event) {
+                processM3U(event.target.result);
+            };
+            reader.readAsText(file);
+        }
 
+        function processM3U(data) {
+            let lines = data.split("\n");
+            let output = "";
+
+            for (let i = 0; i < lines.length; i++) {
+                if (lines[i].startsWith("#EXTINF")) {
+                    let info = lines[i].split(",");
+                    let channelName = info.length > 1 ? info[1] : "غير معروف";
+                    let streamUrl = lines[i + 1] ? lines[i + 1].trim() : "❌ رابط غير متاح";
+                    
+                    output += `📺 ${channelName} ➜ 🌐 ${streamUrl}\n`;
+                }
+            }
+
+            document.getElementById("output").textContent = output || "❌ لا توجد قنوات في الملف!";
+        }
+    </script>
 </body>
 </html>
