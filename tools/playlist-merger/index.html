@@ -140,28 +140,28 @@
         });
 
         // Function to handle M3U file upload
-        document.getElementById('m3uFile').addEventListener('change', function(event) {
-            const file = event.target.files[0];
-            if (file) {
+        async function loadM3U() {
+            let m3uData = "";
+            const fileInput = document.getElementById("fileInput").files[0];
+            const m3uUrl = document.getElementById("m3uUrl").value;
+
+            if (fileInput) {
                 const reader = new FileReader();
+                reader.onload = async function (e) {
+                    m3uData = e.target.result;
+                    await processM3U(m3uData);
+                };
+                reader.readAsText(fileInput);
+            } else if (m3uUrl) {
+                m3uData = await fetchM3U(m3uUrl);
+                if (m3uData) {
+                    await processM3U(m3uData);
+                }
+            } else {
+                alert("⚠️ يرجى إدخال رابط M3U أو تحميل ملف.");
+            }
+        }
 
-                reader.onload = function(e) {
-                    const m3uContent = e.target.result;
-
-                    // Parse M3U content to extract channels
-                    const lines = m3uContent.split('\n');
-                    const channels = [];
-                    let currentChannel = null;
-
-                    lines.forEach(line => {
-                        if (line.startsWith('#EXTINF')) {
-                            currentChannel = { title: line.split(',')[1].trim() };
-                        } else if (currentChannel && line.startsWith('http')) {
-                            currentChannel.url = line.trim();
-                            channels.push(currentChannel);
-                            currentChannel = null;
-                        }
-                    });
 
                     // Display channels
                     const channelList = document.getElementById('channelItems');
