@@ -1,54 +1,241 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>IPTV Panel</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPTV Server Tester</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            font-weight: bold;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background-color: #28a745;
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background-color: #218838;
+        }
+        .categories {
+            margin-top: 20px;
+        }
+        .category {
+            margin-bottom: 20px;
+        }
+        .category-header {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .channel-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 20px;
+        }
+        .channel-item {
+            text-align: center;
+            cursor: pointer;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            transition: transform 0.3s ease;
+        }
+        .channel-item:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .channel-image {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        .video-player {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 999;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+        }
+        video {
+            width: 100%;
+            height: 100%;
+            max-height: 80vh;
+            max-width: 80vw;
+            object-fit: contain;
+        }
+    </style>
 </head>
+<body>
 
-<body style="background:black;color:white;text-align:center">
+    <div class="container">
+        <h1>IPTV Server Tester</h1>
 
-<h2>📺 IPTV Panel</h2>
+        <!-- Form for M3U file upload -->
+        <div class="form-group">
+            <label>Upload M3U File</label>
+            <input type="file" id="m3uFile" accept=".m3u">
+        </div>
 
-<input id="server" placeholder="Server URL">
-<input id="user" placeholder="Username">
-<input id="pass" placeholder="Password">
+        <!-- Categories and Channels Section -->
+        <div id="categories" class="categories"></div>
 
-<button onclick="load()">Load Channels</button>
+        <!-- Video Player Section -->
+        <div id="videoPlayer" class="video-player" style="display: none;">
+            <video controls></video>
+            <button onclick="closeVideoPlayer()">Close</button>
+        </div>
+    </div>
 
-<ul id="channels"></ul>
+    <script>
+        // Function to handle M3U file upload
+        document.getElementById('m3uFile').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
 
-<script>
+                reader.onload = function(e) {
+                    const m3uContent = e.target.result;
 
-async function load(){
+                    // Parse M3U content to extract channels
+                    const lines = m3uContent.split('\n');
+                    const channels = [];
+                    let currentChannel = null;
 
-let server=document.getElementById("server").value
-let user=document.getElementById("user").value
-let pass=document.getElementById("pass").value
+                    lines.forEach(line => {
+                        if (line.startsWith('#EXTINF')) {
+                            const parts = line.split(',');
+                            const description = parts[1].trim();
+                            const attributes = parts[0].split(':');
 
-let url=`${server}/player_api.php?username=${user}&password=${pass}&action=get_live_streams`
+                            // Extract logo and group title
+                            let logo = '';
+                            let groupTitle = 'Uncategorized';
+                            attributes.forEach(attr => {
+                                if (attr.includes('tvg-logo=')) {
+                                    logo = attr.split('=')[1].replace('"', '');
+                                } else if (attr.includes('group-title=')) {
+                                    groupTitle = attr.split('=')[1].replace('"', '');
+                                }
+                            });
 
-let res=await fetch(url)
+                            currentChannel = {
+                                title: description,
+                                logo: logo,
+                                group: groupTitle
+                            };
+                        } else if (currentChannel && line.startsWith('http')) {
+                            currentChannel.url = line.trim();
+                            channels.push(currentChannel);
+                            currentChannel = null;
+                        }
+                    });
 
-let data=await res.json()
+                    // Group channels by category
+                    const categories = {};
+                    channels.forEach(channel => {
+                        if (!categories[channel.group]) {
+                            categories[channel.group] = [];
+                        }
+                        categories[channel.group].push(channel);
+                    });
 
-let list=document.getElementById("channels")
+                    // Display categories and channels
+                    const categoriesDiv = document.getElementById('categories');
+                    categoriesDiv.innerHTML = ''; // Clear previous categories
 
-list.innerHTML=""
+                    for (const group in categories) {
+                        const categoryDiv = document.createElement('div');
+                        categoryDiv.className = 'category';
 
-data.slice(0,100).forEach(ch=>{
+                        const header = document.createElement('h3');
+                        header.className = 'category-header';
+                        header.textContent = group;
+                        categoryDiv.appendChild(header);
 
-let li=document.createElement("li")
+                        const channelList = document.createElement('div');
+                        channelList.className = 'channel-list';
 
-li.innerText=ch.name
+                        categories[group].forEach(channel => {
+                            const channelItem = document.createElement('div');
+                            channelItem.className = 'channel-item';
+                            channelItem.onclick = () => playChannel(channel.url);
 
-list.appendChild(li)
+                            const image = document.createElement('img');
+                            image.className = 'channel-image';
+                            image.src = channel.logo || 'placeholder.png'; // Default placeholder
+                            image.alt = channel.title;
 
-})
+                            const title = document.createElement('p');
+                            title.textContent = channel.title;
 
-}
+                            channelItem.appendChild(image);
+                            channelItem.appendChild(title);
 
-</script>
+                            channelList.appendChild(channelItem);
+                        });
+
+                        categoryDiv.appendChild(channelList);
+                        categoriesDiv.appendChild(categoryDiv);
+                    }
+                };
+
+                reader.readAsText(file);
+            }
+        });
+
+        // Function to play a channel stream
+        function playChannel(streamUrl) {
+            const videoPlayer = document.querySelector('.video-player video');
+            videoPlayer.src = streamUrl;
+            videoPlayer.play();
+            document.getElementById('videoPlayer').style.display = 'block';
+        }
+
+        // Function to close the video player
+        function closeVideoPlayer() {
+            document.getElementById('videoPlayer').style.display = 'none';
+        }
+    </script>
 
 </body>
 </html>
