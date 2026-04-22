@@ -414,6 +414,41 @@ animation:pulse 1.5s infinite;
 100%{opacity:.3}
 }
   
+.netflixPlayer{
+position:relative;
+width:100%;
+height:100%;
+background:black;
+}
+
+.netflixPlayer iframe{
+width:100%;
+height:100%;
+border:none;
+}
+
+.playerControls{
+position:absolute;
+bottom:20px;
+right:20px;
+display:flex;
+gap:10px;
+}
+
+.playerControls button{
+background:rgba(0,0,0,.6);
+color:white;
+border:none;
+padding:10px 14px;
+border-radius:6px;
+cursor:pointer;
+font-size:14px;
+}
+
+.playerControls button:hover{
+background:#e50914;
+}
+  
 button:focus{outline:3px solid red}  
   
 </style>  </head> 
@@ -474,8 +509,23 @@ button:focus{outline:3px solid red}
 <div id="seriesDetails"></div>  
 </div> 
 <div id="player" class="player">
+
 <button class="close" onclick="closePlayer()">✖</button>
+
+<div class="netflixPlayer">
+
 <iframe id="frame" allowfullscreen></iframe>
+
+<div class="playerControls">
+
+<button onclick="toggleFull()">⛶ Fullscreen</button>
+
+<button onclick="reloadPlayer()">↻ Reload</button>
+
+</div>
+
+</div>
+
 </div>
 
 <div id="iptvPlayer" class="player">
@@ -533,23 +583,63 @@ return realOpen(url)
 return null
 
 }  
-  document.addEventListener("click",function(e){
+  document.addEventListener("click", function(e){
 
-if(e.target.tagName==="A"){
+let el = e.target
 
-let link = e.target.href || ""
+// منع الروابط الإعلانية
+if(el.tagName === "A"){
+
+let link = el.href || ""
 
 if(
 link.includes("ads") ||
 link.includes("pop") ||
-link.includes("banner")
+link.includes("banner") ||
+link.includes("doubleclick") ||
+link.includes("exoclick") ||
+link.includes("adsterra") ||
+link.includes("propeller")
 ){
 e.preventDefault()
+return false
 }
 
+}
+
+// منع onclick الإعلاني
+if(el.onclick){
+let txt = el.onclick.toString()
+
+if(
+txt.includes("ads") ||
+txt.includes("pop") ||
+txt.includes("banner")
+){
+e.preventDefault()
+return false
+}
 }
 
 })  
+    setInterval(()=>{
+
+document.querySelectorAll("iframe").forEach(i=>{
+
+let src = i.src || ""
+
+if(
+src.includes("ads") ||
+src.includes("pop") ||
+src.includes("banner") ||
+src.includes("doubleclick")
+){
+i.remove()
+}
+
+})
+
+},1500)
   
 const API="https://api.themoviedb.org/3"  
 const KEY="6f3da2afe20dacbb24cd83311d36c361"  
@@ -849,10 +939,9 @@ style="background-image:url(https://image.tmdb.org/t/p/w780${m.backdrop_path})">
 
 ${trailerBtn}
 
-</div>  
-  
+</div>
+
 <div id="serverList"></div>  
-${trailerBtn}  
   
 <div class="similarTitle">Similar Movies</div>
 
@@ -1788,6 +1877,32 @@ const url = "https://vidsrc.cc/v3/embed/tv/" + id + "/" + season + "/" + episode
 openPlayer(url)
 
 }  
+    
+function toggleFull(){
+
+const player = document.getElementById("player")
+
+if(!document.fullscreenElement){
+player.requestFullscreen()
+}else{
+document.exitFullscreen()
+}
+
+}
+
+function reloadPlayer(){
+
+const frame = document.getElementById("frame")
+
+let src = frame.src
+
+frame.src = ""
+
+setTimeout(()=>{
+frame.src = src
+},300)
+
+}
     
   async function loadActors(){  
   
