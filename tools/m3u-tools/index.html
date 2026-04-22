@@ -139,12 +139,20 @@
       localStorage.setItem("lastChannel", ch.name);
     }
     async function loadServer(url) {
-      channels = []; grouped = {};
-      const res = await fetch(url); const text = await res.text();
-      const lines = text.split('\n');
-      for (let i = 0; i < lines.length; i++) {
-        if (lines[i].startsWith('#EXTINF')) {
-          const name = lines[i].split(',')[1]?.trim() || 'قناة';
+
+channels = [];
+grouped = {};
+
+const res = await fetch(url);
+const text = await res.text();
+
+const lines = text.split('\n');
+
+for (let i = 0; i < lines.length; i++) {
+
+if (lines[i].startsWith('#EXTINF')) {
+
+const name = lines[i].split(',')[1]?.trim() || 'قناة';
 
 const groupRaw = lines[i].match(/group-title="(.*?)"/)?.[1] || 'غير مصنف';
 
@@ -152,31 +160,33 @@ const groups = groupRaw.split(';');
 
 const link = lines[i + 1]?.trim();
 
-if (link?.startsWith('http')) {
+if (link && link.startsWith('http')) {
 
 const ch = { name, url: link };
 
 channels.push(ch);
 
-groups.forEach(group => {
+groups.forEach(g => {
 
-const g = group.trim();
+const group = g.trim();
 
-if (!grouped[g]) grouped[g] = [];
+if (!grouped[group]) grouped[group] = [];
 
-grouped[g].push(ch);
+grouped[group].push(ch);
 
 });
 
 }
 
-});
-          }
-        }
-      }
-      renderCategories();
-      renderChannels();
-    }
+}
+
+}
+
+renderCategories();
+renderChannels();
+
+}
+    
     function getCurrentIndex() {
       return channels.findIndex(ch => ch.name === lastPlayed);
     }
@@ -213,6 +223,6 @@ grouped[g].push(ch);
     });
     loadFavorites();
     updateFavCount();
-    loadServer(servers.Global[0].url);
+    servers.Global.forEach(s => loadServer(s.url));
   </script></body>
 </html>
