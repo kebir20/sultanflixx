@@ -301,38 +301,103 @@ a.click()
 
 async function scanGitHub(){
 
-alert("GitHub scanner limited by API")
+const proxy="https://corsproxy.io/?"
+
+const repos=[
+
+"https://raw.githubusercontent.com/iptv-org/iptv/master/index.m3u",
+"https://raw.githubusercontent.com/iptv-org/iptv/master/languages/ara.m3u",
+"https://raw.githubusercontent.com/iptv-org/iptv/master/categories/sports.m3u",
+"https://raw.githubusercontent.com/iptv-org/iptv/master/categories/news.m3u",
+"https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist.m3u",
+"https://raw.githubusercontent.com/iptv-org/iptv/master/languages/eng.m3u"
+
+]
+
+for(let url of repos){
+
+try{
+
+let res=await fetch(proxy+encodeURIComponent(url))
+let text=await res.text()
+
+parseM3U(text)
+
+}catch(e){
+
+console.log("GitHub failed:",url)
+
+}
+
+}
 
 }
 
 async function scanReddit(){
 
-let res=await fetch(
+const proxy="https://corsproxy.io/?"
 
-"https://www.reddit.com/search.json?q=iptv+m3u"
+try{
 
-)
+let res = await fetch(proxy+"https://www.reddit.com/search.json?q=iptv+m3u")
 
-let data=await res.json()
+let data = await res.json()
 
-data.data.children.forEach(p=>{
+data.data.children.forEach(post=>{
 
-console.log(p.data.url)
+let text = post.data.selftext + " " + post.data.url
+
+let links = text.match(/https?:\/\/[^ ]+\.m3u/g)
+
+if(links){
+
+links.forEach(link=>{
+
+loadM3U(link)
 
 })
 
 }
 
-function scanPastebin(){
+})
 
-let urls=[
+}catch(e){
 
-"https://pastebin.com/raw/iptv",
-"https://pastebin.com/raw/m3u"
+console.log("Reddit scan failed")
+
+}
+
+}
+
+async function scanPastebin(){
+
+const proxy="https://corsproxy.io/?"
+
+let pastes=[
+
+"https://pastebin.com/raw/Zm6PnTqL",
+"https://pastebin.com/raw/k9m3u8tv",
+"https://pastebin.com/raw/iptvlinks",
+"https://pastebin.com/raw/m3uplaylist"
 
 ]
 
-urls.forEach(loadM3U)
+for(let url of pastes){
+
+try{
+
+let res=await fetch(proxy+encodeURIComponent(url))
+let text=await res.text()
+
+parseM3U(text)
+
+}catch(e){
+
+console.log("Pastebin failed:",url)
+
+}
+
+}
 
 }
 
