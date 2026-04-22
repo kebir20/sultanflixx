@@ -103,13 +103,18 @@ async function loadM3U(url){
 
 try{
 
-let res = await fetch(url)
+const proxy="https://corsproxy.io/?"
+
+let res = await fetch(proxy + encodeURIComponent(url))
+
 let text = await res.text()
 
 parseM3U(text)
 
 }catch(e){
+
 console.log("failed",url)
+
 }
 
 }
@@ -122,31 +127,27 @@ for(let i=0;i<lines.length;i++){
 
 if(lines[i].startsWith("#EXTINF")){
 
-let name=lines[i].split(",")[1] || "Unknown"
+let name = lines[i].split(",")[1] || "Unknown"
 
-let url=lines[i+1]
+let url = lines[i+1]
 
-if(!url || urls.has(url)) continue
+if(!url) continue
+
+url=url.trim()
+
+if(urls.has(url)) continue
 
 urls.add(url)
-
-checkStream(url).then(ok=>{
-
-if(ok){
 
 channels.push({name,url})
 
 createChannel(name,url)
 
+}
+
+}
+
 updateCount()
-
-}
-
-})
-
-}
-
-}
 
 }
 
@@ -198,19 +199,38 @@ document.getElementById("results").appendChild(div)
 
 function play(url){
 
-let video=document.getElementById("player")
+const video=document.getElementById("player")
+
+video.pause()
+video.removeAttribute("src")
+video.load()
+
+if(window.hlsPlayer){
+window.hlsPlayer.destroy()
+}
 
 if(Hls.isSupported()){
 
-const hls=new Hls()
+window.hlsPlayer = new Hls({
+maxBufferLength:30,
+maxMaxBufferLength:60
+})
 
-hls.loadSource(url)
+window.hlsPlayer.loadSource(url)
+window.hlsPlayer.attachMedia(video)
 
-hls.attachMedia(video)
+window.hlsPlayer.on(Hls.Events.MANIFEST_PARSED,function(){
+video.play()
+})
+
+}else if(video.canPlayType("application/vnd.apple.mpegurl")){
+
+video.src=url
+video.play()
 
 }else{
 
-video.src=url
+alert("Stream not supported")
 
 }
 
@@ -322,8 +342,13 @@ let lists=[
 
 "https://iptv-org.github.io/iptv/index.m3u",
 "https://iptv-org.github.io/iptv/languages/ara.m3u",
+"https://iptv-org.github.io/iptv/languages/eng.m3u",
 "https://iptv-org.github.io/iptv/categories/news.m3u",
-"https://iptv-org.github.io/iptv/categories/sports.m3u"
+"https://iptv-org.github.io/iptv/categories/sports.m3u",
+"https://iptv-org.github.io/iptv/categories/movies.m3u",
+"https://iptv-org.github.io/iptv/categories/kids.m3u",
+"https://iptv-org.github.io/iptv/categories/music.m3u",
+"https://iptv-org.github.io/iptv/categories/documentary.m3u"
 
 ]
 
