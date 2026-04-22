@@ -1,438 +1,520 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IPTV Checker - فحص سيرفرات IPTV</title>
+    <title>IPTV Pro+</title>
     <style>
-        body { 
-            font-family: Arial, sans-serif; 
-            background: #f0f2f5; 
+        body {
+            font-family: Arial, sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 10px;
+            background: #f0f0f0;
+            transition: background 0.3s, color 0.3s;
         }
-        .container { 
-            max-width: 1200px; 
-            margin: 0 auto; 
+
+        .dark-mode {
+            background: #1a1a1a;
+            color: white;
         }
-        .header { 
-            background: #2196F3; 
-            color: white; 
-            padding: 1rem; 
+
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        button, select {
+            padding: 12px;
+            border: none;
             border-radius: 8px;
-            margin-bottom: 20px;
+            background: #007bff;
+            color: white;
+            font-size: 14px;
         }
-        .progress-bar { 
-            width: 100%; 
-            height: 20px; 
-            background: #ddd; 
+
+        video {
+            width: 100%;
+            max-height: 250px;
+            background: black;
             border-radius: 10px;
-            margin: 20px 0; 
-            display: none;
         }
-        .progress { 
-            width: 0%; 
-            height: 100%; 
-            background: #4CAF50; 
+
+        .channel-list {
+            margin-top: 15px;
+            background: white;
             border-radius: 10px;
-            transition: width 0.3s ease;
+            padding: 10px;
+            max-height: 60vh;
+            overflow-y: auto;
         }
-        table { 
-            width: 100%; 
-            border-collapse: collapse;
-            background: white; 
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+
+        .channel-item {
+            padding: 15px;
+            margin: 5px 0;
+            cursor: pointer;
+            text-align: center;
+            color: #333;
+            transition: all 0.3s;
         }
-        th, td { 
-            padding: 12px 15px; 
-            text-align: center; 
-            vertical-align: middle;
+
+        .channel-item.selected {
+            background: #007bff;
+            color: white;
         }
-        th { 
-            background: #2196F3; 
-            color: white; 
-            cursor: pointer; 
+
+        .favorite-star {
+            color: gold;
+            margin-left: 10px;
         }
-        tr:nth-child(even) { 
-            background: #f8f9fa; 
-        }
-        .working { 
-            color: green; 
-            font-weight: bold; 
-        }
-        .not-working { 
-            color: red; 
-            font-weight: bold; 
-        }
-        .controls { 
-            margin: 20px 0; 
-            display: flex; 
-            gap: 10px; 
-            flex-wrap: wrap; 
+
+        .category-buttons {
+            margin: 10px 0;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
             justify-content: center;
         }
-        button, input, select { 
-            padding: 10px 20px; 
-            border-radius: 5px; 
-            border: 1px solid #ddd;
-        }
-        button { 
-            background: #2196F3; 
-            color: white; 
-            cursor: pointer; 
-            transition: background 0.3s;
-        }
-        button:hover { 
-            background: #1976D2; 
-        }
-        .search-box { 
-            width: 100%; 
-            max-width: 400px; 
-            margin: 20px 0; 
-        }
-        .stats { 
-            font-size: 1.1em; 
-            text-align: center; 
-            margin: 20px 0;
-        }
-        .favorite-icon {
-            cursor: pointer;
-            color: red;
-        }
-        .favorite-icon.active {
-            color: gold;
+
+        .category-btn {
+            background: #28a745 !important;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🔍 فحص سيرفرات IPTV</h1>
-        </div>
-        <input type="text" class="search-box" placeholder="🔍 بحث في القنوات..." onkeyup="filterChannels(this.value)">
-        <div class="stats">
-            <span id="totalChannels">0</span> قنوات - 
-            <span class="working">✅ <span id="workingCount">0</span></span> - 
-            <span class="not-working">❌ <span id="errorCount">0</span></span>
-        </div>
-        <div class="progress-bar">
-            <div class="progress"></div>
-        </div>
-        <div class="controls">
-            <select id="languageSelect" onchange="loadLanguage(this.value)">
-                <option value="ar">العربية</option>
-                <option value="en">English</option>
-            </select>
-            <input type="file" id="fileInput" accept=".m3u">
-            <input type="text" id="m3uUrl" placeholder="🔗 أدخل رابط M3U">
-            <select id="timeoutSelect">
-                <option value="3000">3 ثواني</option>
-                <option value="5000" selected>5 ثواني</option>
-                <option value="10000">10 ثواني</option>
-            </select>
-            <button onclick="loadM3U()">📂 تحميل وفحص</button>
-            <button onclick="exportChannels('working')">📥 تصدير الشغالة</button>
-            <button onclick="exportToCSV()">📥 تصدير إلى CSV</button>
-            <button onclick="backupData()">💾 نسخة احتياطية</button>
-            <button onclick="restoreData()">🔄 استعادة النسخة</button>
-            <button onclick="shareResultsViaEmail()">📤 مشاركة النتائج</button>
-        </div>
-        <table>
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th onclick="sortTable('name')">اسم القناة ⇅</th>
-                    <th>شعار القناة</th>
-                    <th onclick="sortTable('category')">التصنيف ⇅</th>
-                    <th onclick="sortTable('quality')">الجودة ⇅</th>
-                    <th onclick="sortTable('status')">الحالة ⇅</th>
-                    <th>الرابط</th>
-                    <th>مفضلة</th>
-                </tr>
-            </thead>
-            <tbody id="channelList"></tbody>
-        </table>
-        <canvas id="statsChart" width="400" height="200"></canvas>
+    <h1 style="text-align:center;">IPTV Pro+</h1>
+    
+    <video id="videoPlayer" controls playsinline></video>
+    
+    <div class="controls">
+        <button id="playPauseBtn">⏯ تشغيل</button>
+        <button id="muteBtn">🔊 كتم</button>
+        <button id="fullscreenBtn">⛶ شاشة كاملة</button>
+        <button id="addToFavoritesBtn">⭐ مفضلة</button>
+        <select id="qualitySelect">
+            <option value="all">كل الجودات</option>
+            <option value="SD">SD</option>
+            <option value="HD">HD</option>
+            <option value="FHD">FHD</option>
+            <option value="SK">SK</option>
+            <option value="UHD">UHD</option>
+        </select>
+        <button id="prevBtn">السابق</button>
+        <button id="nextBtn">التالي</button>
+        <button id="randomBtn">🎲 عشوائي</button>
+        <button id="toggleFavoritesBtn">📌 عرض المفضلة</button>
+        <button id="themeBtn">🌙 وضع ليلي</button>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <div class="category-buttons" id="categoriesContainer">
+        <button class="category-btn active" data-category="all">الكل</button>
+    </div>
+
+    <div class="channel-list" id="channelList">
+        <!-- القنوات المطلوبة -->
+        <div class="channel-item" data-id="7263" data-quality="FHD">Arena Sport 1 FHD HR</div>
+
+<div class="channel-item" data-id="7329" data-quality="HD">Arena Sport 1 HD HR</div>
+
+<div class="channel-item" data-id="2550" data-quality="Standard">Arena Sport 1 SK</div>
+
+<div class="channel-item" data-id="7264" data-quality="FHD">Arena Sport 2 FHD HR</div>
+
+<div class="channel-item" data-id="7330" data-quality="HD">Arena Sport 2 HD HR</div>
+<div class="channel-item" data-id="7265" data-quality="FHD">Arena Sport 3 FHD HR</div>
+<div class="channel-item" data-id="7331" data-quality="HD">Arena Sport 3 HD HR</div>
+<div class="channel-item" data-id="7266" data-quality="FHD">Arena Sport 4 FHD HR</div>
+<div class="channel-item" data-id="7332" data-quality="HD">Arena Sport 4 HD HR</div>
+<div class="channel-item" data-id="7267" data-quality="FHD">Arena Sport 5 FHD HR</div>
+<div class="channel-item" data-id="7333" data-quality="HD">Arena Sport 5 HD HR</div>
+<div class="channel-item" data-id="7268" data-quality="FHD">Arena Sport 6 FHD HR</div>
+<div class="channel-item" data-id="7334" data-quality="HD">Arena Sport 6 HD HR</div>
+<div class="channel-item" data-id="6159" data-quality="HD">BAND SP HD BR</div>
+<div class="channel-item" data-id="6158" data-quality="Standard">Band Sports BR</div>
+<div class="channel-item" data-id="6157" data-quality="HD">BAND SPORTS HD BR</div>
+<div class="channel-item" data-id="2499" data-quality="HD">Bein Sports 1 HD FR</div>
+<div class="channel-item" data-id="6123" data-quality="HD">beIN Sports 1 HD QA</div>
+<div class="channel-item" data-id="6131" data-quality="HD">beIN Sports 1 Premium HD QA</div>
+<div class="channel-item" data-id="6133" data-quality="HD">beIN Sports 2 HD EN</div>
+<div class="channel-item" data-id="2500" data-quality="HD">Bein Sports 2 HD FR</div>
+<div class="channel-item" data-id="2501" data-quality="HD">Bein Sports 3 HD FR</div>
+<div class="channel-item" data-id="6124" data-quality="HD">beIN Sports 3 HD QA</div>
+<div class="channel-item" data-id="6125" data-quality="HD">beIN Sports 4 HD QA</div>
+<div class="channel-item" data-id="6126" data-quality="HD">beIN Sports 5 HD QA</div>
+<div class="channel-item" data-id="6127" data-quality="HD">beIN Sports 6 HD QA</div>
+<div class="channel-item" data-id="6128" data-quality="HD">beIN Sports 7 HD QA</div>
+<div class="channel-item" data-id="2543" data-quality="HD">BEIN SPORTS HD ES</div>
+<div class="channel-item" data-id="18015" data-quality="HD">Best4Sport 2 HD LV</div>
+<div class="channel-item" data-id="18016" data-quality="HD">Best4Sport HD LV</div>
+<div class="channel-item" data-id="6566" data-quality="FHD">BT SPORT 1 FHD UK</div>
+<div class="channel-item" data-id="2505" data-quality="Standard">BT Sport 1 UK</div>
+<div class="channel-item" data-id="6565" data-quality="FHD">BT SPORT 2 FHD UK</div>
+<div class="channel-item" data-id="2506" data-quality="Standard">BT Sport 2 UK</div>
+<div class="channel-item" data-id="6564" data-quality="FHD">BT SPORT 3 FHD UK</div>
+<div class="channel-item" data-id="6563" data-quality="FHD">BT SPORT ESPN FHD UK</div>
+<div class="channel-item" data-id="12032" data-quality="HD">C MORE FOOTBALL HD SE</div>
+<div class="channel-item" data-id="12033" data-quality="HD">C MORE GOLF HD SE</div>
+<div class="channel-item" data-id="12034" data-quality="HD">C MORE HITS HD SE</div>
+<div class="channel-item" data-id="12035" data-quality="HD">C MORE HOKEY HD SE</div>
+<div class="channel-item" data-id="2541" data-quality="HD">C More Sport 1 HD FI</div>
+<div class="channel-item" data-id="2515" data-quality="HD">C More Sport HD SE</div>
+<div class="channel-item" data-id="12042" data-quality="HD">C MORE STARTS HD SE</div>
+<div class="channel-item" data-id="2502" data-quality="HD">Canal+ Sport HD FR</div>
+<div class="channel-item" data-id="7324" data-quality="Standard">CBS SPORTS NETWORK US</div>
+<div class="channel-item" data-id="2551" data-quality="HD">ČT sport HD CZ</div>
+<div class="channel-item" data-id="6071" data-quality="HD">Dazn F1 HD ES</div>
+<div class="channel-item" data-id="2523" data-quality="HD">DIGI Sport 1 HD RO</div>
+<div class="channel-item" data-id="2522" data-quality="HD">DIGI Sport 2 HD RO</div>
+<div class="channel-item" data-id="2524" data-quality="HD">DIGI Sport 3 HD RO</div>
+<div class="channel-item" data-id="2538" data-quality="HD">DIGI Sport 4 HD RO</div>
+<div class="channel-item" data-id="2518" data-quality="HD">Eleven Sports 1 HD PL</div>
+<div class="channel-item" data-id="2531" data-quality="HD">Eleven Sports 1 HD PT</div>
+<div class="channel-item" data-id="2517" data-quality="HD">Eleven Sports 2 HD PL</div>
+<div class="channel-item" data-id="2532" data-quality="HD">Eleven Sports 2 HD PT</div>
+<div class="channel-item" data-id="7062" data-quality="Standard">Eleven Sports 3 PT</div>
+<div class="channel-item" data-id="2534" data-quality="Standard">Eleven Sports 4 PT</div>
+<div class="channel-item" data-id="2535" data-quality="Standard">Eleven Sports 5 PT</div>
+<div class="channel-item" data-id="2536" data-quality="Standard">Eleven Sports 6 PT</div>
+<div class="channel-item" data-id="7064" data-quality="Standard">Eleven Sports 6 PT</div>
+<div class="channel-item" data-id="19201" data-quality="HD">ESPN 1 HD NL</div>
+<div class="channel-item" data-id="19202" data-quality="HD">ESPN 2 HD NL</div>
+<div class="channel-item" data-id="19203" data-quality="HD">ESPN 3 HD NL</div>
+<div class="channel-item" data-id="19204" data-quality="HD">ESPN 4 HD NL</div>
+<div class="channel-item" data-id="141" data-quality="Standard">Eurosport 1</div>
+<div class="channel-item" data-id="228" data-quality="HD">Eurosport 1 HD</div>
+<div class="channel-item" data-id="5075" data-quality="HD">Eurosport 1 HD orig</div>
+<div class="channel-item" data-id="12047" data-quality="HD">EUROSPORT 1 HD SE</div>
+<div class="channel-item" data-id="9247" data-quality="Standard">Eurosport 1 orig</div>
+<div class="channel-item" data-id="12048" data-quality="HD">EUROSPORT 2 HD SE</div>
+<div class="channel-item" data-id="6556" data-quality="HD">EUROSPORT 2 HD UK</div>
+<div class="channel-item" data-id="5076" data-quality="HD">Eurosport 2 HD orig</div>
+<div class="channel-item" data-id="14180" data-quality="Standard">Setanta Event 1</div>
+<div class="channel-item" data-id="14181" data-quality="Standard">Setanta Event 2</div>
+<div class="channel-item" data-id="14182" data-quality="Standard">Setanta Event 3</div>
+<div class="channel-item" data-id="14183" data-quality="Standard">Setanta Event 4</div>
+<div class="channel-item" data-id="14184" data-quality="Standard">Setanta Event 5</div>
+<div class="channel-item" data-id="14185" data-quality="Standard">Setanta Event 6</div>
+<div class="channel-item" data-id="14186" data-quality="Standard">Setanta Event 7</div>
+<div class="channel-item" data-id="14187" data-quality="Standard">Setanta Event 8</div>
+<div class="channel-item" data-id="14188" data-quality="Standard">Setanta Event 9</div>
+<div class="channel-item" data-id="14189" data-quality="Standard">Setanta Event 10</div>
+<div class="channel-item" data-id="14190" data-quality="Standard">Setanta Event 11</div>
+<div class="channel-item" data-id="14191" data-quality="Standard">Setanta Event 12</div>
+<div class="channel-item" data-id="15179" data-quality="HD">Eurosport HD DE</div>
+<div class="channel-item" data-id="144" data-quality="Standard">Extreme Sports</div>
+<div class="channel-item" data-id="9160" data-quality="Standard">Extreme Sports orig</div>
+<div class="channel-item" data-id="15231" data-quality="Standard">Fastnfunbox</div>
+<div class="channel-item" data-id="15232" data-quality="Standard">FightBox</div>
+<div class="channel-item" data-id="7322" data-quality="Standard">FOX SPORTS 1 US</div>
+<div class="channel-item" data-id="7323" data-quality="Standard">FOX SPORTS 2 US</div>
+<div class="channel-item" data-id="6121" data-quality="Standard">Fox Sports News AU</div>
+<div class="channel-item" data-id="6119" data-quality="Standard">Fox Sports News AU</div>
+<div class="channel-item" data-id="6066" data-quality="Standard">Golf TV FR</div>
+<div class="channel-item" data-id="2544" data-quality="HD">Infosport+ HD FR</div>
+<div class="channel-item" data-id="9094" data-quality="Standard">Insport HD</div>
+<div class="channel-item" data-id="519" data-quality="Standard">KHL</div>
+<div class="channel-item" data-id="9250" data-quality="Standard">KHL orig</div>
+<div class="channel-item" data-id="2403" data-quality="FHD">KHL Prime FHD</div>
+<div class="channel-item" data-id="843" data-quality="Standard">MMA-TV.com</div>
+<div class="channel-item" data-id="9161" data-quality="Standard">MMA-TV.com orig</div>
+<div class="channel-item" data-id="6112" data-quality="Standard">Motorvision TV DE</div>
+<div class="channel-item" data-id="6075" data-quality="HD">Movistar Golf HD ES</div>
+<div class="channel-item" data-id="6073" data-quality="HD">Movistar LaLiga HD ES</div>
+<div class="channel-item" data-id="6074" data-quality="HD">Movistar Liga Campeones HD ES</div>
+<div class="channel-item" data-id="10078" data-quality="Standard">MUTV UK</div>
+<div class="channel-item" data-id="7327" data-quality="Standard">NBC SPORTS NETWORK US</div>
+<div class="channel-item" data-id="7328" data-quality="Standard">NHL NETWORK US</div>
+<div class="channel-item" data-id="2555" data-quality="HD">Nova Sport 1 HD CZ</div>
+<div class="channel-item" data-id="2556" data-quality="HD">Nova Sport 2 HD CZ</div>
+<div class="channel-item" data-id="2519" data-quality="Standard">nSport+ PL</div>
+<div class="channel-item" data-id="2512" data-quality="Standard">ONTime Sports EG</div>
+<div class="channel-item" data-id="7310" data-quality="HD">POLSAT SPORT EXTRA HD PL</div>
+<div class="channel-item" data-id="7296" data-quality="FHD">Polsat Sport FHD PL</div>
+<div class="channel-item" data-id="7311" data-quality="HD">POLSAT SPORT FIGHT HD PL</div>
+<div class="channel-item" data-id="7303" data-quality="HD">POLSAT SPORT NEWS HD PL</div>
+<div class="channel-item" data-id="7304" data-quality="Standard">POLSAT SPORT PREMIUM 1 PL</div>
+<div class="channel-item" data-id="7305" data-quality="Standard">POLSAT SPORT PREMIUM 2 PL</div>
+<div class="channel-item" data-id="7306" data-quality="Standard">POLSAT SPORT PREMIUM 3 PPV PL</div>
+<div class="channel-item" data-id="7307" data-quality="Standard">POLSAT SPORT PREMIUM 4 PPV PL</div>
+<div class="channel-item" data-id="7308" data-quality="Standard">POLSAT SPORT PREMIUM 5 PPV PL</div>
+<div class="channel-item" data-id="7309" data-quality="Standard">POLSAT SPORT PREMIUM 6 PPV PL</div>
+<div class="channel-item" data-id="6555" data-quality="Standard">PREMIER SPORTS UK</div>
+<div class="channel-item" data-id="15238" data-quality="HD">QSport Arena HD</div>
+<div class="channel-item" data-id="16039" data-quality="Standard">Red Bull TV</div>
+<div class="channel-item" data-id="16040" data-quality="HD">Red Bull TV HD</div>
+<div class="channel-item" data-id="2545" data-quality="HD">RMC Sport 1 HD FR</div>
+<div class="channel-item" data-id="2546" data-quality="HD">RMC Sport 2 HD FR</div>
+<div class="channel-item" data-id="2547" data-quality="HD">RMC Sport 3 HD FR</div>
+<div class="channel-item" data-id="6543" data-quality="Standard">Setanta Eurasia</div>
+<div class="channel-item" data-id="271" data-quality="HD">Setanta Eurasia HD</div>
+<div class="channel-item" data-id="6541" data-quality="HD">Setanta Eurasia HD orig</div>
+<div class="channel-item" data-id="6544" data-quality="Standard">Setanta Eurasia Plus</div>
+<div class="channel-item" data-id="270" data-quality="HD">Setanta Eurasia Plus HD</div>
+<div class="channel-item" data-id="6542" data-quality="HD">Setanta Eurasia Plus HD orig</div>
+<div class="channel-item" data-id="2399" data-quality="HD">Setanta Qazaqstan HD</div>
+<div class="channel-item" data-id="5069" data-quality="HD">Setanta Sports 1 Baltic HD</div>
+<div class="channel-item" data-id="272" data-quality="HD">Setanta Ukraine HD</div>
+<div class="channel-item" data-id="15183" data-quality="HD">Setanta Ukraine HD orig</div>
+<div class="channel-item" data-id="5068" data-quality="HD">Setanta Ukraine Plus HD</div>
+<div class="channel-item" data-id="15184" data-quality="HD">Setanta Ukraine Plus HD orig</div>
+<div class="channel-item" data-id="7147" data-quality="Standard">Agrogaremo</div>
+<div class="channel-item" data-id="15097" data-quality="HD">SKY HIGH FIGHT + HD</div>
+<div class="channel-item" data-id="6122" data-quality="Standard">Sky Racing AU</div>
+<div class="channel-item" data-id="2478" data-quality="HD">Sky Sport 1 HD DE</div>
+<div class="channel-item" data-id="2479" data-quality="HD">Sky Sport 2 HD DE</div>
+<div class="channel-item" data-id="2492" data-quality="HD">Sky Sport Austria 1 HD DE</div>
+<div class="channel-item" data-id="6113" data-quality="Standard">Sky Sport Austria 2 DE</div>
+<div class="channel-item" data-id="2480" data-quality="HD">Sky Sport Bundesliga 1 HD DE</div>
+<div class="channel-item" data-id="7234" data-quality="HD">Sky Sport Bundesliga 2 HD DE</div>
+<div class="channel-item" data-id="7235" data-quality="HD">Sky Sport Bundesliga 3 HD DE</div>
+<div class="channel-item" data-id="7237" data-quality="HD">Sky Sport Bundesliga 5 HD DE</div>
+<div class="channel-item" data-id="7236" data-quality="HD">Sky Sport Bundesliga 4 HD DE</div>
+<div class="channel-item" data-id="7238" data-quality="HD">Sky Sport Bundesliga 6 HD DE</div>
+<div class="channel-item" data-id="7239" data-quality="HD">Sky Sport Bundesliga 7 HD DE</div>
+<div class="channel-item" data-id="7240" data-quality="HD">Sky Sport Bundesliga 8 HD DE</div>
+<div class="channel-item" data-id="6097" data-quality="Standard">Sky Sport Bundesliga 9 DE</div>
+<div class="channel-item" data-id="7241" data-quality="HD">Sky Sport Bundesliga 9 HD DE</div>
+<div class="channel-item" data-id="2477" data-quality="HD">Sky Sport News HD DE</div>
+<div class="channel-item" data-id="7345" data-quality="FHD">Sky Sports Action FHD UK</div>
+<div class="channel-item" data-id="7340" data-quality="HD">Sky Sports Action HD UK</div>
+<div class="channel-item" data-id="7338" data-quality="Standard">SKY SPORTS ARENA UK</div>
+<div class="channel-item" data-id="7343" data-quality="Standard">SKY SPORTS CRICKET UK</div>
+<div class="channel-item" data-id="7342" data-quality="Standard">SKY SPORTS F1 UK</div>
+<div class="channel-item" data-id="7336" data-quality="Standard">SKY SPORTS FOOTBALL UK</div>
+<div class="channel-item" data-id="7344" data-quality="Standard">SKY SPORTS GOLF UK</div>
+<div class="channel-item" data-id="7337" data-quality="Standard">SKY SPORTS MAIN EVENT UK</div>
+<div class="channel-item" data-id="7339" data-quality="Standard">SKY SPORTS MIX UK</div>
+<div class="channel-item" data-id="7335" data-quality="Standard">SKY SPORTS PREMIER LEAGUE UK</div>
+<div class="channel-item" data-id="7341" data-quality="Standard">SKY SPORTS RACING UK</div>
+<div class="channel-item" data-id="15235" data-quality="HD">ICTV 2 HD</div>
+<div class="channel-item" data-id="2503" data-quality="HD">Sport 1 HD DE</div>
+<div class="channel-item" data-id="6367" data-quality="HD">Sport 1 HD LT</div>
+<div class="channel-item" data-id="2549" data-quality="HD">Sport 1 HD IL</div>
+<div class="channel-item" data-id="6366" data-quality="Standard">Sport 1 LT</div>
+<div class="channel-item" data-id="2548" data-quality="Standard">Sport 1 LT</div>
+<div class="channel-item" data-id="2557" data-quality="HD">Sport 2 HD CZ</div>
+<div class="channel-item" data-id="2558" data-quality="Standard">Sport 5 CZ</div>
+<div class="channel-item" data-id="7269" data-quality="HD">Sport Klub 1 HD HR</div>
+<div class="channel-item" data-id="7270" data-quality="HD">Sport Klub 2 HD HR</div>
+<div class="channel-item" data-id="7271" data-quality="HD">Sport Klub 3 HD HR</div>
+<div class="channel-item" data-id="7272" data-quality="HD">Sport Klub 4 HD HR</div>
+<div class="channel-item" data-id="7273" data-quality="HD">Sport Klub 5 HD HR</div>
+<div class="channel-item" data-id="7274" data-quality="HD">Sport Klub 6 HD HR</div>
+<div class="channel-item" data-id="7275" data-quality="HD">Sport Klub 7 HD HR</div>
+<div class="channel-item" data-id="7276" data-quality="HD">Sport Klub 8 HD HR</div>
+<div class="channel-item" data-id="7277" data-quality="Standard">Sport Klub Golf HR</div>
+<div class="channel-item" data-id="7278" data-quality="HD">Sport Klub HD HR</div>
+<div class="channel-item" data-id="2530" data-quality="HD">Sporting TV HD PT</div>
+<div class="channel-item" data-id="2525" data-quality="HD">SPORT TV 1 HD PT</div>
+<div class="channel-item" data-id="2526" data-quality="HD">SPORT TV 2 HD PT</div>
+<div class="channel-item" data-id="2527" data-quality="HD">SPORT TV 3 HD PT</div>
+<div class="channel-item" data-id="2528" data-quality="Standard">SPORT TV 4 PT</div>
+<div class="channel-item" data-id="2529" data-quality="Standard">SPORT TV 5 PT</div>
+<div class="channel-item" data-id="2521" data-quality="HD">Sportklub HD PL</div>
+<div class="channel-item" data-id="2508" data-quality="Standard">Star Sports 1 IN</div>
+<div class="channel-item" data-id="2507" data-quality="Standard">Star Sports 2 IN</div>
+<div class="channel-item" data-id="6079" data-quality="HD">Super Tennis HD</div>
+<div class="channel-item" data-id="2540" data-quality="HD">TV 2 Sport 2 HD NO</div>
+<div class="channel-item" data-id="7355" data-quality="HD">TV 2 SPORT HD DK</div>
+<div class="channel-item" data-id="18001" data-quality="HD">TV3 Sport 2 HD EE</div>
+<div class="channel-item" data-id="6418" data-quality="HD">TV3 Sport 2 HD LT</div>
+<div class="channel-item" data-id="6408" data-quality="HD">TV3 Sport 3 HD LV</div>
+<div class="channel-item" data-id="18000" data-quality="HD">TV3 Sport HD EE</div>
+<div class="channel-item" data-id="6417" data-quality="HD">TV3 Sport HD LT</div>
+<div class="channel-item" data-id="18025" data-quality="HD">TV3 Sport Open HD LV</div>
+<div class="channel-item" data-id="12100" data-quality="Standard">TV3 SPORT SE</div>
+<div class="channel-item" data-id="7280" data-quality="FHD">TVP Sport FHD PL</div>
+<div class="channel-item" data-id="2520" data-quality="HD">TVP Sport HD PL</div>
+<div class="channel-item" data-id="6554" data-quality="Standard">UFC Fight Pass</div>
+<div class="channel-item" data-id="12284" data-quality="Standard">UK Premier Sports 1 SD IE</div>
+<div class="channel-item" data-id="11110" data-quality="FHD">V Sport Football FHD</div>
+<div class="channel-item" data-id="11111" data-quality="FHD">V Sport Vinter FHD</div>
+<div class="channel-item" data-id="12078" data-quality="HD">V Sport Vinter HD SE</div>
+<div class="channel-item" data-id="5078" data-quality="HD">Viasat Fotboll HD SK orig</div>
+<div class="channel-item" data-id="160" data-quality="Standard">Viju+ Sport</div>
+<div class="channel-item" data-id="12074" data-quality="HD">VIASAT SPORT EXTRA HD SE</div>
+<div class="channel-item" data-id="12076" data-quality="HD">VIASAT SPORT FOOTBALL HD SE</div>
+<div class="channel-item" data-id="12077" data-quality="HD">VIASAT SPORT GOLF HD SE</div>
+<div class="channel-item" data-id="5065" data-quality="HD">Viju+ Sport HD orig</div>
+<div class="channel-item" data-id="12075" data-quality="HD">VIASAT SPORT HD SE</div>
+<div class="channel-item" data-id="9249" data-quality="Standard">Viju+ Sport orig</div>
+<div class="channel-item" data-id="12079" data-quality="HD">VIASAT SPORT PREMIUM HD SE</div>
+<div class="channel-item" data-id="6069" data-quality="HD">Viasat Sport Premium HD SK</div>
+<div class="channel-item" data-id="11056" data-quality="Standard">WWE Russian</div>
+<div class="channel-item" data-id="996" data-quality="HD">XSPORT HD</div>
+<div class="channel-item" data-id="5077" data-quality="HD">Xsport HD orig</div>
+<div class="channel-item" data-id="2511" data-quality="Standard">YAS Sports AE</div>
+<div class="channel-item" data-id="2559" data-quality="Standard">Ziggo Sport Golf NL</div>
+<div class="channel-item" data-id="2560" data-quality="HD">Ziggo Sport Select HD NL</div>
+<div class="channel-item" data-id="2561" data-quality="Standard">Ziggo Sport Voetbal NL</div>
+<div class="channel-item" data-id="15237" data-quality="HD">Спорт 1 HD UA</div>
+<div class="channel-item" data-id="10039" data-quality="HD">Хоккейный HD</div>
+<div class="channel-item" data-id="19200" data-quality="Standard">RMC SPORT 4</div>
+<div class="channel-item" data-id="20058" data-quality="4K">BT Sports 4k UHD</div>
+<div class="channel-item" data-id="20059" data-quality="HD">Sporsmart 2 HD</div>
+<div class="channel-item" data-id="20060" data-quality="HD">Sporsmart HD</div>
+<div class="channel-item" data-id="20061" data-quality="HD">Q Sport HD</div>
+<div class="channel-item" data-id="20062" data-quality="HD">Q Sport League HD</div>
+<div class="channel-item" data-id="20065" data-quality="HD">Setanta Sports 1 Qazaqstan HD</div>
+<div class="channel-item" data-id="20069" data-quality="HD">Eurosport 1 HD CEE</div>
+<div class="channel-item" data-id="20070" data-quality="HD">Eurosport 2 HD CEE</div>
+<div class="channel-item" data-id="20068" data-quality="4K">Eleven 4K</div>
+<div class="channel-item" data-id="20074" data-quality="HD">Setanta Sports Moldova HD</div>
+<div class="channel-item" data-id="20077" data-quality="HD">Sport 1 HD Ukraine</div>
+<div class="channel-item" data-id="20078" data-quality="4K">Eleven Sports 1 4K</div>
+<div class="channel-item" data-id="20081" data-quality="FHD">Setanta Sports 1 Baltic FHD</div>
+<div class="channel-item" data-id="14031" data-quality="HD">NBA HD</div>
+<div class="channel-item" data-id="14032" data-quality="HD">QazSport HD</div>
+<div class="channel-item" data-id="19025" data-quality="HD">Auto Motor Sport HD</div>
+<div class="channel-item" data-id="19026" data-quality="HD">Sport Digital HD</div>
+        <!-- ... باقي القنوات -->
+    </div>
+
     <script>
-        let channels = [];
-        let currentSortKey = '';
-        let sortDirection = 1;
+        // بيانات التصنيفات المخفية
+        const channelCategories = {
+            "7263": "sports",
+            "7329": "sports",
+            "19201": "entertainment",
+            // ... أضف بقية الـ IDs مع تصنيفاتها
+        };
 
-        // تهيئة الإحصائيات
-        document.getElementById('totalChannels').textContent = 0;
-        document.getElementById('workingCount').textContent = 0;
-        document.getElementById('errorCount').textContent = 0;
+        const BASE_URL = "http://54606f57.megatv.fun/iptv/DUTA3CP8CMLPXT/";
+        let currentChannels = [];
+        let currentIndex = 0;
+        let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
+        let isFavoriteMode = false;
+        let currentCategory = 'all';
 
-        async function checkChannel(url) {
-            const timeout = parseInt(document.getElementById('timeoutSelect').value);
-            try {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), timeout);
-                const response = await fetch(url, { 
-                    method: 'GET',
-                    signal: controller.signal,
-                    headers: { 'Range': 'bytes=0-1000' }
+        // توليد التصنيفات تلقائياً
+        function generateCategories() {
+            const categories = [...new Set(Object.values(channelCategories))];
+            const container = document.getElementById('categoriesContainer');
+            categories.forEach(cat => {
+                const btn = document.createElement('button');
+                btn.className = 'category-btn';
+                btn.textContent = cat;
+                btn.dataset.category = cat;
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentCategory = cat;
+                    filterChannels();
                 });
-                clearTimeout(timeoutId);
-                return response.status === 200 || response.status === 206;
-            } catch {
-                return false;
-            }
-        }
-
-        function updateStats() {
-            const working = channels.filter(c => c.status === '✅ تعمل').length;
-            document.getElementById('workingCount').textContent = working;
-            document.getElementById('errorCount').textContent = channels.length - working;
-            document.getElementById('totalChannels').textContent = channels.length;
-
-            // تحديث الرسم البياني
-            updateChart(working, channels.length - working);
-        }
-
-        function filterChannels(keyword) {
-            const filtered = channels.filter(c => 
-                c.name.toLowerCase().includes(keyword.toLowerCase())
-            );
-            renderTable(filtered);
-        }
-
-        function sortTable(key) {
-            if (currentSortKey === key) sortDirection *= -1;
-            else currentSortKey = key, sortDirection = 1;
-            channels.sort((a, b) => a[key] > b[key] ? sortDirection : -sortDirection);
-            renderTable(channels);
-        }
-
-        function renderTable(data) {
-            const tbody = document.getElementById('channelList');
-            tbody.innerHTML = '';
-            const favorites = JSON.parse(localStorage.getItem('favorites')) || [];
-            data.forEach((channel, i) => {
-                const row = document.createElement('tr');
-
-                // رقم القناة
-                const numCell = document.createElement('td');
-                numCell.textContent = i + 1;
-                row.appendChild(numCell);
-
-                // اسم القناة
-                const nameCell = document.createElement('td');
-                nameCell.textContent = channel.name || "غير معروف";
-                row.appendChild(nameCell);
-
-                // شعار القناة
-                const logoCell = document.createElement('td');
-                if (channel.logo) {
-                    const img = document.createElement('img');
-                    img.src = channel.logo;
-                    img.style.width = '50px';
-                    logoCell.appendChild(img);
-                }
-                row.appendChild(logoCell);
-
-                // التصنيف
-                const categoryCell = document.createElement('td');
-                categoryCell.textContent = channel.category || "غير معروف";
-                row.appendChild(categoryCell);
-
-                // الجودة
-                const qualityCell = document.createElement('td');
-                qualityCell.textContent = channel.quality;
-                row.appendChild(qualityCell);
-
-                // الحالة
-                const statusCell = document.createElement('td');
-                statusCell.className = channel.status === '✅ تعمل' ? 'working' : 'not-working';
-                statusCell.textContent = channel.status;
-                row.appendChild(statusCell);
-
-                // الرابط
-                const urlCell = document.createElement('td');
-                const link = document.createElement('a');
-                link.href = channel.url;
-                link.textContent = '🔗 رابط';
-                link.target = '_blank';
-                urlCell.appendChild(link);
-                row.appendChild(urlCell);
-
-                // مفضلة
-                const favoriteCell = document.createElement('td');
-                const favoriteIcon = document.createElement('span');
-                favoriteIcon.className = 'favorite-icon' + (favorites.includes(channel.name) ? ' active' : '');
-                favoriteIcon.textContent = '❤️';
-                favoriteIcon.onclick = () => toggleFavorite(channel.name);
-                favoriteCell.appendChild(favoriteIcon);
-                row.appendChild(favoriteCell);
-
-                tbody.appendChild(row);
+                container.appendChild(btn);
             });
         }
 
-        function toggleFavorite(channelName) {
-            const favorites = JSON.parse(localStorage.getItem('favorites')) || [];
-            if (favorites.includes(channelName)) {
-                localStorage.setItem('favorites', JSON.stringify(favorites.filter(name => name !== channelName)));
+        // تصفية القنوات
+        function filterChannels() {
+            const quality = document.getElementById('qualitySelect').value;
+            const channels = document.querySelectorAll('.channel-item');
+            
+            channels.forEach(ch => {
+                const category = channelCategories[ch.dataset.id] || 'other';
+                const categoryMatch = currentCategory === 'all' || category === currentCategory;
+                const qualityMatch = quality === 'all' || ch.dataset.quality === quality;
+                const favoriteMatch = !isFavoriteMode || favorites.includes(ch.dataset.id);
+                
+                ch.style.display = (categoryMatch && qualityMatch && favoriteMatch) ? 'block' : 'none';
+            });
+
+            currentChannels = Array.from(channels).filter(ch => ch.style.display !== 'none');
+            if (currentChannels.length > 0) playChannel(currentChannels[0]);
+        }
+
+        // تشغيل القناة
+        function playChannel(channel) {
+            currentChannels.forEach(c => c.classList.remove('selected'));
+            channel.classList.add('selected');
+            const channelId = channel.dataset.id;
+            document.getElementById('videoPlayer').src = `${BASE_URL}${channelId}/index.m3u8`;
+        }
+
+        // التهيئة
+        window.addEventListener('DOMContentLoaded', () => {
+            generateCategories();
+            init();
+        });
+
+        function init() {
+            document.querySelectorAll('.channel-item').forEach(ch => {
+                ch.addEventListener('click', () => playChannel(ch));
+            });
+
+            document.getElementById('playPauseBtn').addEventListener('click', togglePlay);
+            document.getElementById('muteBtn').addEventListener('click', toggleMute);
+            document.getElementById('fullscreenBtn').addEventListener('click', toggleFullscreen);
+            document.getElementById('addToFavoritesBtn').addEventListener('click', addToFavorites);
+            document.getElementById('toggleFavoritesBtn').addEventListener('click', toggleFavorites);
+            document.getElementById('qualitySelect').addEventListener('change', filterChannels);
+            document.getElementById('randomBtn').addEventListener('click', playRandom);
+            document.getElementById('themeBtn').addEventListener('click', toggleTheme);
+
+            filterChannels();
+        }
+
+        // باقي الدوال
+        function togglePlay() {
+            const video = document.getElementById('videoPlayer');
+            if (video.paused) {
+                video.play();
+                document.getElementById('playPauseBtn').textContent = '⏸ إيقاف';
             } else {
-                favorites.push(channelName);
+                video.pause();
+                document.getElementById('playPauseBtn').textContent = '▶ تشغيل';
+            }
+        }
+
+        function toggleMute() {
+            const video = document.getElementById('videoPlayer');
+            video.muted = !video.muted;
+            document.getElementById('muteBtn').textContent = video.muted ? '🔇 صوت' : '🔊 كتم';
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        function addToFavorites() {
+            const selected = document.querySelector('.channel-item.selected');
+            if (selected) {
+                const channelId = selected.dataset.id;
+                const index = favorites.indexOf(channelId);
+                
+                if (index === -1) {
+                    favorites.push(channelId);
+                    selected.innerHTML += ' <span class="favorite-star">★</span>';
+                } else {
+                    favorites.splice(index, 1);
+                    selected.querySelector('.favorite-star').remove();
+                }
+                
                 localStorage.setItem('favorites', JSON.stringify(favorites));
             }
-            renderTable(channels.slice(0, visibleChannels));
         }
 
-        function updateChart(working, notWorking) {
-            const ctx = document.getElementById('statsChart').getContext('2d');
-            if (window.statsChart) window.statsChart.destroy();
-            window.statsChart = new Chart(ctx, {
-                type: 'pie',
-                data: {
-                    labels: ['تعمل', 'لا تعمل'],
-                    datasets: [{
-                        data: [working, notWorking],
-                        backgroundColor: ['#4CAF50', '#F44336']
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        }
-                    }
-                }
-            });
+        function toggleFavorites() {
+            isFavoriteMode = !isFavoriteMode;
+            document.getElementById('toggleFavoritesBtn').textContent = isFavoriteMode ? '📺 عرض الكل' : '📌 عرض المفضلة';
+            filterChannels();
         }
 
-        function exportToCSV() {
-            const csvContent = "data:text/csv;charset=utf-8," 
-                + "اسم القناة,الجودة,الحالة,الرابط\n"
-                + channels.map(c => `${c.name},${c.quality},${c.status},${c.url}`).join("\n");
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "channels.csv");
-            document.body.appendChild(link);
-            link.click();
+        function playRandom() {
+            const visibleChannels = currentChannels.filter(ch => ch.style.display !== 'none');
+            if (visibleChannels.length === 0) return;
+            const randomIndex = Math.floor(Math.random() * visibleChannels.length);
+            playChannel(visibleChannels[randomIndex]);
         }
 
-        function backupData() {
-            const blob = new Blob([JSON.stringify(channels)], { type: 'application/json' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `backup_${new Date().toISOString()}.json`;
-            link.click();
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
         }
-
-        function restoreData() {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = '.json';
-            input.onchange = async () => {
-                const file = input.files[0];
-                const data = await new Promise(resolve => {
-                    const reader = new FileReader();
-                    reader.onload = e => resolve(JSON.parse(e.target.result));
-                    reader.readAsText(file);
-                });
-                channels = data;
-                renderTable(channels.slice(0, visibleChannels));
-            };
-            input.click();
-        }
-
-        function shareResultsViaEmail() {
-            const subject = encodeURIComponent("نتائج فحص IPTV");
-            const body = encodeURIComponent(`تم فحص ${channels.length} قناة:\n\n` +
-                `القنوات العاملة: ${workingCount}\n` +
-                `القنوات غير العاملة: ${errorCount}`);
-            window.location.href = `mailto:?subject=${subject}&body=${body}`;
-        }
-
-        function loadLanguage(lang) {
-            const translations = {
-                ar: {
-                    title: "فحص سيرفرات IPTV",
-                    searchPlaceholder: "🔍 بحث في القنوات...",
-                    working: "تعمل",
-                    notWorking: "لا تعمل"
-                },
-                en: {
-                    title: "IPTV Server Checker",
-                    searchPlaceholder: "🔍 Search channels...",
-                    working: "Working",
-                    notWorking: "Not Working"
-                }
-            };
-            const strings = translations[lang];
-            document.title = strings.title;
-            document.querySelector('.search-box').placeholder = strings.searchPlaceholder;
-            document.querySelector('.working').textContent = `✅ ${strings.working}`;
-            document.querySelector('.not-working').textContent = `❌ ${strings.notWorking}`;
-        }
-
-        async function processM3U(m3uData) {
-            channels = parseM3U(m3uData);
-            const progressBar = document.querySelector('.progress-bar');
-            const progress = document.querySelector('.progress');
-            progressBar.style.display = 'block';
-
-            for (let i = 0; i < channels.length; i++) {
-                const isWorking = await checkChannel(channels[i].url);
-                channels[i].status = isWorking ? '✅ تعمل' : '❌ لا تعمل';
-                progress.style.width = `${((i + 1) / channels.length) * 100}%`;
-            }
-
-            progressBar.style.display = 'none';
-            updateStats();
-            renderTable(channels);
-        }
-
-        function parseM3U(m3uContent) {
-            const lines = m3uContent.split("\n");
-            let parsedChannels = [];
-            let currentChannel = {};
-            for (let i = 0; i < lines.length; i++) {
-                let line = lines[i].trim();
-                if (line.startsWith("#EXTINF")) {
-                    currentChannel.name = line.match(/,(.+)$/)?.[1] || "غير معروف";
-                    currentChannel.quality = line.includes('tvg-logo') ? "HD" : "SD";
-                    const logoMatch = line.match(/tvg-logo="([^"]+)"/);
-                    currentChannel.logo = logoMatch ? logoMatch[1] : null;
-                    const categoryMatch = line.match(/group-title="([^"]+)"/);
-                    currentChannel.category = categoryMatch ? categoryMatch[1] : "غير معروف";
-                } else if (line && !line.startsWith("#")) {
-                    currentChannel.url = line;
-                    parsedChannels.push({ ...currentChannel });
-                    currentChannel = {};
-                }
-            }
-            return parsedChannels;
-        }
-
-        async function loadM3U() {
-            let m3uData = "";
-            const fileInput = document.getElementById("fileInput").files[0];
-            const m3uUrl = document.getElementById("m3uUrl").value;
-
-            if (fileInput) {
-                const reader = new FileReader();
-                reader.onload = async function (e) {
-                    m3uData = e.target.result;
-                    await processM3U(m3uData);
-                };
-                reader.readAsText(fileInput);
-            } else if (m3uUrl) {
-                m3uData = await fetchM3U(m3uUrl);
-                if (m3uData) {
-                    await processM3U(m3uData);
-                }
-            } else {
-                alert("⚠️ يرجى إدخال رابط M3U أو تحميل ملف.");
-            }
-        }
-
     </script>
 </body>
 </html>
