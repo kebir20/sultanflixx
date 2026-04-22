@@ -428,6 +428,8 @@
         // تشغيل القناة
         let hls;
 
+let hls;
+
 function playChannel(channel) {
 
     currentChannels.forEach(c => c.classList.remove('selected'));
@@ -444,12 +446,43 @@ function playChannel(channel) {
 
     if (Hls.isSupported()) {
 
-        hls = new Hls();
+        hls = new Hls({
+            maxBufferLength: 30,
+            maxMaxBufferLength: 60,
+            enableWorker: true,
+            lowLatencyMode: true
+        });
+
         hls.loadSource(streamUrl);
         hls.attachMedia(video);
 
         hls.on(Hls.Events.MANIFEST_PARSED, function () {
             video.play();
+        });
+
+        hls.on(Hls.Events.ERROR, function (event, data) {
+
+            if (data.fatal) {
+
+                switch (data.type) {
+
+                    case Hls.ErrorTypes.NETWORK_ERROR:
+                        console.log("Network error...");
+                        hls.startLoad();
+                        break;
+
+                    case Hls.ErrorTypes.MEDIA_ERROR:
+                        console.log("Media error...");
+                        hls.recoverMediaError();
+                        break;
+
+                    default:
+                        hls.destroy();
+                        break;
+                }
+
+            }
+
         });
 
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
@@ -463,13 +496,6 @@ function playChannel(channel) {
         alert("المتصفح لا يدعم تشغيل البث");
     }
 }
-
-        // التهيئة
-        window.addEventListener('DOMContentLoaded', () => {
-            generateCategories();
-            init();
-        });
-
         function init() {
             document.querySelectorAll('.channel-item').forEach(ch => {
                 ch.addEventListener('click', () => playChannel(ch));
