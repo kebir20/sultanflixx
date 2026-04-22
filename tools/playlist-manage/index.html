@@ -81,6 +81,7 @@
             background: #28a745 !important;
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 </head>
 <body>
     <h1 style="text-align:center;">IPTV Pro+</h1>
@@ -425,12 +426,43 @@
         }
 
         // تشغيل القناة
-        function playChannel(channel) {
-            currentChannels.forEach(c => c.classList.remove('selected'));
-            channel.classList.add('selected');
-            const channelId = channel.dataset.id;
-            document.getElementById('videoPlayer').src = `${BASE_URL}${channelId}/index.m3u8`;
-        }
+        let hls;
+
+function playChannel(channel) {
+
+    currentChannels.forEach(c => c.classList.remove('selected'));
+    channel.classList.add('selected');
+
+    const video = document.getElementById('videoPlayer');
+    const channelId = channel.dataset.id;
+
+    const streamUrl = `${BASE_URL}${channelId}/index.m3u8`;
+
+    if (hls) {
+        hls.destroy();
+    }
+
+    if (Hls.isSupported()) {
+
+        hls = new Hls();
+        hls.loadSource(streamUrl);
+        hls.attachMedia(video);
+
+        hls.on(Hls.Events.MANIFEST_PARSED, function () {
+            video.play();
+        });
+
+    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+
+        video.src = streamUrl;
+        video.addEventListener('loadedmetadata', function () {
+            video.play();
+        });
+
+    } else {
+        alert("المتصفح لا يدعم تشغيل البث");
+    }
+}
 
         // التهيئة
         window.addEventListener('DOMContentLoaded', () => {
