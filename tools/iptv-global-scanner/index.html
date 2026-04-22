@@ -4,7 +4,7 @@
 <head>
 
 <meta charset="UTF-8">
-<title>IPTV Global Scanner PRO MAX</title>
+<title>SULTANFLIX IPTV</title>
 
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
@@ -13,8 +13,21 @@
 body{
 background:#0f0f0f;
 color:white;
-font-family:sans-serif;
+font-family:Arial;
+margin:0;
 text-align:center;
+}
+
+header{
+background:black;
+padding:20px;
+font-size:30px;
+font-weight:bold;
+color:#e50914;
+}
+
+.controls{
+padding:20px;
 }
 
 button{
@@ -25,39 +38,76 @@ color:white;
 margin:6px;
 cursor:pointer;
 border-radius:6px;
+font-size:16px;
 }
 
 input,select{
-padding:8px;
+padding:10px;
 margin:6px;
 border-radius:6px;
 border:none;
+font-size:16px;
 }
 
-#results{
-max-width:800px;
-margin:auto;
-}
-
-.channel{
-background:#1a1a1a;
-margin:10px;
-padding:15px;
-border-radius:8px;
-}
-
-.channel:hover{
-background:#e50914;
+#count{
+margin-top:10px;
+opacity:0.8;
 }
 
 video{
 width:90%;
+max-height:500px;
 margin-top:20px;
+background:black;
 }
 
-.status{
-font-size:12px;
-opacity:0.8;
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+gap:15px;
+padding:20px;
+}
+
+.card{
+background:#1a1a1a;
+border-radius:8px;
+padding:10px;
+cursor:pointer;
+transition:.2s;
+}
+
+.card:hover{
+transform:scale(1.05);
+background:#e50914;
+}
+
+.card img{
+width:100%;
+height:80px;
+object-fit:contain;
+background:black;
+border-radius:6px;
+}
+
+.name{
+margin-top:6px;
+font-size:14px;
+}
+  
+#playerContainer{
+position:sticky;
+top:0;
+z-index:999;
+background:#000;
+padding:10px 0;
+box-shadow:0 4px 20px rgba(0,0,0,0.6);
+}
+
+#player{
+width:95%;
+max-height:450px;
+background:black;
+border-radius:8px;
 }
 
 </style>
@@ -66,44 +116,66 @@ opacity:0.8;
 
 <body>
 
-<h1>🌍 IPTV Global Scanner PRO MAX</h1>
+<header>📺 SULTANFLIX IPTV</header>
 
-<button onclick="scanGitHub()">GitHub</button>
-<button onclick="scanReddit()">Reddit</button>
-<button onclick="scanPastebin()">Pastebin</button>
-<button onclick="scanInternet()">Scan Internet</button>
-<button onclick="downloadPlaylist()">Download M3U</button>
+<div class="controls">
+
+<button onclick="scanInternet()">🌍 Load Channels</button>
+
+<button onclick="loadSports()">⚽ Sports</button>
+
+<button onclick="downloadPlaylist()">⬇ Download M3U</button>
 
 <br>
 
 <input id="search" placeholder="🔎 Search Channel" onkeyup="searchChannel()">
 
-<select onchange="filterQuality(this.value)">
-<option value="">All Quality</option>
-<option value="1080">1080p</option>
-<option value="720">720p</option>
-<option value="480">480p</option>
-<option value="360">360p</option>
+<select onchange="filterCountry(this.value)">
+<option value="">All Countries</option>
+<option value="AR">Arabic</option>
+<option value="US">USA</option>
+<option value="GB">UK</option>
+<option value="FR">France</option>
+<option value="ES">Spain</option>
 </select>
 
-<div id="count"></div>
+<div id="count">Channels Found: 0</div>
 
-<br>
+</div>
+
+<div id="playerContainer">
 
 <video id="player" controls></video>
 
-<div id="results"></div>
+</div>
+
+<div id="results" class="grid"></div>
 
 <script>
 
 let channels=[]
 let urls=new Set()
+let hlsPlayer=null
+
+/* تحميل ملف m3u */
 
 async function loadM3U(url){
 
 try{
 
-const proxy="https://corsproxy.io/?"
+let res = await fetch(url)
+
+if(!res.ok) throw new Error()
+
+let text = await res.text()
+
+parseM3U(text)
+
+}catch{
+
+try{
+
+const proxy="https://api.allorigins.win/raw?url="
 
 let res = await fetch(proxy + encodeURIComponent(url))
 
@@ -113,11 +185,15 @@ parseM3U(text)
 
 }catch(e){
 
-console.log("failed",url)
+console.log("Failed:",url)
 
 }
 
 }
+
+}
+
+/* تحليل القنوات */
 
 function parseM3U(data){
 
@@ -127,9 +203,23 @@ for(let i=0;i<lines.length;i++){
 
 if(lines[i].startsWith("#EXTINF")){
 
-let name = lines[i].split(",")[1] || "Unknown"
+let line=lines[i]
 
-let url = lines[i+1]
+let name=line.split(",")[1] || "Unknown"
+
+let logo=""
+
+let country=""
+
+let logoMatch=line.match(/tvg-logo="(.*?)"/)
+
+if(logoMatch) logo=logoMatch[1]
+
+let countryMatch=line.match(/tvg-country="(.*?)"/)
+
+if(countryMatch) country=countryMatch[1]
+
+let url=lines[i+1]
 
 if(!url) continue
 
@@ -139,9 +229,9 @@ if(urls.has(url)) continue
 
 urls.add(url)
 
-channels.push({name,url})
+channels.push({name,url,logo,country})
 
-createChannel(name,url)
+createChannel(name,url,logo,country)
 
 }
 
@@ -151,98 +241,66 @@ updateCount()
 
 }
 
-async function checkStream(url){
+/* إنشاء بطاقة القناة */
 
-try{
-
-const controller=new AbortController()
-
-const timeout=setTimeout(()=>controller.abort(),4000)
-
-const res=await fetch(url,{
-method:"HEAD",
-signal:controller.signal
-})
-
-clearTimeout(timeout)
-
-return res.ok
-
-}catch{
-
-return false
-
-}
-
-}
-
-function createChannel(name,url){
+function createChannel(name,url,logo,country){
 
 let div=document.createElement("div")
-div.className="channel"
+div.className="card"
+div.dataset.country=country
 
 div.innerHTML=`
 
-<b>${name}</b>
+<img src="${logo || 'https://upload.wikimedia.org/wikipedia/commons/4/41/No_image_available.svg'}">
 
-<br>
-
-<button onclick="play('${url}')">▶ Play</button>
-
-<span class="status">🟢 Working</span>
+<div class="name">${name}</div>
 
 `
+
+div.onclick=()=>play(url)
 
 document.getElementById("results").appendChild(div)
 
 }
 
+/* تشغيل القناة */
+
 function play(url){
 
-const video=document.getElementById("player")
+let video=document.getElementById("player")
 
-video.pause()
-video.removeAttribute("src")
-video.load()
-
-if(window.hlsPlayer){
-window.hlsPlayer.destroy()
+if(hlsPlayer){
+hlsPlayer.destroy()
 }
 
 if(Hls.isSupported()){
 
-window.hlsPlayer = new Hls({
-maxBufferLength:30,
-maxMaxBufferLength:60
-})
+hlsPlayer=new Hls()
 
-window.hlsPlayer.loadSource(url)
-window.hlsPlayer.attachMedia(video)
+hlsPlayer.loadSource(url)
 
-window.hlsPlayer.on(Hls.Events.MANIFEST_PARSED,function(){
+hlsPlayer.attachMedia(video)
+
+hlsPlayer.on(Hls.Events.MANIFEST_PARSED,function(){
 video.play()
 })
 
-}else if(video.canPlayType("application/vnd.apple.mpegurl")){
+}else{
 
 video.src=url
 video.play()
 
-}else{
-
-alert("Stream not supported")
-
 }
 
 }
+
+/* البحث */
 
 function searchChannel(){
 
 let input=document.getElementById("search").value.toLowerCase()
 
-let cards=document.querySelectorAll(".channel")
-
-cards.forEach(card=>{
+document.querySelectorAll(".card").forEach(card=>{
 
 card.style.display=
 
@@ -254,13 +312,13 @@ card.innerText.toLowerCase().includes(input)
 
 }
 
-function filterQuality(q){
+/* فلترة الدولة */
 
-let cards=document.querySelectorAll(".channel")
+function filterCountry(c){
 
-cards.forEach(card=>{
+document.querySelectorAll(".card").forEach(card=>{
 
-if(q=="" || card.innerText.includes(q))
+if(c=="" || card.dataset.country.includes(c))
 card.style.display="block"
 else
 card.style.display="none"
@@ -269,13 +327,16 @@ card.style.display="none"
 
 }
 
+/* عدد القنوات */
+
 function updateCount(){
 
-document.getElementById("count").innerHTML=
-
+document.getElementById("count").innerText=
 "Channels Found: "+channels.length
 
 }
+
+/* تحميل قائمة */
 
 function downloadPlaylist(){
 
@@ -299,109 +360,14 @@ a.click()
 
 }
 
-async function scanGitHub(){
-
-const proxy="https://corsproxy.io/?"
-
-const repos=[
-
-"https://raw.githubusercontent.com/iptv-org/iptv/master/index.m3u",
-"https://raw.githubusercontent.com/iptv-org/iptv/master/languages/ara.m3u",
-"https://raw.githubusercontent.com/iptv-org/iptv/master/categories/sports.m3u",
-"https://raw.githubusercontent.com/iptv-org/iptv/master/categories/news.m3u",
-"https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist.m3u",
-"https://raw.githubusercontent.com/iptv-org/iptv/master/languages/eng.m3u"
-
-]
-
-for(let url of repos){
-
-try{
-
-let res=await fetch(proxy+encodeURIComponent(url))
-let text=await res.text()
-
-parseM3U(text)
-
-}catch(e){
-
-console.log("GitHub failed:",url)
-
-}
-
-}
-
-}
-
-async function scanReddit(){
-
-const proxy="https://corsproxy.io/?"
-
-try{
-
-let res = await fetch(proxy+"https://www.reddit.com/search.json?q=iptv+m3u")
-
-let data = await res.json()
-
-data.data.children.forEach(post=>{
-
-let text = post.data.selftext + " " + post.data.url
-
-let links = text.match(/https?:\/\/[^ ]+\.m3u/g)
-
-if(links){
-
-links.forEach(link=>{
-
-loadM3U(link)
-
-})
-
-}
-
-})
-
-}catch(e){
-
-console.log("Reddit scan failed")
-
-}
-
-}
-
-async function scanPastebin(){
-
-const proxy="https://corsproxy.io/?"
-
-let pastes=[
-
-"https://pastebin.com/raw/Zm6PnTqL",
-"https://pastebin.com/raw/k9m3u8tv",
-"https://pastebin.com/raw/iptvlinks",
-"https://pastebin.com/raw/m3uplaylist"
-
-]
-
-for(let url of pastes){
-
-try{
-
-let res=await fetch(proxy+encodeURIComponent(url))
-let text=await res.text()
-
-parseM3U(text)
-
-}catch(e){
-
-console.log("Pastebin failed:",url)
-
-}
-
-}
-
-}
+/* جلب القنوات */
 
 function scanInternet(){
+
+document.getElementById("results").innerHTML=""
+
+channels=[]
+urls=new Set()
 
 let lists=[
 
@@ -410,10 +376,7 @@ let lists=[
 "https://iptv-org.github.io/iptv/languages/eng.m3u",
 "https://iptv-org.github.io/iptv/categories/news.m3u",
 "https://iptv-org.github.io/iptv/categories/sports.m3u",
-"https://iptv-org.github.io/iptv/categories/movies.m3u",
-"https://iptv-org.github.io/iptv/categories/kids.m3u",
-"https://iptv-org.github.io/iptv/categories/music.m3u",
-"https://iptv-org.github.io/iptv/categories/documentary.m3u"
+"https://iptv-org.github.io/iptv/categories/movies.m3u"
 
 ]
 
@@ -421,8 +384,20 @@ lists.forEach(loadM3U)
 
 }
 
+/* قسم الرياضة */
+
+function loadSports(){
+
+document.getElementById("results").innerHTML=""
+
+channels=[]
+urls=new Set()
+
+loadM3U("https://iptv-org.github.io/iptv/categories/sports.m3u")
+
+}
+
 </script>
 
 </body>
-
 </html>
