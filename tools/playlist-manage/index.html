@@ -132,8 +132,7 @@
 
 <script>
 
-const BASE_URL = "https://54606f57.megatv.fun/iptv/DUTA3CP8CMLPXT/";
-
+const BASE_URL = "//54606f57.megatv.fun/iptv/DUTA3CP8CMLPXT/";
 let currentChannels = [];
 let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
 let isFavoriteMode = false;
@@ -146,6 +145,8 @@ const video = document.getElementById("videoPlayer");
 /* تشغيل القناة */
 let hls;
 
+let hls = null;
+
 function playChannel(channel){
 
 const video = document.getElementById("videoPlayer");
@@ -156,30 +157,37 @@ c.classList.remove("selected");
 
 channel.classList.add("selected");
 
-const stream = BASE_URL + channel.dataset.id + "/index.m3u8";
+const channelId = channel.dataset.id;
+
+const streamUrl = BASE_URL + channelId + "/index.m3u8";
+
 
 if(hls){
 hls.destroy();
+hls = null;
 }
+
 
 if(Hls.isSupported()){
 
 hls = new Hls({
 enableWorker:true,
 lowLatencyMode:true,
-backBufferLength:90
+liveDurationInfinity:true
 });
 
-hls.loadSource(stream);
+hls.loadSource(streamUrl);
 hls.attachMedia(video);
 
 hls.on(Hls.Events.MANIFEST_PARSED,function(){
+
 video.play().catch(()=>{});
+
 });
 
-}else if(video.canPlayType("application/vnd.apple.mpegurl")){
+}else{
 
-video.src = stream;
+video.src = streamUrl;
 video.play();
 
 }
