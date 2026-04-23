@@ -1462,32 +1462,67 @@ function toggleSearch() {
   input.style.display = input.style.display === "none" ? "block" : "none";
 }
 
-function openPlayer(link) {
+function openPlayer(link){
 
-const players = {
-"MX Player": `intent://${link.replace(/^https?:\/\//,'')}#Intent;package=com.mxtech.videoplayer.ad;type=video/*;scheme=http;end`,
-"VLC": `intent://${link.replace(/^https?:\/\//,'')}#Intent;package=org.videolan.vlc;type=video/*;scheme=http;end`,
-"Just Player": `intent://${link.replace(/^https?:\/\//,'')}#Intent;package=com.brouken.player;type=video/*;scheme=http;end`,
-"Nova Player": `intent://${link.replace(/^https?:\/\//,'')}#Intent;package=org.courville.nova;type=video/*;scheme=http;end`,
-"XPlayer": `intent://${link.replace(/^https?:\/\//,'')}#Intent;package=video.player.videoplayer;type=video/*;scheme=http;end`,
-"مشغل النظام": link
+const players = [
+{ name:"MX Player", pkg:"com.mxtech.videoplayer.ad" },
+{ name:"VLC", pkg:"org.videolan.vlc" },
+{ name:"Just Player", pkg:"com.brouken.player" },
+{ name:"Nova Player", pkg:"org.courville.nova" },
+{ name:"XPlayer", pkg:"video.player.videoplayer" }
+];
+
+let menu = document.createElement("div");
+
+menu.style.position="fixed";
+menu.style.bottom="0";
+menu.style.left="0";
+menu.style.right="0";
+menu.style.background="#111";
+menu.style.padding="15px";
+menu.style.zIndex="9999";
+menu.style.borderTop="2px solid #ffc107";
+
+players.forEach(p=>{
+
+let btn=document.createElement("button");
+
+btn.textContent=p.name;
+btn.style.display="block";
+btn.style.width="100%";
+btn.style.marginBottom="8px";
+btn.style.padding="12px";
+btn.style.background="#ffc107";
+btn.style.border="none";
+btn.style.borderRadius="6px";
+
+btn.onclick=()=>{
+
+const base = link.replace(/^https?:\/\//,'');
+const intent = `intent://${base}#Intent;package=${p.pkg};type=video/*;scheme=http;end`;
+
+window.location.href=intent;
+
 };
 
-let menu = "اختر المشغل:\n\n";
+menu.appendChild(btn);
 
-let keys = Object.keys(players);
-
-keys.forEach((p,i)=>{
-menu += `${i+1} - ${p}\n`;
 });
 
-let choice = prompt(menu);
+let sys=document.createElement("button");
+sys.textContent="مشغل النظام";
+sys.style.width="100%";
+sys.style.padding="12px";
 
-if(choice && players[keys[choice-1]]){
+sys.onclick=()=>{
 
-window.location.href = players[keys[choice-1]];
+window.location.href=link;
 
-}
+};
+
+menu.appendChild(sys);
+
+document.body.appendChild(menu);
 
 }
 
