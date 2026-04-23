@@ -1462,10 +1462,33 @@ function toggleSearch() {
   input.style.display = input.style.display === "none" ? "block" : "none";
 }
 
-function openMX(link) {
-  const base = link.replace(/^https?:\/\//, '');
-  const intent = `intent://${base}#Intent;package=com.mxtech.videoplayer.ad;type=video/*;scheme=http;end`;
-  window.location.href = intent;
+function openPlayer(link) {
+
+const players = {
+"MX Player": `intent://${link.replace(/^https?:\/\//,'')}#Intent;package=com.mxtech.videoplayer.ad;type=video/*;scheme=http;end`,
+"VLC": `intent://${link.replace(/^https?:\/\//,'')}#Intent;package=org.videolan.vlc;type=video/*;scheme=http;end`,
+"Just Player": `intent://${link.replace(/^https?:\/\//,'')}#Intent;package=com.brouken.player;type=video/*;scheme=http;end`,
+"Nova Player": `intent://${link.replace(/^https?:\/\//,'')}#Intent;package=org.courville.nova;type=video/*;scheme=http;end`,
+"XPlayer": `intent://${link.replace(/^https?:\/\//,'')}#Intent;package=video.player.videoplayer;type=video/*;scheme=http;end`,
+"مشغل النظام": link
+};
+
+let menu = "اختر المشغل:\n\n";
+
+let keys = Object.keys(players);
+
+keys.forEach((p,i)=>{
+menu += `${i+1} - ${p}\n`;
+});
+
+let choice = prompt(menu);
+
+if(choice && players[keys[choice-1]]){
+
+window.location.href = players[keys[choice-1]];
+
+}
+
 }
 
 function toggleFavorite(link) {
@@ -1559,7 +1582,7 @@ function filterChannels() {
       <span>${c.name}</span>
       <i class="fas fa-heart fav-btn" onclick="event.stopPropagation(); toggleFavorite('${c.link}')"></i>
     `;
-    item.onclick = () => openMX(c.link);
+    item.onclick = () => openPlayer(c.link);
     item.onkeydown = (e) => {
       if (e.key === "Enter") {
         toggleFavorite(c.link);
