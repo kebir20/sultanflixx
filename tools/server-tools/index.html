@@ -28,6 +28,24 @@ button{padding:10px;font-size:14px;border:none;border-radius:6px;background:#ffc
 
 #videoContainer{flex:1;background:#000;display:none}
 video{width:100%;height:100%}
+
+.playerBtn{
+display:flex;
+align-items:center;
+gap:10px;
+padding:10px;
+background:#ffc107;
+border:none;
+border-radius:8px;
+font-size:16px;
+cursor:pointer;
+}
+
+.playerBtn img{
+width:24px;
+height:24px;
+border-radius:4px;
+}
 </style>
 </head>
 
@@ -58,14 +76,39 @@ video{width:100%;height:100%}
 
 <h3>اختر المشغل</h3>
 
-<button onclick="startPlayer('mx')">MX Player</button>
-<button onclick="startPlayer('vlc')">VLC</button>
-<button onclick="startPlayer('just')">Just Player</button>
-<button onclick="startPlayer('nova')">Nova Player</button>
-<button onclick="startPlayer('km')">KMPlayer</button>
-<button onclick="startPlayer('xplayer')">XPlayer</button>
-<button onclick="startPlayer('web')">Web Player</button>
-<button onclick="openBrowser()">🌐 فتح في المتصفح</button>
+<button class="playerBtn" onclick="startPlayer('mx')">
+<img src="https://upload.wikimedia.org/wikipedia/en/9/9b/MX_Player_Logo.png">
+MX Player
+</button>
+
+<button class="playerBtn" onclick="startPlayer('vlc')">
+<img src="https://upload.wikimedia.org/wikipedia/commons/9/9c/VLC_media_player_icon.png">
+VLC
+</button>
+
+<button class="playerBtn" onclick="startPlayer('just')">
+<img src="https://play-lh.googleusercontent.com/WqfYj1WFJsbgx5caX5WDHnhbA3Qydb9h9NP7VDaRao7IhiHBpjz2uVH54camzatoNg=w240-h480">
+Just Player
+</button>
+
+<button class="playerBtn" onclick="startPlayer('nova')">
+<img src="https://play-lh.googleusercontent.com/Lw4Hknc0aF4Pjk6HoydxHDBPPfQtbDNRsTA70vsK1tnE-bBZ5qTqL0U8nyCLlcHO9b0=w240-h480">
+Nova Player
+</button>
+
+<button class="playerBtn" onclick="startPlayer('km')">
+<img src="https://upload.wikimedia.org/wikipedia/commons/8/86/KMPlayer_logo.png">
+KMPlayer
+</button>
+
+<button class="playerBtn" onclick="startPlayer('xplayer')">
+<img src="https://play-lh.googleusercontent.com/Kp4vOB0fOkH1ZZ1xdjQbaO5SpM90oCbGyF07I6GZxGDZCBoBPuiGNsq4CPGK8HBX9Q=w240-h480">
+XPlayer
+</button>
+
+<button class="playerBtn" onclick="startPlayer('web')">
+🌐 Web Player
+</button>
 
 <button class="cancel" onclick="closeModal()">إلغاء</button>
 
