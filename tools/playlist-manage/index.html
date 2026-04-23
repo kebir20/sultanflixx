@@ -132,7 +132,7 @@
 
 <script>
 
-const BASE_URL = "http://54606f57.megatv.fun/iptv/DUTA3CP8CMLPXT/";
+const BASE_URL = "https://54606f57.megatv.fun/iptv/DUTA3CP8CMLPXT/";
 
 let currentChannels = [];
 let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
@@ -144,73 +144,47 @@ const video = document.getElementById("videoPlayer");
 
 
 /* تشغيل القناة */
+let hls;
+
 function playChannel(channel){
 
-    document.querySelectorAll(".channel-item").forEach(c=>{
-        c.classList.remove("selected");
-    });
+const video = document.getElementById("videoPlayer");
 
-    channel.classList.add("selected");
+document.querySelectorAll(".channel-item").forEach(c=>{
+c.classList.remove("selected");
+});
 
-    const id = channel.dataset.id;
-    const stream = BASE_URL + id + "/index.m3u8";
+channel.classList.add("selected");
 
-    video.pause();
+const stream = BASE_URL + channel.dataset.id + "/index.m3u8";
 
-    if(hls){
-        hls.destroy();
-        hls = null;
-    }
+if(hls){
+hls.destroy();
+}
 
-    if(Hls.isSupported()){
+if(Hls.isSupported()){
 
-        hls = new Hls({
-            enableWorker:true,
-            lowLatencyMode:true
-        });
+hls = new Hls({
+enableWorker:true,
+lowLatencyMode:true,
+backBufferLength:90
+});
 
-        hls.loadSource(stream);
-        hls.attachMedia(video);
+hls.loadSource(stream);
+hls.attachMedia(video);
 
-        hls.on(Hls.Events.MANIFEST_PARSED,function(){
-            video.play().catch(()=>{});
-        });
+hls.on(Hls.Events.MANIFEST_PARSED,function(){
+video.play().catch(()=>{});
+});
 
-        hls.on(Hls.Events.ERROR,function(event,data){
+}else if(video.canPlayType("application/vnd.apple.mpegurl")){
 
-            if(data.fatal){
-
-                switch(data.type){
-
-                    case Hls.ErrorTypes.NETWORK_ERROR:
-                        hls.startLoad();
-                        break;
-
-                    case Hls.ErrorTypes.MEDIA_ERROR:
-                        hls.recoverMediaError();
-                        break;
-
-                    default:
-                        hls.destroy();
-                        break;
-                }
-
-            }
-
-        });
-
-    }else if(video.canPlayType("application/vnd.apple.mpegurl")){
-
-        video.src = stream;
-
-        video.addEventListener("loadedmetadata",function(){
-            video.play();
-        });
-
-    }
+video.src = stream;
+video.play();
 
 }
 
+}
 
 /* تصفية القنوات */
 
