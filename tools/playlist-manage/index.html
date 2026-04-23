@@ -130,8 +130,78 @@
       margin-right: 10px;
       font-size: 16px;
     }
+
+    #playerModal{
+position:fixed;
+bottom:0;
+left:0;
+right:0;
+background:#111;
+border-top:3px solid #ffc107;
+padding:15px;
+z-index:9999;
+transform:translateY(100%);
+transition:transform .35s ease;
+}
+
+#playerModal.show{
+transform:translateY(0);
+}
+
+.player-btn{
+display:flex;
+align-items:center;
+gap:10px;
+width:100%;
+padding:12px;
+margin-bottom:8px;
+background:#ffc107;
+border:none;
+border-radius:8px;
+font-size:15px;
+cursor:pointer;
+}
+
+.player-btn img{
+width:22px;
+height:22px;
+}
+
+#modalClose{
+background:#222;
+color:#fff;
+}
   </style>
 </head>
+  <div id="playerModal">
+
+<button class="player-btn" onclick="playIntent('com.mxtech.videoplayer.ad')">
+<img src="https://cdn-icons-png.flaticon.com/512/732/732228.png">
+MX Player
+</button>
+
+<button class="player-btn" onclick="playIntent('org.videolan.vlc')">
+<img src="https://upload.wikimedia.org/wikipedia/commons/9/9a/VLC_Icon.svg">
+VLC
+</button>
+
+<button class="player-btn" onclick="playIntent('com.brouken.player')">
+🎬 Just Player
+</button>
+
+<button class="player-btn" onclick="playIntent('org.courville.nova')">
+📺 Nova Player
+</button>
+
+<button class="player-btn" onclick="playIntent('video.player.videoplayer')">
+▶️ XPlayer
+</button>
+
+<button class="player-btn" onclick="playSystem()">مشغل النظام</button>
+
+<button class="player-btn" id="modalClose" onclick="closePlayerModal()">إغلاق</button>
+
+  </div>
 <body>
 
 <div id="sidebar">
@@ -1462,67 +1532,35 @@ function toggleSearch() {
   input.style.display = input.style.display === "none" ? "block" : "none";
 }
 
+let currentLink="";
+
 function openPlayer(link){
 
-const players = [
-{ name:"MX Player", pkg:"com.mxtech.videoplayer.ad" },
-{ name:"VLC", pkg:"org.videolan.vlc" },
-{ name:"Just Player", pkg:"com.brouken.player" },
-{ name:"Nova Player", pkg:"org.courville.nova" },
-{ name:"XPlayer", pkg:"video.player.videoplayer" }
-];
+currentLink=link;
 
-let menu = document.createElement("div");
+document.getElementById("playerModal").classList.add("show");
 
-menu.style.position="fixed";
-menu.style.bottom="0";
-menu.style.left="0";
-menu.style.right="0";
-menu.style.background="#111";
-menu.style.padding="15px";
-menu.style.zIndex="9999";
-menu.style.borderTop="2px solid #ffc107";
+}
 
-players.forEach(p=>{
+function closePlayerModal(){
 
-let btn=document.createElement("button");
+document.getElementById("playerModal").classList.remove("show");
 
-btn.textContent=p.name;
-btn.style.display="block";
-btn.style.width="100%";
-btn.style.marginBottom="8px";
-btn.style.padding="12px";
-btn.style.background="#ffc107";
-btn.style.border="none";
-btn.style.borderRadius="6px";
+}
 
-btn.onclick=()=>{
+function playIntent(pkg){
 
-const base = link.replace(/^https?:\/\//,'');
-const intent = `intent://${base}#Intent;package=${p.pkg};type=video/*;scheme=http;end`;
+const base=currentLink.replace(/^https?:\/\//,'');
+
+const intent=`intent://${base}#Intent;package=${pkg};type=video/*;scheme=http;end`;
 
 window.location.href=intent;
 
-};
+}
 
-menu.appendChild(btn);
+function playSystem(){
 
-});
-
-let sys=document.createElement("button");
-sys.textContent="مشغل النظام";
-sys.style.width="100%";
-sys.style.padding="12px";
-
-sys.onclick=()=>{
-
-window.location.href=link;
-
-};
-
-menu.appendChild(sys);
-
-document.body.appendChild(menu);
+window.location.href=currentLink;
 
 }
 
