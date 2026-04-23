@@ -1,448 +1,231 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
-
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-
-<title>IPTV Analyzer PRO</title>
-
-<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>IPTV Player</title>
 
 <style>
-
 body{
-font-family:Arial;
-background:#f2f2f2;
 margin:0;
-padding:20px;
-}
-
-header{
-text-align:center;
-font-size:24px;
-margin-bottom:20px;
-}
-
-.controls{
-display:flex;
-flex-wrap:wrap;
-gap:10px;
-margin-bottom:15px;
-}
-
-button,input{
-padding:10px;
-}
-
-table{
-width:100%;
-border-collapse:collapse;
-background:white;
-}
-
-th,td{
-border:1px solid #ddd;
-padding:8px;
-text-align:center;
-}
-
-th{
-background:#007bff;
-color:white;
-}
-
-.logo{
-width:40px;
-}
-
-.status-ok{
-color:green;
-font-weight:bold;
-}
-
-.status-dead{
-color:red;
-font-weight:bold;
+background:#000;
+color:#fff;
+font-family:sans-serif;
+overflow:hidden;
 }
 
 video{
 width:100%;
-max-width:800px;
-margin-top:20px;
+height:100vh;
+background:#000;
+object-fit:contain;
 }
 
-</style>
+.controls{
+position:absolute;
+bottom:10px;
+left:0;
+right:0;
+display:flex;
+justify-content:center;
+gap:6px;
+background:rgba(0,0,0,.5);
+padding:10px;
+border-radius:12px;
+}
 
+button{
+background:#222;
+color:#fff;
+border:none;
+padding:8px;
+border-radius:6px;
+cursor:pointer;
+}
+
+.channel-list{
+position:absolute;
+top:0;
+right:0;
+bottom:0;
+width:260px;
+background:rgba(0,0,0,.8);
+overflow-y:auto;
+display:none;
+}
+
+.channel-list.show{
+display:block;
+}
+
+.channel-item{
+padding:8px;
+border-bottom:1px solid #333;
+cursor:pointer;
+}
+
+.channel-item:hover{
+background:#444;
+}
+
+.channel-item.selected{
+background:#007bff;
+}
+
+.overlay{
+position:absolute;
+top:10px;
+left:10px;
+background:rgba(0,0,0,.6);
+padding:6px 10px;
+border-radius:6px;
+}
+</style>
 </head>
 
 <body>
 
-<header>🚀 IPTV Analyzer PRO</header>
+<video id="video" controls autoplay></video>
+
+<div class="overlay" id="overlay">IPTV</div>
 
 <div class="controls">
-
-<input type="file" id="fileInput">
-
-<input type="text" id="urlInput" placeholder="M3U URL">
-
-<button onclick="loadM3U()">Load</button>
-
-<button onclick="scanChannels()">Scan</button>
-
-<button onclick="removeDuplicates()">Remove duplicates</button>
-
-<button onclick="exportM3U()">Export working</button>
-
-<button onclick="mergeM3U()">Merge lists</button>
-
-<button onclick="xtreamToM3U()">Xtream → M3U</button>
-
-<input type="text" id="search" placeholder="Search">
-
+<button id="toggleList">📺 القنوات</button>
+<button id="prev">⏮</button>
+<button id="next">⏭</button>
+<button id="random">🎲</button>
+<button id="mute">🔊</button>
+<button id="fullscreen">⛶</button>
 </div>
 
-<table>
+<div class="channel-list" id="channelList"></div>
 
-<thead>
-
-<tr>
-
-<th>#</th>
-<th>Logo</th>
-<th>Name</th>
-<th>Group</th>
-<th>Server</th>
-<th>Type</th>
-<th>Ping</th>
-<th>Status</th>
-<th>Play</th>
-
-</tr>
-
-</thead>
-
-<tbody id="channels"></tbody>
-
-</table>
-
-<video id="player" controls></video>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
 <script>
 
-let channels=[]
+const M3U_URL="https://thetivi.us/M3U/m3u2/playlist_ken1980_plus.m3u"; // ملف القنوات
 
-function parseM3U(text){
+const video=document.getElementById("video");
+const list=document.getElementById("channelList");
+const overlay=document.getElementById("overlay");
 
-let lines=text.split("\n")
+let channels=[];
+let current=0;
+let hls;
 
-let list=[]
+fetch(M3U_URL)
+.then(r=>r.text())
+.then(parseM3U);
 
-let temp={}
+function parseM3U(data){
 
-for(let line of lines){
+const lines=data.split("\n");
 
-line=line.trim()
+for(let i=0;i<lines.length;i++){
 
-if(line.startsWith("#EXTINF")){
+if(lines[i].startsWith("#EXTINF")){
 
-let name=line.split(",").pop()
+const name=lines[i].split(",")[1].trim();
+const url=lines[i+1].trim();
 
-let logo=line.match(/tvg-logo="(.+?)"/)
-
-let group=line.match(/group-title="(.+?)"/)
-
-temp.name=name
-temp.logo=logo?logo[1]:""
-temp.group=group?group[1]:"Other"
-
-}
-
-else if(line && !line.startsWith("#")){
-
-temp.url=line
-
-temp.server=getServer(line)
-
-temp.type=detectType(line)
-
-list.push({...temp})
-
-temp={}
+channels.push({name,url});
 
 }
 
 }
 
-return list
+renderChannels();
+
+playChannel(0);
 
 }
 
-function detectType(url){
+function renderChannels(){
 
-if(url.includes(".m3u8")) return "HLS"
+channels.forEach((ch,i)=>{
 
-if(url.includes(".ts")) return "TS"
+const div=document.createElement("div");
+div.className="channel-item";
+div.textContent=ch.name;
 
-if(url.includes("rtmp")) return "RTMP"
+div.onclick=()=>playChannel(i);
 
-return "Stream"
+list.appendChild(div);
 
-}
-
-function getServer(url){
-
-try{
-
-let u=new URL(url)
-
-return u.hostname
-
-}catch{
-
-return "-"
+});
 
 }
 
-}
+function playChannel(i){
 
-async function loadM3U(){
+current=i;
 
-let file=document.getElementById("fileInput").files[0]
+const ch=channels[i];
 
-let url=document.getElementById("urlInput").value
+overlay.textContent=ch.name;
 
-if(file){
+document.querySelectorAll(".channel-item")
+.forEach(e=>e.classList.remove("selected"));
 
-let reader=new FileReader()
+document.querySelectorAll(".channel-item")[i].classList.add("selected");
 
-reader.onload=e=>{
-
-channels=parseM3U(e.target.result)
-
-render()
-
-}
-
-reader.readAsText(file)
-
-}
-
-else if(url){
-
-let res=await fetch(url)
-
-let txt=await res.text()
-
-channels=parseM3U(txt)
-
-render()
-
-}
-
-}
-
-function render(){
-
-let table=document.getElementById("channels")
-
-table.innerHTML=""
-
-channels.forEach((c,i)=>{
-
-let row=document.createElement("tr")
-
-row.innerHTML=`
-
-<td>${i+1}</td>
-
-<td>${c.logo?`<img src="${c.logo}" class="logo">`:""}</td>
-
-<td>${c.name}</td>
-
-<td>${c.group}</td>
-
-<td>${c.server}</td>
-
-<td>${c.type}</td>
-
-<td class="ping">-</td>
-
-<td class="status">⏳</td>
-
-<td><button onclick="play('${c.url}')">▶</button></td>
-
-`
-
-table.appendChild(row)
-
-})
-
-}
-
-async function ping(url){
-
-let start=performance.now()
-
-try{
-
-await fetch(url,{method:"HEAD"})
-
-return Math.round(performance.now()-start)
-
-}catch{
-
-return null
-
-}
-
-}
-
-async function check(url){
-
-try{
-
-let controller=new AbortController()
-
-setTimeout(()=>controller.abort(),4000)
-
-let r=await fetch(url,{method:"HEAD",signal:controller.signal})
-
-return r.ok
-
-}catch{
-
-return false
-
-}
-
-}
-
-async function scanChannels(){
-
-let rows=document.querySelectorAll("#channels tr")
-
-let batchSize=40
-
-for(let i=0;i<channels.length;i+=batchSize){
-
-let batch=channels.slice(i,i+batchSize)
-
-let promises=batch.map(c=>check(c.url))
-
-let results=await Promise.all(promises)
-
-results.forEach((ok,index)=>{
-
-let rowIndex=i+index
-
-let statusCell=rows[rowIndex].querySelector(".status")
-
-if(ok){
-
-statusCell.innerHTML="✅"
-statusCell.className="status-ok"
-
-}else{
-
-statusCell.innerHTML="❌"
-statusCell.className="status-dead"
-
-}
-
-})
-
-}
-
-}
-
-function play(url){
-
-let video=document.getElementById("player")
+if(hls) hls.destroy();
 
 if(Hls.isSupported()){
 
-let hls=new Hls()
+hls=new Hls();
 
-hls.loadSource(url)
+hls.loadSource(ch.url);
 
-hls.attachMedia(video)
-
-hls.on(Hls.Events.MANIFEST_PARSED,function(){
-
-video.play()
-
-})
+hls.attachMedia(video);
 
 }else{
 
-video.src=url
-
-video.play()
+video.src=ch.url;
 
 }
 
-}
-
-function removeDuplicates(){
-
-let seen=new Set()
-
-channels=channels.filter(c=>{
-
-if(seen.has(c.url)) return false
-
-seen.add(c.url)
-
-return true
-
-})
-
-render()
+video.play();
 
 }
 
-function exportM3U(){
+document.getElementById("toggleList").onclick=()=>{
 
-let data="#EXTM3U\n"
-
-channels.forEach(c=>{
-
-data+=`#EXTINF:-1,${c.name}\n${c.url}\n`
-
-})
-
-let blob=new Blob([data])
-
-let a=document.createElement("a")
-
-a.href=URL.createObjectURL(blob)
-
-a.download="channels.m3u"
-
-a.click()
+list.classList.toggle("show");
 
 }
 
-function mergeM3U(){
+document.getElementById("next").onclick=()=>{
 
-alert("قم بتحميل قائمة ثانية وسيتم دمجها تلقائياً")
+playChannel((current+1)%channels.length);
 
 }
 
-function xtreamToM3U(){
+document.getElementById("prev").onclick=()=>{
 
-let server=prompt("Xtream server")
+playChannel((current-1+channels.length)%channels.length);
 
-let user=prompt("username")
+}
 
-let pass=prompt("password")
+document.getElementById("random").onclick=()=>{
 
-let url=`${server}/get.php?username=${user}&password=${pass}&type=m3u`
+playChannel(Math.floor(Math.random()*channels.length));
 
-document.getElementById("urlInput").value=url
+}
 
-alert("تم تحويل Xtream الى M3U")
+document.getElementById("mute").onclick=()=>{
+
+video.muted=!video.muted;
+
+}
+
+document.getElementById("fullscreen").onclick=()=>{
+
+if(!document.fullscreenElement)
+document.documentElement.requestFullscreen();
+else
+document.exitFullscreen();
 
 }
 
