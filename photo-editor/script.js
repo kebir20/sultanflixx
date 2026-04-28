@@ -1,71 +1,26 @@
-const canvas = document.getElementById("canvas")
-const ctx = canvas.getContext("2d")
+const canvas=document.getElementById("canvas")
+const ctx=canvas.getContext("2d")
 
-canvas.width = 1000
-canvas.height = 600
+canvas.width=window.innerWidth
+canvas.height=window.innerHeight-130
 
 let tool="brush"
 let drawing=false
-
-let layers=[]
-let activeLayer=0
+let startX,startY
 
 let history=[]
 let step=-1
 
-const colorPicker=document.getElementById("colorPicker")
-const brushSize=document.getElementById("brushSize")
+let texts=[]
+let draggingText=null
 
-function addLayer(name){
+const color=document.getElementById("color")
+const size=document.getElementById("size")
 
-layers.push({
-name:name,
-data:canvas.toDataURL()
-})
+const brightness=document.getElementById("brightness")
+const contrast=document.getElementById("contrast")
 
-updateLayers()
-
-}
-
-function updateLayers(){
-
-const list=document.getElementById("layerList")
-
-list.innerHTML=""
-
-layers.forEach((l,i)=>{
-
-let li=document.createElement("li")
-
-li.innerText=l.name
-
-li.onclick=()=>selectLayer(i)
-
-list.appendChild(li)
-
-})
-
-}
-
-function selectLayer(i){
-
-activeLayer=i
-
-let img=new Image()
-
-img.onload=()=>{
-
-ctx.clearRect(0,0,canvas.width,canvas.height)
-
-ctx.drawImage(img,0,0)
-
-}
-
-img.src=layers[i].data
-
-}
-
-function saveHistory(){
+function saveState(){
 
 history=history.slice(0,step+1)
 
@@ -121,30 +76,65 @@ tool=btn.dataset.tool
 
 })
 
-canvas.addEventListener("mousedown",startDraw)
-canvas.addEventListener("mousemove",draw)
-canvas.addEventListener("mouseup",stopDraw)
+function getPos(e){
 
-function startDraw(e){
+const rect=canvas.getBoundingClientRect()
 
-drawing=true
+if(e.touches){
 
-ctx.beginPath()
+return{
 
-ctx.moveTo(e.offsetX,e.offsetY)
+x:e.touches[0].clientX-rect.left,
+y:e.touches[0].clientY-rect.top
 
 }
 
-function draw(e){
+}
+
+return{
+
+x:e.clientX-rect.left,
+y:e.clientY-rect.top
+
+}
+
+}
+
+canvas.addEventListener("mousedown",start)
+canvas.addEventListener("mousemove",move)
+canvas.addEventListener("mouseup",end)
+
+canvas.addEventListener("touchstart",start)
+canvas.addEventListener("touchmove",move)
+canvas.addEventListener("touchend",end)
+
+function start(e){
+
+drawing=true
+
+let p=getPos(e)
+
+startX=p.x
+startY=p.y
+
+ctx.beginPath()
+ctx.moveTo(startX,startY)
+
+}
+
+function move(e){
 
 if(!drawing)return
 
-ctx.lineWidth=brushSize.value
-ctx.strokeStyle=colorPicker.value
+let p=getPos(e)
+
+ctx.lineWidth=size.value
 
 if(tool==="brush"){
 
-ctx.lineTo(e.offsetX,e.offsetY)
+ctx.strokeStyle=color.value
+
+ctx.lineTo(p.x,p.y)
 ctx.stroke()
 
 }
@@ -153,7 +143,7 @@ if(tool==="eraser"){
 
 ctx.globalCompositeOperation="destination-out"
 
-ctx.lineTo(e.offsetX,e.offsetY)
+ctx.lineTo(p.x,p.y)
 ctx.stroke()
 
 ctx.globalCompositeOperation="source-over"
@@ -162,27 +152,75 @@ ctx.globalCompositeOperation="source-over"
 
 }
 
-function stopDraw(){
+function end(e){
 
 drawing=false
 
-saveHistory()
+let p=getPos(e)
+
+if(tool==="rect"){
+
+ctx.strokeStyle=color.value
+
+ctx.strokeRect(startX,startY,p.x-startX,p.y-startY)
 
 }
 
-document.getElementById("downloadBtn").onclick=()=>{
+if(tool==="circle"){
 
-let link=document.createElement("a")
+let r=Math.hypot(p.x-startX,p.y-startY)
 
-link.download="image.png"
+ctx.beginPath()
 
-link.href=canvas.toDataURL()
+ctx.arc(startX,startY,r,0,Math.PI*2)
 
-link.click()
+ctx.strokeStyle=color.value
+
+ctx.stroke()
 
 }
 
-document.getElementById("openBtn").onclick=()=>{
+saveState()
+
+}
+
+document.getElementById("textBtn").onclick=()=>{
+
+let t=prompt("النص")
+
+texts.push({text:t,x:100,y:100})
+
+drawTexts()
+
+}
+
+function drawTexts(){
+
+ctx.font="30px Arial"
+
+texts.forEach(t=>{
+
+ctx.fillStyle=color.value
+
+ctx.fillText(t.text,t.x,t.y)
+
+})
+
+}
+
+brightness.oninput=applyFilters
+contrast.oninput=applyFilters
+
+function applyFilters(){
+
+ctx.filter=`
+brightness(${brightness.value}%)
+contrast(${contrast.value}%)
+`
+
+}
+
+document.getElementById("open").onclick=()=>{
 
 document.getElementById("fileInput").click()
 
@@ -205,9 +243,7 @@ canvas.height=img.height
 
 ctx.drawImage(img,0,0)
 
-addLayer("Image")
-
-saveHistory()
+saveState()
 
 }
 
@@ -219,13 +255,17 @@ reader.readAsDataURL(file)
 
 }
 
-document.getElementById("undoBtn").onclick=undo
-document.getElementById("redoBtn").onclick=redo
+document.getElementById("undo").onclick=undo
+document.getElementById("redo").onclick=redo
 
-document.addEventListener("keydown",e=>{
+document.getElementById("save").onclick=()=>{
 
-if(e.ctrlKey && e.key==="z") undo()
+let link=document.createElement("a")
 
-if(e.ctrlKey && e.key==="y") redo()
+link.download="image.png"
 
-})
+link.href=canvas.toDataURL()
+
+link.click()
+
+}
