@@ -2,6 +2,9 @@
 <html lang="ar" dir="rtl">
 
 <head>
+  
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/page-flip/dist/page-flip.min.css">
+<script src="https://cdn.jsdelivr.net/npm/page-flip/dist/page-flip.browser.min.js"></script>
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -204,6 +207,11 @@ max-width:1000px;
 <div class="tab" onclick="show('khatma')">الختمة</div>
 
 <div class="tab" onclick="show('juz')">الأجزاء</div>
+  
+<div class="tab" onclick="show('qibla')">اتجاه القبلة</div>
+
+<div class="tab" onclick="show('haram')">بث الحرم</div>
+
 
 </div>
 
@@ -338,7 +346,40 @@ src="https://quran.ksu.edu.sa/png_big/1.png">
 </div>
 
 </div>
+  
+  <div id="qibla" class="section">
+
+<h3>🧭 اتجاه القبلة</h3>
+
+<div id="compass">جارٍ تحديد الاتجاه...</div>
+
+</div>
+  
+  <div id="haram" class="section">
+
+<h3>🕋 بث الحرم</h3>
+
+<iframe
+width="100%"
+height="400"
+src="https://www.youtube.com/embed/4kz3QhKQ6Sg"
+allowfullscreen>
+</iframe>
+
+</div>
+  
+  
 <script>
+  
+  navigator.geolocation.getCurrentPosition(pos=>{
+
+let lat = pos.coords.latitude
+let lon = pos.coords.longitude
+
+document.getElementById("compass").innerHTML =
+"موقعك: "+lat+" , "+lon
+
+})
   
   async function loadReciters(){
 
