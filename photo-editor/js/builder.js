@@ -81,16 +81,7 @@ width:100%;
 
 ${htmlSections}
 
-<script>
-
-(${enableDrag.toString()})();
-
-enableDrag()
-
-<\/script>
-
 </body>
 </html>
 `
-
 }
