@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>القرآن الكريم - SULTANFLIX</title>
+
+<style>
+
+body{
+background:#111;
+color:white;
+font-family:Arial;
+text-align:center;
+margin:0;
+}
+
+header{
+background:#202020;
+padding:15px;
+font-size:22px;
+color:gold;
+}
+
+select{
+padding:10px;
+font-size:16px;
+border-radius:8px;
+margin:10px;
+}
+
+audio{
+width:90%;
+margin-top:20px;
+}
+
+button{
+padding:10px 20px;
+border:none;
+border-radius:10px;
+background:#007bff;
+color:white;
+font-size:16px;
+margin-top:20px;
+cursor:pointer;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<header>📖 القرآن الكريم</header>
+
+<h3>اختر القارئ</h3>
+
+<select id="reciter">
+
+<option value="https://server8.mp3quran.net/afs/">عبدالرحمن السديس</option>
+
+<option value="https://server7.mp3quran.net/s_gmd/">سعد الغامدي</option>
+
+<option value="https://server8.mp3quran.net/ajm/">أحمد العجمي</option>
+
+<option value="https://server6.mp3quran.net/shur/">سعود الشريم</option>
+
+<option value="https://server10.mp3quran.net/minsh/">المنشاوي</option>
+
+</select>
+
+<h3>اختر السورة</h3>
+
+<select id="surah"></select>
+
+<br>
+
+<audio id="player" controls></audio>
+
+<br>
+
+<button onclick="play()">▶ تشغيل</button>
+
+<script>
+
+const surahNames=[
+
+"الفاتحة","البقرة","آل عمران","النساء","المائدة","الأنعام","الأعراف","الأنفال","التوبة","يونس",
+"هود","يوسف","الرعد","إبراهيم","الحجر","النحل","الإسراء","الكهف","مريم","طه",
+"الأنبياء","الحج","المؤمنون","النور","الفرقان","الشعراء","النمل","القصص","العنكبوت","الروم",
+"لقمان","السجدة","الأحزاب","سبأ","فاطر","يس","الصافات","ص","الزمر","غافر",
+"فصلت","الشورى","الزخرف","الدخان","الجاثية","الأحقاف","محمد","الفتح","الحجرات","ق",
+"الذاريات","الطور","النجم","القمر","الرحمن","الواقعة","الحديد","المجادلة","الحشر","الممتحنة",
+"الصف","الجمعة","المنافقون","التغابن","الطلاق","التحريم","الملك","القلم","الحاقة","المعارج",
+"نوح","الجن","المزمل","المدثر","القيامة","الإنسان","المرسلات","النبأ","النازعات","عبس",
+"التكوير","الانفطار","المطففين","الانشقاق","البروج","الطارق","الأعلى","الغاشية","الفجر","البلد",
+"الشمس","الليل","الضحى","الشرح","التين","العلق","القدر","البينة","الزلزلة","العاديات",
+"القارعة","التكاثر","العصر","الهمزة","الفيل","قريش","الماعون","الكوثر","الكافرون","النصر",
+"المسد","الإخلاص","الفلق","الناس"
+
+];
+
+const surahSelect=document.getElementById("surah");
+
+surahNames.forEach((s,i)=>{
+
+let num=(i+1).toString().padStart(3,"0");
+
+let option=document.createElement("option");
+
+option.value=num;
+
+option.textContent=(i+1)+" - "+s;
+
+surahSelect.appendChild(option);
+
+});
+
+function play(){
+
+const reciter=document.getElementById("reciter").value;
+
+const surah=document.getElementById("surah").value;
+
+document.getElementById("player").src=reciter+surah+".mp3";
+
+}
+
+</script>
+
+</body>
+
+</html>
