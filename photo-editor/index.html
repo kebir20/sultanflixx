@@ -1,63 +1,66 @@
 <!DOCTYPE html>
 <html lang="ar">
 <head>
+
 <meta charset="UTF-8">
-<title>Advanced Photo Editor</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Photo Editor</title>
+
 <link rel="stylesheet" href="style.css">
+
 </head>
 
 <body>
 
 <header>
-<h2>🖼️ Advanced Photo Editor</h2>
+📱 Mobile Photo Editor
 </header>
-
-<div class="editor">
-
-<!-- Toolbar -->
-
-<div class="toolbar">
-
-<button id="openBtn">Open</button>
-
-<button data-tool="brush">Brush</button>
-<button data-tool="eraser">Eraser</button>
-<button data-tool="rect">Rectangle</button>
-<button data-tool="circle">Circle</button>
-<button data-tool="text">Text</button>
-<button data-tool="crop">Crop</button>
-
-<button id="undoBtn">Undo</button>
-<button id="redoBtn">Redo</button>
-
-<button id="gridBtn">Grid</button>
-
-<button id="downloadBtn">Export</button>
-
-<input type="color" id="colorPicker">
-
-<input type="range" id="brushSize" min="1" max="50" value="5">
-
-</div>
-
-<!-- Workspace -->
 
 <div class="workspace">
 
 <canvas id="canvas"></canvas>
 
-<div class="layers">
+</div>
 
-<h3>Layers</h3>
-<ul id="layerList"></ul>
+<div class="controls">
+
+<input type="color" id="color" value="#ff0000">
+
+<label>Brush</label>
+<input type="range" id="size" min="1" max="50" value="5">
+
+<label>Brightness</label>
+<input type="range" id="brightness" min="0" max="200" value="100">
+
+<label>Contrast</label>
+<input type="range" id="contrast" min="0" max="200" value="100">
 
 </div>
 
-</div>
+<div class="toolbar">
+
+<button id="open">📂</button>
+
+<button data-tool="brush">✏️</button>
+
+<button data-tool="eraser">🧽</button>
+
+<button data-tool="rect">⬛</button>
+
+<button data-tool="circle">⚪</button>
+
+<button id="textBtn">T</button>
+
+<button id="undo">↩️</button>
+
+<button id="redo">↪️</button>
+
+<button id="save">💾</button>
 
 </div>
 
-<input type="file" id="fileInput" hidden>
+<input type="file" id="fileInput" accept="image/*" hidden>
 
 <script src="script.js"></script>
 
