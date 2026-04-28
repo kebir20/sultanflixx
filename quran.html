@@ -183,6 +183,37 @@ text-align:center;
 width:95%;
 max-width:1000px;
 }
+  
+#storyBox{
+margin-top:20px;
+padding:20px;
+background:#1a1a1a;
+border-radius:15px;
+line-height:2;
+font-size:20px;
+}
+  
+.prophets-grid{
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:10px;
+margin-top:20px;
+}
+
+.prophets-grid button{
+padding:14px;
+font-size:18px;
+border-radius:14px;
+}
+
+#storyBox{
+margin-top:20px;
+padding:20px;
+background:#1a1a1a;
+border-radius:15px;
+line-height:2;
+font-size:20px;
+}
 
 </style>
 
@@ -198,7 +229,9 @@ max-width:1000px;
 
 <div class="tab" onclick="show('moshaf')">المصحف</div>
 
-<div class="tab" onclick="show('radio')">الراديو</div>
+<div class="tab" onclick="show('radioIslam')">راديو إسلامي</div>
+  
+<div class="tab" onclick="show('prophets')">قصص الأنبياء</div>
 
 <div class="tab" onclick="show('prayer')">أوقات الصلاة</div>
 
@@ -232,6 +265,10 @@ max-width:1000px;
 <button onclick="play()">▶ تشغيل</button>
 
 <button onclick="bookmark()">🔖 حفظ</button>
+  
+<button onclick="readingMode()">📖 وضع القراءة</button>
+  
+<button onclick="bookmarkPage()">🔖 علامة</button>
 
 <button onclick="toggleTheme()" id="themeBtn">🌙 الوضع الليلي</button>
 
@@ -274,15 +311,62 @@ src="https://quran.ksu.edu.sa/png_big/1.png">
 
 <!-- الراديو -->
 
-<div id="radio" class="section">
+<div id="radioIslam" class="section">
 
-<h3>📻 راديو القرآن</h3>
+<h3>📻 راديو إسلامي عالمي</h3>
 
-<button onclick="radio('https://live.mp3quran.net:8000/afs')">راديو السديس</button>
+<button onclick="playRadio('https://live.mp3quran.net:8000/afs')">
+راديو السديس
+</button>
 
-<button onclick="radio('https://live.mp3quran.net:8000/ajm')">راديو العجمي</button>
+<button onclick="playRadio('https://live.mp3quran.net:8000/ajm')">
+راديو العجمي
+</button>
 
-<button onclick="radio('https://live.mp3quran.net:8000/maher')">راديو المعيقلي</button>
+<button onclick="playRadio('https://live.mp3quran.net:8000/maher')">
+راديو المعيقلي
+</button>
+
+<audio id="radioPlayer" controls style="width:100%"></audio>
+
+</div>
+  
+  <div id="prophets" class="section">
+
+<h3>📚 قصص الأنبياء</h3>
+
+<div class="prophets-grid">
+
+<button onclick="showStory('adam')">آدم</button>
+<button onclick="showStory('idris')">إدريس</button>
+<button onclick="showStory('nuh')">نوح</button>
+<button onclick="showStory('hud')">هود</button>
+<button onclick="showStory('salih')">صالح</button>
+<button onclick="showStory('lut')">لوط</button>
+<button onclick="showStory('ibrahim')">إبراهيم</button>
+<button onclick="showStory('ismail')">إسماعيل</button>
+<button onclick="showStory('ishaq')">إسحاق</button>
+<button onclick="showStory('yaqub')">يعقوب</button>
+<button onclick="showStory('yusuf')">يوسف</button>
+<button onclick="showStory('ayub')">أيوب</button>
+<button onclick="showStory('shuayb')">شعيب</button>
+<button onclick="showStory('musa')">موسى</button>
+<button onclick="showStory('harun')">هارون</button>
+<button onclick="showStory('dawud')">داود</button>
+<button onclick="showStory('sulayman')">سليمان</button>
+<button onclick="showStory('ilyas')">إلياس</button>
+<button onclick="showStory('alyasa')">اليسع</button>
+<button onclick="showStory('yunus')">يونس</button>
+<button onclick="showStory('zakariya')">زكريا</button>
+<button onclick="showStory('yahya')">يحيى</button>
+<button onclick="showStory('isa')">عيسى</button>
+<button onclick="showStory('muhammad')">محمد ﷺ</button>
+
+</div>
+
+<div id="storyBox"></div>
+
+<audio id="storyAudio" controls style="width:100%;margin-top:15px"></audio>
 
 </div>
 
@@ -371,13 +455,98 @@ allowfullscreen>
   
 <script>
   
+  function showStory(p){
+
+const stories={
+
+adam:"خلق الله آدم عليه السلام من طين وأسكنه الجنة...",
+idris:"إدريس عليه السلام كان من أوائل الأنبياء...",
+nuh:"نوح عليه السلام دعا قومه 950 سنة...",
+hud:"أرسل الله هود إلى قوم عاد...",
+salih:"أرسل الله صالح إلى قوم ثمود...",
+lut:"أرسل الله لوط إلى قومه الذين كانوا يفعلون الفاحشة...",
+ibrahim:"إبراهيم عليه السلام كسر الأصنام...",
+ismail:"إسماعيل ابن إبراهيم وساعد والده في بناء الكعبة...",
+ishaq:"إسحاق نبي كريم من نسل إبراهيم...",
+yaqub:"يعقوب أبو يوسف عليه السلام...",
+yusuf:"يوسف ألقي في البئر ثم أصبح عزيز مصر...",
+ayub:"أيوب ابتلاه الله بالمرض فصبر...",
+shuayb:"أرسل الله شعيب إلى قوم مدين...",
+musa:"موسى أرسله الله إلى فرعون...",
+harun:"هارون كان أخا موسى ووزيره...",
+dawud:"داود كان ملكاً ونبياً...",
+sulayman:"سليمان ملك عظيم سخر الله له الجن...",
+ilyas:"إلياس دعا قومه لعبادة الله...",
+alyasa:"اليسع كان نبياً صالحاً...",
+yunus:"يونس ابتلعه الحوت ثم نجاه الله...",
+zakariya:"زكريا دعا الله فرزقه يحيى...",
+yahya:"يحيى نبي كريم ابن زكريا...",
+isa:"عيسى ولد بمعجزة من غير أب...",
+muhammad:"محمد ﷺ خاتم الأنبياء والمرسلين..."
+
+}
+
+document.getElementById("storyBox").innerText = stories[p]
+
+document.getElementById("storyAudio").src = "stories/"+p+".mp3"
+
+}
+  
+  function playRadio(url){
+
+document.getElementById("radioPlayer").src=url
+
+}
+  
+  function bookmarkPage(){
+
+localStorage.setItem("bookmarkPage",page)
+
+alert("تم حفظ الصفحة")
+
+}
+  
+  function goBookmark(){
+
+let p = localStorage.getItem("bookmarkPage")
+
+if(p){
+
+page = p
+
+openPage()
+
+}
+
+}
+  
+  function readingMode(){
+
+document.querySelector(".tabs").style.display="none"
+document.querySelector("header").style.display="none"
+
+document.getElementById("quranText").style.fontSize="36px"
+
+}
+  
   navigator.geolocation.getCurrentPosition(pos=>{
 
 let lat = pos.coords.latitude
 let lon = pos.coords.longitude
 
-document.getElementById("compass").innerHTML =
-"موقعك: "+lat+" , "+lon
+let makkahLat=21.4225
+let makkahLon=39.8262
+
+let qibla = Math.atan2(
+Math.sin((makkahLon-lon)*Math.PI/180),
+Math.cos(lat*Math.PI/180)*Math.tan(makkahLat*Math.PI/180)-
+Math.sin(lat*Math.PI/180)*Math.cos((makkahLon-lon)*Math.PI/180)
+)
+
+let deg = qibla*180/Math.PI
+
+document.getElementById("compass").innerHTML=
+"اتجاه القبلة: "+Math.round(deg)+"°"
 
 })
   
