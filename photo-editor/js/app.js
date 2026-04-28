@@ -1,6 +1,25 @@
 const frame = document.getElementById("frame")
 
-function build(){
+const ideas = [
+
+"restaurant website",
+"gym landing page",
+"portfolio website",
+"startup website",
+"travel blog",
+"coffee shop website"
+
+]
+
+function randomIdea(){
+
+const idea = ideas[Math.floor(Math.random()*ideas.length)]
+
+document.getElementById("idea").value = idea
+
+}
+
+function buildSite(){
 
 const idea = document.getElementById("idea").value || "My Website"
 
@@ -8,40 +27,36 @@ const palette = randomPalette()
 
 const sections = aiSections(idea)
 
-let html = ""
+const html = buildPage(idea, palette, sections)
 
-sections.forEach(sec=>{
-
-if(Components[sec]){
-
-html += Components[sec](idea)
+frame.srcdoc = html
 
 }
 
-})
+function improveDesign(){
 
-const page = `
-<html>
-
-<body style="background:${palette.bg};color:${palette.text};font-family:Arial">
-
-${html}
-
-</body>
-
-</html>
-`
-
-frame.srcdoc = page
-
-setTimeout(enableDrag,500)
+buildSite()
 
 }
 
-document.getElementById("build").onclick = build
+function mutateDesign(){
 
-document.getElementById("export").onclick = ()=>{
+buildSite()
+
+}
+
+document.getElementById("build").onclick = buildSite
+
+document.getElementById("random").onclick = randomIdea
+
+document.getElementById("mutate").onclick = mutateDesign
+
+document.getElementById("improve").onclick = improveDesign
+
+document.getElementById("export").onclick = () => {
 
 exportSite(frame.srcdoc)
 
 }
+
+buildSite()
