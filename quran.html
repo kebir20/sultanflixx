@@ -6,211 +6,731 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>القرآن الكريم - SultanFlix</title>
+<title>القرآن الكريم</title>
 
 <style>
 
 body{
-background:#111;
-color:white;
-font-family:Arial;
 margin:0;
-text-align:center;
-transition:0.4s;
-}
-
-body.light{
-background:#f4f4f4;
-color:#111;
+font-family:Arial;
+background:#0f0f0f;
+color:white;
 }
 
 header{
-background:#202020;
+background:#1c1c1c;
 padding:15px;
-font-size:22px;
+text-align:center;
+font-size:24px;
 color:gold;
 }
 
-.controls{
+.tabs{
+display:grid;
+grid-template-columns:repeat(5,1fr);
+gap:12px;
 padding:15px;
+background:#111;
 }
 
-select,input{
+.tab{
+background:#2a2a2a;
+padding:18px 10px;
+border-radius:18px;
+text-align:center;
+font-size:18px;
+transition:0.3s;
+box-shadow:0 4px 10px rgba(0,0,0,0.4);
+}
+
+.tab:hover{
+background:#007bff;
+transform:scale(1.05);
+}
+
+.section{
+display:none;
+padding:20px;
+}
+
+.active{
+display:block;
+}
+
+select,button,input{
 padding:10px;
-font-size:16px;
+border:none;
 border-radius:8px;
 margin:5px;
 }
 
-audio{
-width:95%;
-margin-top:15px;
+button{
+background:linear-gradient(135deg,#1e88e5,#1565c0);
+color:white;
+cursor:pointer;
+font-size:18px;
+padding:12px 16px;
+border-radius:14px;
+box-shadow:0 4px 10px rgba(0,0,0,0.3);
+transition:0.3s;
 }
 
-button{
-padding:10px 18px;
-border:none;
-border-radius:10px;
-background:#007bff;
-color:white;
-font-size:16px;
-cursor:pointer;
-margin:5px;
+button:hover{
+transform:scale(1.05);
+}
+
+audio{
+width:100%;
+margin-top:10px;
 }
 
 #quranText{
+font-size:28px;
+line-height:2.4;
+text-align:center;
 margin-top:20px;
-padding:15px;
-line-height:2;
-font-size:20px;
+}
+
+.dark{
+background:#0f0f0f;
+color:white;
+}
+
+.light{
+background:white;
+color:black;
+}
+  
+.ayah{
+padding:4px;
+cursor:pointer;
+}
+
+.activeAyah{
+background:#e50914;
+color:white;
+border-radius:6px;
+}
+  
+body{
+background:#0f0f0f;
+color:white;
+transition:0.3s;
+}
+
+.light-mode{
+background:#f5f5f5;
+color:#111;
+}
+
+.light-mode header{
+background:#ffffff;
+color:#000;
+}
+
+.light-mode .tab{
+background:#e5e5e5;
+color:#000;
+}
+
+.light-mode button{
+background:#1976d2;
+color:white;
+}
+  
+#juz{
+grid-template-columns:repeat(3,1fr);
+gap:10px;
+}
+  
+.juz-grid{
+display:grid;
+grid-template-columns:repeat(5,1fr);
+gap:12px;
+margin-top:20px;
+}
+
+.juz-grid button{
+height:70px;
+font-size:22px;
+border-radius:16px;
+}
+  
+#moshafContainer{
+overflow:hidden;
+touch-action:none;
+text-align:center;
+}
+
+#moshafPage{
+width:95%;
 max-width:900px;
 margin:auto;
+display:block;
+border-radius:12px;
+box-shadow:0 10px 25px rgba(0,0,0,0.6);
+transition:transform 0.2s;
+}
+  
+#moshaf{
+text-align:center;
+}
+
+#moshafPage{
+width:95%;
+max-width:1000px;
 }
 
 </style>
 
 </head>
 
-<body>
+<body class="dark">
 
 <header>📖 القرآن الكريم</header>
 
-<div class="controls">
+<div class="tabs">
 
-<input id="search" placeholder="🔍 ابحث عن السورة">
+<div class="tab" onclick="show('quran')">القرآن</div>
+
+<div class="tab" onclick="show('moshaf')">المصحف</div>
+
+<div class="tab" onclick="show('radio')">الراديو</div>
+
+<div class="tab" onclick="show('prayer')">أوقات الصلاة</div>
+
+<div class="tab" onclick="show('azkar')">الأذكار</div>
+
+<div class="tab" onclick="show('khatma')">الختمة</div>
+
+<div class="tab" onclick="show('juz')">الأجزاء</div>
+
+</div>
+
+<!-- القرآن -->
+
+<div id="quran" class="section active">
+
+<input id="search" placeholder="🔍 بحث عن سورة">
 
 <br>
-
-<select id="reciter">
-
-<option value="https://server8.mp3quran.net/afs/">عبدالرحمن السديس</option>
-<option value="https://server7.mp3quran.net/s_gmd/">سعد الغامدي</option>
-<option value="https://server8.mp3quran.net/ajm/">أحمد العجمي</option>
-<option value="https://server6.mp3quran.net/shur/">سعود الشريم</option>
-<option value="https://server10.mp3quran.net/minsh/">المنشاوي</option>
-<option value="https://server8.mp3quran.net/maher/">ماهر المعيقلي</option>
-
-</select>
 
 <select id="surah"></select>
 
+<select id="reciter"></select>
+
 <br>
 
-<button onclick="playSurah()">▶ تشغيل</button>
+<button onclick="play()">▶ تشغيل</button>
 
-<button onclick="downloadSurah()">🎧 تحميل السورة</button>
+<button onclick="bookmark()">🔖 حفظ</button>
 
-<button onclick="toggleMode()">🌙 وضع ليلي</button>
+<button onclick="toggleTheme()" id="themeBtn">🌙 الوضع الليلي</button>
 
-</div>
+<button onclick="fontPlus()">A+</button>
+
+<button onclick="fontMinus()">A-</button>
 
 <audio id="player" controls></audio>
 
 <div id="quranText"></div>
 
+</div>
+
+<!-- المصحف -->
+
+<div id="moshaf" class="section">
+
+<h3>📖 المصحف الشريف</h3>
+
+<div style="margin-bottom:15px">
+
+<button onclick="prevPage()">⬅ الصفحة السابقة</button>
+
+<input id="page" type="number" min="1" max="604" value="1">
+
+<button onclick="openPage()">فتح الصفحة</button>
+
+<button onclick="nextPage()">الصفحة التالية ➡</button>
+
+</div>
+
+<div id="moshafContainer">
+
+<img id="moshafPage"
+src="https://quran.ksu.edu.sa/png_big/1.png">
+
+</div>
+
+</div>
+
+<!-- الراديو -->
+
+<div id="radio" class="section">
+
+<h3>📻 راديو القرآن</h3>
+
+<button onclick="radio('https://live.mp3quran.net:8000/afs')">راديو السديس</button>
+
+<button onclick="radio('https://live.mp3quran.net:8000/ajm')">راديو العجمي</button>
+
+<button onclick="radio('https://live.mp3quran.net:8000/maher')">راديو المعيقلي</button>
+
+</div>
+
+<!-- الصلاة -->
+
+<div id="prayer" class="section">
+
+<h3>🕌 أوقات الصلاة</h3>
+
+<div id="prayerTimes"></div>
+
+</div>
+
+<!-- الأذكار -->
+
+<div id="azkar" class="section">
+
+<h3>📿 الأذكار اليومية</h3>
+
+<p>سبحان الله</p>
+
+<p>الحمد لله</p>
+
+<p>الله أكبر</p>
+
+<p>لا إله إلا الله</p>
+
+</div>
+
+<!-- الختمة -->
+
+<div id="khatma" class="section">
+
+<h3>🏆 ختمة القرآن</h3>
+
+<p>التقدم: <span id="progress">0</span>%</p>
+
+<button onclick="progress()">تقدم</button>
+
+</div>
+
+<!-- الأجزاء -->
+
+<div id="juz" class="section">
+
+<h3>📚 فهرس الأجزاء</h3>
+
+<div class="juz-grid">
+
+<button onclick="openJuz(1)">1</button>
+<button onclick="openJuz(2)">2</button>
+<button onclick="openJuz(3)">3</button>
+<button onclick="openJuz(4)">4</button>
+<button onclick="openJuz(5)">5</button>
+<button onclick="openJuz(6)">6</button>
+<button onclick="openJuz(7)">7</button>
+<button onclick="openJuz(8)">8</button>
+<button onclick="openJuz(9)">9</button>
+<button onclick="openJuz(10)">10</button>
+
+</div>
+
+</div>
 <script>
+  
+  async function loadReciters(){
+
+const select = document.getElementById("reciter")
+
+try{
+
+let res = await fetch("https://api.mp3quran.net/reciters?language=ar")
+let data = await res.json()
+
+data.reciters.forEach(r=>{
+
+let valid = r.moshaf.find(m=>m.surah_total == 114)
+
+if(valid){
+
+let option = document.createElement("option")
+option.value = valid.server
+option.textContent = r.name
+
+select.appendChild(option)
+
+}
+
+})
+
+}catch(e){
+
+console.log("API error — loading fallback reciters")
+
+const fallback = [
+{name:"عبدالرحمن السديس",url:"https://server8.mp3quran.net/afs/"},
+{name:"مشاري العفاسي",url:"https://server8.mp3quran.net/afs/"},
+{name:"أحمد العجمي",url:"https://server8.mp3quran.net/ajm/"},
+{name:"ماهر المعيقلي",url:"https://server8.mp3quran.net/maher/"},
+{name:"سعد الغامدي",url:"https://server7.mp3quran.net/s_gmd/"},
+{name:"الحصري",url:"https://server12.mp3quran.net/husr/"},
+{name:"عبدالباسط عبدالصمد",url:"https://server13.mp3quran.net/basit/"},
+{name:"محمد صديق المنشاوي",url:"https://server10.mp3quran.net/minsh/"},
+{name:"ياسر الدوسري",url:"https://server8.mp3quran.net/yasser/"}
+]
+
+fallback.forEach(r=>{
+
+let option = document.createElement("option")
+option.value = r.url
+option.textContent = r.name
+
+select.appendChild(option)
+
+})
+
+}
+
+}
+
+function show(id){
+
+document.querySelectorAll(".section").forEach(s=>{
+s.classList.remove("active")
+})
+
+document.getElementById(id).classList.add("active")
+
+}
 
 const surahs=[
-"الفاتحة","البقرة","آل عمران","النساء","المائدة","الأنعام","الأعراف","الأنفال","التوبة","يونس",
-"هود","يوسف","الرعد","إبراهيم","الحجر","النحل","الإسراء","الكهف","مريم","طه",
-"الأنبياء","الحج","المؤمنون","النور","الفرقان","الشعراء","النمل","القصص","العنكبوت","الروم",
-"لقمان","السجدة","الأحزاب","سبأ","فاطر","يس","الصافات","ص","الزمر","غافر",
-"فصلت","الشورى","الزخرف","الدخان","الجاثية","الأحقاف","محمد","الفتح","الحجرات","ق",
-"الذاريات","الطور","النجم","القمر","الرحمن","الواقعة","الحديد","المجادلة","الحشر","الممتحنة",
-"الصف","الجمعة","المنافقون","التغابن","الطلاق","التحريم","الملك","القلم","الحاقة","المعارج",
-"نوح","الجن","المزمل","المدثر","القيامة","الإنسان","المرسلات","النبأ","النازعات","عبس",
-"التكوير","الانفطار","المطففين","الانشقاق","البروج","الطارق","الأعلى","الغاشية","الفجر","البلد",
-"الشمس","الليل","الضحى","الشرح","التين","العلق","القدر","البينة","الزلزلة","العاديات",
-"القارعة","التكاثر","العصر","الهمزة","الفيل","قريش","الماعون","الكوثر","الكافرون","النصر",
-"المسد","الإخلاص","الفلق","الناس"
-];
+"الفاتحة","البقرة","آل عمران","النساء","المائدة","الأنعام","الأعراف",
+"الأنفال","التوبة","يونس","هود","يوسف","الرعد","إبراهيم","الحجر",
+"النحل","الإسراء","الكهف","مريم","طه","الأنبياء","الحج","المؤمنون",
+"النور","الفرقان","الشعراء","النمل","القصص","العنكبوت","الروم",
+"لقمان","السجدة","الأحزاب","سبأ","فاطر","يس","الصافات","ص",
+"الزمر","غافر","فصلت","الشورى","الزخرف","الدخان","الجاثية","الأحقاف",
+"محمد","الفتح","الحجرات","ق","الذاريات","الطور","النجم","القمر",
+"الرحمن","الواقعة","الحديد","المجادلة","الحشر","الممتحنة","الصف",
+"الجمعة","المنافقون","التغابن","الطلاق","التحريم","الملك","القلم",
+"الحاقة","المعارج","نوح","الجن","المزمل","المدثر","القيامة","الإنسان",
+"المرسلات","النبأ","النازعات","عبس","التكوير","الإنفطار","المطففين",
+"الانشقاق","البروج","الطارق","الأعلى","الغاشية","الفجر","البلد",
+"الشمس","الليل","الضحى","الشرح","التين","العلق","القدر","البينة",
+"الزلزلة","العاديات","القارعة","التكاثر","العصر","الهمزة","الفيل",
+"قريش","الماعون","الكوثر","الكافرون","النصر","المسد","الإخلاص",
+"الفلق","الناس"
+]
 
-const surahSelect=document.getElementById("surah");
+const surahSelect=document.getElementById("surah")
 
 surahs.forEach((s,i)=>{
 
-let num=(i+1).toString().padStart(3,"0");
+let o=document.createElement("option")
 
-let option=document.createElement("option");
+o.value=i+1
 
-option.value=num;
+o.textContent=(i+1)+" - "+s
 
-option.textContent=(i+1)+" - "+s;
+surahSelect.appendChild(o)
 
-surahSelect.appendChild(option);
+})
 
-});
+async function play(){
 
-function playSurah(){
+let s=surahSelect.value
 
-const reciter=document.getElementById("reciter").value;
+let rec=document.getElementById("reciter").value
 
-const surah=surahSelect.value;
+let num = String(s).padStart(3,"0")
 
-const url=reciter+surah+".mp3";
+player.src = rec + num + ".mp3"
+player.load()
+player.play().catch(()=>{})
 
-const player=document.getElementById("player");
+let res=await fetch("https://api.alquran.cloud/v1/surah/"+s)
 
-player.src=url;
+let data=await res.json()
 
-player.play();
-
-loadText(parseInt(surah));
-
-}
-
-function downloadSurah(){
-
-const reciter=document.getElementById("reciter").value;
-
-const surah=surahSelect.value;
-
-const url=reciter+surah+".mp3";
-
-window.open(url);
-
-}
-
-async function loadText(num){
-
-let res=await fetch("https://api.alquran.cloud/v1/surah/"+num);
-
-let data=await res.json();
-
-let html="";
+let text=""
 
 data.data.ayahs.forEach(a=>{
 
-html+=a.text+" ("+a.numberInSurah+") ";
+text+=`<span class="ayah" id="a${a.numberInSurah}">${a.text} (${a.numberInSurah})</span> `
 
-});
+})
 
-document.getElementById("quranText").innerHTML=html;
+document.getElementById("quranText").innerHTML=text
+
+}
+  
+  const player=document.getElementById("player")
+
+player.ontimeupdate=function(){
+
+let ayat=document.querySelectorAll(".ayah")
+
+let duration=player.duration
+
+let current=player.currentTime
+
+let per=(duration/ayat.length)
+
+let index=Math.floor(current/per)
+
+ayat.forEach(a=>a.classList.remove("activeAyah"))
+
+if(ayat[index]){
+
+ayat[index].classList.add("activeAyah")
 
 }
 
-function toggleMode(){
+}
 
-document.body.classList.toggle("light");
+function radio(url){
+
+document.getElementById("player").src=url
 
 }
 
-document.getElementById("search").addEventListener("input",function(){
+function mode(){
 
-let v=this.value;
-
-for(let o of surahSelect.options){
-
-o.style.display=o.text.includes(v)? "block":"none";
+document.body.classList.toggle("light")
 
 }
 
-});
+
+let size=24
+
+function fontPlus(){
+
+size+=2
+document.getElementById("quranText").style.fontSize=size+"px"
+
+}
+
+function fontMinus(){
+
+size-=2
+document.getElementById("quranText").style.fontSize=size+"px"
+
+}
+
+function bookmark(){
+
+localStorage.setItem("surah",surahSelect.value)
+
+alert("تم الحفظ")
+
+}
+
+let p=0
+
+function progress(){
+
+p+=5
+
+document.getElementById("progress").innerText=p
+
+}
+
+async function loadPrayer(){
+
+let res=await fetch("https://api.aladhan.com/v1/timingsByCity?city=Mecca&country=SA")
+
+let data=await res.json()
+
+let t=data.data.timings
+
+document.getElementById("prayerTimes").innerHTML=
+
+`الفجر ${t.Fajr} | الظهر ${t.Dhuhr} | العصر ${t.Asr} | المغرب ${t.Maghrib} | العشاء ${t.Isha}`
+
+}
+  
+  let page=1
+let scale=1
+let startX=0
+
+function openPage(){
+
+page=document.getElementById("page").value
+
+if(page<1)page=1
+if(page>604)page=604
+
+document.getElementById("moshafPage").src=
+"https://quran.ksu.edu.sa/png_big/"+page+".png"
+
+}
+
+function nextPage(){
+
+page++
+if(page>604)page=604
+
+document.getElementById("page").value=page
+openPage()
+
+}
+
+function prevPage(){
+
+page--
+if(page<1)page=1
+
+document.getElementById("page").value=page
+openPage()
+
+}
+
+const img=document.getElementById("moshafPage")
+
+img.addEventListener("touchstart",e=>{
+startX=e.touches[0].clientX
+})
+  
+  let initialDistance = null
+
+img.addEventListener("touchmove",e=>{
+
+if(e.touches.length==2){
+
+let dx=e.touches[0].clientX-e.touches[1].clientX
+let dy=e.touches[0].clientY-e.touches[1].clientY
+
+let distance=Math.sqrt(dx*dx+dy*dy)
+
+if(!initialDistance){
+initialDistance=distance
+}
+
+scale += (distance-initialDistance)/500
+
+if(scale<1)scale=1
+if(scale>3)scale=3
+
+img.style.transform="scale("+scale+")"
+
+}
+
+})
+
+img.addEventListener("touchend",()=>{
+initialDistance=null
+})
+
+img.addEventListener("touchend",e=>{
+
+let endX=e.changedTouches[0].clientX
+
+if(endX<startX){
+nextPage()
+}else{
+prevPage()
+}
+
+})
+
+img.addEventListener("wheel",e=>{
+
+if(e.deltaY<0){
+scale+=0.1
+}else{
+scale-=0.1
+}
+
+if(scale<1)scale=1
+if(scale>3)scale=3
+
+img.style.transform="scale("+scale+")"
+
+})
+  
+  function openJuz(j){
+
+const pages={
+1:1,
+2:22,
+3:42,
+4:62,
+5:82,
+6:102,
+7:121,
+8:142,
+9:162,
+10:182
+}
+
+let page=pages[j]
+
+show("moshaf")
+
+document.getElementById("moshafPage").src=
+"https://quran.ksu.edu.sa/png_big/"+page+".png"
+
+}
+  
+  
+  
+  function toggleTheme(){
+
+document.body.classList.toggle("light-mode")
+
+let btn=document.getElementById("themeBtn")
+
+if(document.body.classList.contains("light-mode")){
+
+btn.innerHTML="☀️ الوضع النهاري"
+
+localStorage.setItem("theme","light")
+
+}else{
+
+btn.innerHTML="🌙 الوضع الليلي"
+
+localStorage.setItem("theme","dark")
+
+}
+
+}
+
+window.onload=function(){
+
+let saved=localStorage.getItem("theme")
+
+if(saved==="light"){
+
+document.body.classList.add("light-mode")
+
+document.getElementById("themeBtn").innerHTML="☀️ الوضع النهاري"
+
+}
+
+}
+  
+  document.getElementById("search").addEventListener("input",function(){
+
+let value=this.value
+
+for(let option of surahSelect.options){
+
+option.style.display=
+option.text.includes(value) ? "block":"none"
+
+}
+
+})
+  
+
+loadPrayer()
+loadReciters()
 
 </script>
 
 </body>
 
 </html>
-
-
