@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>القرآن الكريم - SULTANFLIX</title>
+<title>القرآن الكريم - SultanFlix</title>
 
 <style>
 
@@ -14,8 +14,14 @@ body{
 background:#111;
 color:white;
 font-family:Arial;
-text-align:center;
 margin:0;
+text-align:center;
+transition:0.4s;
+}
+
+body.light{
+background:#f4f4f4;
+color:#111;
 }
 
 header{
@@ -25,27 +31,40 @@ font-size:22px;
 color:gold;
 }
 
-select{
+.controls{
+padding:15px;
+}
+
+select,input{
 padding:10px;
 font-size:16px;
 border-radius:8px;
-margin:10px;
+margin:5px;
 }
 
 audio{
-width:90%;
-margin-top:20px;
+width:95%;
+margin-top:15px;
 }
 
 button{
-padding:10px 20px;
+padding:10px 18px;
 border:none;
 border-radius:10px;
 background:#007bff;
 color:white;
 font-size:16px;
-margin-top:20px;
 cursor:pointer;
+margin:5px;
+}
+
+#quranText{
+margin-top:20px;
+padding:15px;
+line-height:2;
+font-size:20px;
+max-width:900px;
+margin:auto;
 }
 
 </style>
@@ -56,38 +75,42 @@ cursor:pointer;
 
 <header>📖 القرآن الكريم</header>
 
-<h3>اختر القارئ</h3>
+<div class="controls">
+
+<input id="search" placeholder="🔍 ابحث عن السورة">
+
+<br>
 
 <select id="reciter">
 
 <option value="https://server8.mp3quran.net/afs/">عبدالرحمن السديس</option>
-
 <option value="https://server7.mp3quran.net/s_gmd/">سعد الغامدي</option>
-
 <option value="https://server8.mp3quran.net/ajm/">أحمد العجمي</option>
-
 <option value="https://server6.mp3quran.net/shur/">سعود الشريم</option>
-
 <option value="https://server10.mp3quran.net/minsh/">المنشاوي</option>
+<option value="https://server8.mp3quran.net/maher/">ماهر المعيقلي</option>
 
 </select>
-
-<h3>اختر السورة</h3>
 
 <select id="surah"></select>
 
 <br>
 
+<button onclick="playSurah()">▶ تشغيل</button>
+
+<button onclick="downloadSurah()">🎧 تحميل السورة</button>
+
+<button onclick="toggleMode()">🌙 وضع ليلي</button>
+
+</div>
+
 <audio id="player" controls></audio>
 
-<br>
-
-<button onclick="play()">▶ تشغيل</button>
+<div id="quranText"></div>
 
 <script>
 
-const surahNames=[
-
+const surahs=[
 "الفاتحة","البقرة","آل عمران","النساء","المائدة","الأنعام","الأعراف","الأنفال","التوبة","يونس",
 "هود","يوسف","الرعد","إبراهيم","الحجر","النحل","الإسراء","الكهف","مريم","طه",
 "الأنبياء","الحج","المؤمنون","النور","الفرقان","الشعراء","النمل","القصص","العنكبوت","الروم",
@@ -100,12 +123,11 @@ const surahNames=[
 "الشمس","الليل","الضحى","الشرح","التين","العلق","القدر","البينة","الزلزلة","العاديات",
 "القارعة","التكاثر","العصر","الهمزة","الفيل","قريش","الماعون","الكوثر","الكافرون","النصر",
 "المسد","الإخلاص","الفلق","الناس"
-
 ];
 
 const surahSelect=document.getElementById("surah");
 
-surahNames.forEach((s,i)=>{
+surahs.forEach((s,i)=>{
 
 let num=(i+1).toString().padStart(3,"0");
 
@@ -119,18 +141,76 @@ surahSelect.appendChild(option);
 
 });
 
-function play(){
+function playSurah(){
 
 const reciter=document.getElementById("reciter").value;
 
-const surah=document.getElementById("surah").value;
+const surah=surahSelect.value;
 
-document.getElementById("player").src=reciter+surah+".mp3";
+const url=reciter+surah+".mp3";
+
+const player=document.getElementById("player");
+
+player.src=url;
+
+player.play();
+
+loadText(parseInt(surah));
 
 }
+
+function downloadSurah(){
+
+const reciter=document.getElementById("reciter").value;
+
+const surah=surahSelect.value;
+
+const url=reciter+surah+".mp3";
+
+window.open(url);
+
+}
+
+async function loadText(num){
+
+let res=await fetch("https://api.alquran.cloud/v1/surah/"+num);
+
+let data=await res.json();
+
+let html="";
+
+data.data.ayahs.forEach(a=>{
+
+html+=a.text+" ("+a.numberInSurah+") ";
+
+});
+
+document.getElementById("quranText").innerHTML=html;
+
+}
+
+function toggleMode(){
+
+document.body.classList.toggle("light");
+
+}
+
+document.getElementById("search").addEventListener("input",function(){
+
+let v=this.value;
+
+for(let o of surahSelect.options){
+
+o.style.display=o.text.includes(v)? "block":"none";
+
+}
+
+});
 
 </script>
 
 </body>
 
 </html>
+
+
