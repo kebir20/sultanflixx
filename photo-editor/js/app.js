@@ -21,7 +21,17 @@ document.getElementById("idea").value = idea
 
 function buildSite(){
 
-const idea = document.getElementById("idea").value || "My Website"
+const ideaInput = document.getElementById("idea")
+
+let idea = ideaInput.value.trim()
+
+if(!idea){
+
+idea = "My Website"
+
+ideaInput.value = idea
+
+}
 
 const palette = randomPalette()
 
