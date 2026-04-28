@@ -1,0 +1,63 @@
+body{
+margin:0;
+font-family:Segoe UI;
+background:#111;
+color:white;
+}
+
+header{
+background:#1e1e1e;
+padding:10px;
+text-align:center;
+}
+
+.editor{
+display:flex;
+flex-direction:column;
+height:100vh;
+}
+
+.toolbar{
+background:#222;
+padding:10px;
+display:flex;
+flex-wrap:wrap;
+gap:5px;
+}
+
+.toolbar button{
+padding:6px 10px;
+background:#444;
+color:white;
+border:none;
+cursor:pointer;
+}
+
+.workspace{
+flex:1;
+display:flex;
+}
+
+canvas{
+background:#333;
+margin:auto;
+border:1px solid #555;
+}
+
+.layers{
+width:200px;
+background:#1e1e1e;
+padding:10px;
+overflow:auto;
+}
+
+.layers ul{
+list-style:none;
+padding:0;
+}
+
+.layers li{
+padding:5px;
+border-bottom:1px solid #444;
+cursor:pointer;
+}
