@@ -1,160 +1,460 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="ar" dir="rtl">
 <head>
-
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-
-<title>SultanFlix IPTV Global Scanner</title>
-
-<style>
-
-body{
-background:#0f0f0f;
-color:white;
-font-family:sans-serif;
-text-align:center;
-}
-
-button{
-background:#e50914;
-color:white;
-border:none;
-padding:12px;
-margin:10px;
-cursor:pointer;
-border-radius:6px;
-}
-
-#results{
-max-width:900px;
-margin:auto;
-}
-
-.card{
-background:#1a1a1a;
-margin:10px;
-padding:15px;
-border-radius:6px;
-}
-
-a{
-color:#00d0ff;
-text-decoration:none;
-}
-
-</style>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>📡 IPTV Auto Collector ULTIMATE | جلب تلقائي من الويب</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root { --bg: #0f172a; --card: #1e293b; --text: #e2e8f0; --primary: #3b82f6; --success: #22c55e; --danger: #ef4444; }
+        body.light { --bg: #f1f5f9; --card: #ffffff; --text: #0f172a; --primary: #2563eb; }
+        body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui; transition: 0.2s; padding: 20px; }
+        .container { max-width: 1400px; margin: auto; }
+        .card { background: var(--card); border-radius: 28px; padding: 20px; margin-bottom: 24px; box-shadow: 0 8px 20px rgba(0,0,0,0.2); border: 1px solid #334155; }
+        .flex { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+        h1 { font-size: 1.8rem; display: flex; gap: 10px; align-items: center; }
+        button { background: var(--primary); color: white; border: none; padding: 10px 18px; border-radius: 40px; font-weight: bold; cursor: pointer; transition: 0.1s; }
+        button:active { transform: scale(0.96); }
+        select, input { background: var(--bg); color: var(--text); border: 1px solid #334155; padding: 8px 14px; border-radius: 40px; }
+        .status { background: rgba(0,0,0,0.2); padding: 12px; border-radius: 20px; font-size: 14px; margin: 12px 0; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); gap: 12px; margin: 15px 0; }
+        .stat { background: var(--bg); border-radius: 20px; padding: 10px; text-align: center; }
+        .stat-number { font-size: 28px; font-weight: 800; }
+        .progress { height: 6px; background: #334155; border-radius: 10px; overflow: hidden; margin: 12px 0; }
+        .progress-fill { width: 0%; height: 100%; background: var(--primary); transition: width 0.2s; }
+        .results-table { max-height: 550px; overflow-y: auto; border-radius: 20px; margin-top: 16px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { padding: 10px 6px; text-align: right; border-bottom: 1px solid #334155; }
+        th { background: var(--card); position: sticky; top: 0; }
+        .online { color: var(--success); font-weight: bold; }
+        .offline { color: var(--danger); }
+        .group-chip { background: #334155; display: inline-block; padding: 4px 12px; border-radius: 30px; margin: 4px; cursor: pointer; font-size: 12px; }
+        .group-chip.active { background: var(--primary); }
+        .loading { display: inline-block; width: 18px; height: 18px; border: 2px solid var(--primary); border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear; vertical-align: middle; margin-right: 8px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .toast { position: fixed; bottom: 20px; right: 20px; background: var(--card); padding: 8px 18px; border-radius: 40px; z-index: 1000; animation: fadeOut 3s forwards; }
+        @keyframes fadeOut { 0% { opacity: 1; } 70% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
+        @media (max-width:700px) { th,td { font-size: 11px; } }
+    </style>
 </head>
-
 <body>
-
-<h1>🌍 IPTV Global Scanner</h1>
-
-<button onclick="scanGithub()">GitHub</button>
-<button onclick="scanReddit()">Reddit</button>
-<button onclick="scanPastebin()">Pastebin</button>
-
-<h2>Results</h2>
-
-<div id="results"></div>
+<div class="container">
+    <div class="card">
+        <div class="flex">
+            <h1>📡 IPTV Auto Collector <span style="background:var(--primary); font-size:0.8rem; padding:4px 12px; border-radius:30px;">ULTIMATE</span></h1>
+            <div>
+                <button id="themeToggle">🌙 الوضع المظلم</button>
+                <button id="autoFetchBtn">🚀 جلب تلقائي (30+ مصدر)</button>
+                <button id="refreshOfflineBtn" style="background:#334155;">🔄 إعادة فحص المعطلة</button>
+                <button id="exportM3uBtn" disabled>📥 تصدير M3U</button>
+                <button id="exportJsonBtn" disabled>📄 JSON</button>
+                <button id="exportCsvBtn" disabled>📊 CSV</button>
+            </div>
+        </div>
+        <div id="status" class="status">⚡ جاهز – اضغط "جلب تلقائي" لبدء جمع القنوات من الإنترنت</div>
+        <div class="stats-grid" id="statsGrid" style="display: none;">
+            <div class="stat"><div class="stat-number" id="totalCount">0</div><div>إجمالي</div></div>
+            <div class="stat"><div class="stat-number" id="onlineCount" style="color:#22c55e;">0</div><div>نشطة ✅</div></div>
+            <div class="stat"><div class="stat-number" id="offlineCount" style="color:#ef4444;">0</div><div>معطلة ❌</div></div>
+            <div class="stat"><div class="stat-number" id="avgSpeed">—</div><div>متوسط السرعة (ms)</div></div>
+            <div class="stat"><div class="stat-number" id="fastestSpeed">—</div><div>أسرع قناة</div></div>
+        </div>
+        <div class="progress"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="flex" style="margin: 10px 0;">
+            <input type="text" id="searchInput" placeholder="🔍 بحث في القنوات..." style="flex:2;">
+            <select id="sortSelect">
+                <option value="name">ترتيب حسب الاسم</option>
+                <option value="speed">ترتيب حسب السرعة (الأسرع أولاً)</option>
+                <option value="status">ترتيب حسب الحالة (النشطة أولاً)</option>
+            </select>
+        </div>
+        <div id="groupFilters" style="display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0;"></div>
+        <div class="results-table" id="resultsTable"><div style="padding:40px; text-align:center;">📂 انتظر بدء الجلب التلقائي...</div></div>
+    </div>
+</div>
 
 <script>
+    // ======================== المصادر التلقائية (أكثر من 30 مصدراً) ========================
+    const SOURCES = [
+        // عالمية (iptv-org)
+        "https://iptv-org.github.io/iptv/index.m3u",
+        "https://iptv-org.github.io/iptv/categories/news.m3u",
+        "https://iptv-org.github.io/iptv/categories/sports.m3u",
+        "https://iptv-org.github.io/iptv/categories/movies.m3u",
+        "https://iptv-org.github.io/iptv/categories/music.m3u",
+        // Free-TV
+        "https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist.m3u8",
+        "https://raw.githubusercontent.com/Free-IPTV/Countries/master/arabic.m3u",
+        "https://raw.githubusercontent.com/Free-IPTV/Countries/master/english.m3u",
+        "https://raw.githubusercontent.com/Free-IPTV/Countries/master/french.m3u",
+        "https://raw.githubusercontent.com/Free-IPTV/Countries/master/german.m3u",
+        "https://raw.githubusercontent.com/Free-IPTV/Countries/master/spanish.m3u",
+        // قوائم متفرقة من GitHub
+        "https://raw.githubusercontent.com/akshatmittal/iptv/master/playlists/india.m3u",
+        "https://raw.githubusercontent.com/mat/iptv/master/playlists/iptv.m3u",
+        "https://raw.githubusercontent.com/andrewsun6070/iptv/main/iptv.m3u",
+        "https://raw.githubusercontent.com/ipr0/iptv/main/playlist.m3u",
+        "https://raw.githubusercontent.com/zhanghaitao/iptv/main/iptv.m3u",
+        "https://raw.githubusercontent.com/yousifd/iptv/main/playlist.m3u",
+        // قوائم عربية
+        "https://raw.githubusercontent.com/abusaeeidx/IPTV-Scraper-Zilla/main/output.m3u",
+        "https://raw.githubusercontent.com/omarzen/iptv/main/playlist.m3u",
+        "https://raw.githubusercontent.com/abdulrhmanAljabri/IPTV/main/All.m3u",
+        "https://pastebin.com/raw/cRspq6Qf",
+        "https://pastebin.com/raw/5XcKAmC9",
+        // أوروبية
+        "https://raw.githubusercontent.com/iptv-org/iptv/master/playlists/de.m3u",
+        "https://raw.githubusercontent.com/iptv-org/iptv/master/playlists/fr.m3u",
+        "https://raw.githubusercontent.com/iptv-org/iptv/master/playlists/it.m3u",
+        "https://raw.githubusercontent.com/iptv-org/iptv/master/playlists/es.m3u",
+        "https://raw.githubusercontent.com/iptv-org/iptv/master/playlists/uk.m3u",
+        // آسيوية
+        "https://raw.githubusercontent.com/iptv-org/iptv/master/playlists/in.m3u",
+        "https://raw.githubusercontent.com/iptv-org/iptv/master/playlists/jp.m3u",
+        "https://raw.githubusercontent.com/iptv-org/iptv/master/playlists/kr.m3u"
+    ];
 
-const results = document.getElementById("results")
+    // خوادم CORS Proxy مع خيارات متعددة
+    const PROXIES = [
+        "https://cors.zme.ink/",
+        "https://cors-proxy.htmldriven.com/",
+        "https://api.allorigins.win/raw?url=",
+        "https://cors-anywhere.herokuapp.com/",
+        "https://proxy.cors.sh/"
+    ];
 
-function add(title,url){
+    let allChannels = [];          // { name, group, url, status, responseTime, logo, tvgId }
+    let currentFilterGroup = "all";
+    let currentSearch = "";
+    let currentSort = "name";
+    let isFetching = false;
+    let db = null;
 
-let card=document.createElement("div")
+    // IndexedDB setup
+    function initDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open("IPTV_AutoCollector", 1);
+            request.onupgradeneeded = (e) => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains("channels")) {
+                    const store = db.createObjectStore("channels", { keyPath: "id" });
+                    store.createIndex("status", "status");
+                }
+            };
+            request.onsuccess = (e) => { db = e.target.result; resolve(); };
+            request.onerror = (e) => reject(e);
+        });
+    }
 
-card.className="card"
+    async function saveToDB(channels) {
+        if (!db) await initDB();
+        const tx = db.transaction("channels", "readwrite");
+        const store = tx.objectStore("channels");
+        channels.forEach(ch => store.put({ ...ch, id: btoa(ch.url).slice(0,50), savedAt: Date.now() }));
+        return tx.complete;
+    }
 
-card.innerHTML=`
-<a href="${url}" target="_blank">
-${title}
-</a>
-`
+    async function loadFromDB() {
+        if (!db) await initDB();
+        return new Promise((resolve) => {
+            const tx = db.transaction("channels", "readonly");
+            const store = tx.objectStore("channels");
+            const request = store.getAll();
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => resolve([]);
+        });
+    }
 
-results.appendChild(card)
+    // Helper functions
+    function showToast(msg) {
+        let t = document.createElement('div');
+        t.className = 'toast';
+        t.innerText = msg;
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 3000);
+    }
 
-}
+    async function fetchWithProxy(url, timeout = 12000) {
+        for (let proxy of PROXIES) {
+            try {
+                let fullUrl = proxy + encodeURIComponent(url);
+                if (proxy.includes('allorigins.win')) fullUrl = proxy + encodeURIComponent(url);
+                const controller = new AbortController();
+                const id = setTimeout(() => controller.abort(), timeout);
+                const res = await fetch(fullUrl, { signal: controller.signal });
+                clearTimeout(id);
+                if (res.ok) return await res.text();
+            } catch(e) { continue; }
+        }
+        throw new Error(`فشل تحميل ${url}`);
+    }
 
-/* =========================
-GITHUB SEARCH
-========================= */
+    function parseM3U(content) {
+        const lines = content.split(/\r?\n/);
+        const channels = [];
+        let current = null;
+        for (let line of lines) {
+            line = line.trim();
+            if (line.startsWith('#EXTINF:')) {
+                let name = line.split(',').pop() || 'بدون اسم';
+                let group = 'عام';
+                let logo = '';
+                let tvgId = '';
+                const groupMatch = line.match(/group-title=["']([^"']+)["']/i);
+                if (groupMatch) group = groupMatch[1];
+                const logoMatch = line.match(/tvg-logo=["']([^"']+)["']/i);
+                if (logoMatch) logo = logoMatch[1];
+                const tvgMatch = line.match(/tvg-id=["']([^"']+)["']/i);
+                if (tvgMatch) tvgId = tvgMatch[1];
+                current = { name: name.trim(), group: group.trim(), url: null, logo, tvgId };
+            } else if (line && !line.startsWith('#') && current) {
+                current.url = line;
+                channels.push({ ...current, status: false, responseTime: null });
+                current = null;
+            }
+        }
+        return channels;
+    }
 
-async function scanGithub(){
+    async function validateUrl(url) {
+        for (let proxy of PROXIES) {
+            try {
+                const start = performance.now();
+                let fullUrl = proxy + encodeURIComponent(url);
+                const res = await fetch(fullUrl, { method: 'HEAD', signal: AbortSignal.timeout(7000) });
+                const elapsed = Math.round(performance.now() - start);
+                if (res.ok || (res.status >= 200 && res.status < 400)) return { status: true, responseTime: elapsed };
+            } catch(e) { continue; }
+        }
+        return { status: false, responseTime: null };
+    }
 
-results.innerHTML="Searching GitHub..."
+    async function validateBatch(channels, concurrency = 10, onProgress) {
+        const results = [...channels];
+        let idx = 0;
+        const total = results.length;
+        async function worker() {
+            while (idx < total) {
+                const i = idx++;
+                if (onProgress) onProgress(i+1, total, results[i].name);
+                const v = await validateUrl(results[i].url);
+                results[i].status = v.status;
+                results[i].responseTime = v.responseTime;
+            }
+        }
+        const workers = [];
+        for (let i=0; i<concurrency; i++) workers.push(worker());
+        await Promise.all(workers);
+        return results;
+    }
 
-let res = await fetch(
-"https://api.github.com/search/repositories?q=iptv+m3u&sort=stars"
-)
+    function deduplicateChannels(channels) {
+        const map = new Map();
+        for (let ch of channels) {
+            const key = ch.url.split('?')[0]; // تجاهل المعلمات
+            if (!map.has(key)) map.set(key, ch);
+            else {
+                // احتفظ بالاسم الأطول أو الأفضل
+                const existing = map.get(key);
+                if (ch.name.length > existing.name.length) map.set(key, ch);
+            }
+        }
+        return [...map.values()];
+    }
 
-let data = await res.json()
+    // UI update
+    function updateUI(channels) {
+        const total = channels.length;
+        const online = channels.filter(c => c.status).length;
+        document.getElementById('totalCount').innerText = total;
+        document.getElementById('onlineCount').innerText = online;
+        document.getElementById('offlineCount').innerText = total - online;
+        const speeds = channels.filter(c => c.status && c.responseTime).map(c => c.responseTime);
+        if (speeds.length) {
+            const avg = Math.round(speeds.reduce((a,b)=>a+b,0)/speeds.length);
+            const fastest = Math.min(...speeds);
+            document.getElementById('avgSpeed').innerText = avg;
+            document.getElementById('fastestSpeed').innerText = fastest;
+        } else {
+            document.getElementById('avgSpeed').innerText = '—';
+            document.getElementById('fastestSpeed').innerText = '—';
+        }
+    }
 
-results.innerHTML=""
+    function buildGroupFilters(channels) {
+        const groups = [...new Set(channels.map(c => c.group))].sort();
+        const container = document.getElementById('groupFilters');
+        if (groups.length <= 1) { container.style.display = 'none'; return; }
+        container.style.display = 'flex';
+        container.innerHTML = '<span style="margin-left:8px;">📂 المجموعة:</span>';
+        const addChip = (label, val) => {
+            const chip = document.createElement('span');
+            chip.className = `group-chip ${currentFilterGroup === val ? 'active' : ''}`;
+            chip.innerText = label;
+            chip.onclick = () => { currentFilterGroup = val; renderFiltered(); };
+            container.appendChild(chip);
+        };
+        addChip('الكل', 'all');
+        groups.forEach(g => addChip(g, g));
+    }
 
-data.items.slice(0,20).forEach(repo=>{
+    function renderFiltered() {
+        let filtered = allChannels;
+        if (currentFilterGroup !== 'all') filtered = filtered.filter(c => c.group === currentFilterGroup);
+        if (currentSearch) filtered = filtered.filter(c => c.name.includes(currentSearch) || c.group.includes(currentSearch));
+        if (currentSort === 'name') filtered.sort((a,b) => a.name.localeCompare(b.name));
+        else if (currentSort === 'speed') filtered.sort((a,b) => (a.responseTime || 9999) - (b.responseTime || 9999));
+        else if (currentSort === 'status') filtered.sort((a,b) => (b.status ? 1 : 0) - (a.status ? 1 : 0));
+        renderTable(filtered);
+    }
 
-add(repo.full_name,repo.html_url)
+    function renderTable(channels) {
+        if (!channels.length) { document.getElementById('resultsTable').innerHTML = '<div style="padding:40px;">لا توجد قنوات</div>'; return; }
+        let html = `<table><thead><tr><th>#</th><th>القناة</th><th>المجموعة</th><th>الحالة</th><th>السرعة</th><th>الرابط</th></thead><tbody>`;
+        channels.forEach((ch, i) => {
+            html += `<tr>
+                <td>${i+1}</td>
+                <td><strong>${escapeHtml(ch.name)}</strong>${ch.logo ? `<br><img src="${ch.logo}" width="20" style="border-radius:8px;">` : ''}</td>
+                <td>${escapeHtml(ch.group)}</td>
+                <td class="${ch.status ? 'online' : 'offline'}">${ch.status ? '🟢 نشطة' : '🔴 معطلة'}</td>
+                <td>${ch.responseTime ? ch.responseTime+' ms' : '—'}</td>
+                <td class="link-cell" title="${escapeHtml(ch.url)}" style="max-width:300px; overflow:hidden; text-overflow:ellipsis;">${truncate(ch.url, 55)}</td>
+            </tr>`;
+        });
+        html += `</tbody></table>`;
+        document.getElementById('resultsTable').innerHTML = html;
+    }
 
-})
+    function escapeHtml(str) { return String(str).replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
+    function truncate(s, len) { return s.length > len ? s.slice(0,len)+'…' : s; }
 
-}
+    // Main collection
+    async function autoCollect() {
+        if (isFetching) return;
+        isFetching = true;
+        document.getElementById('autoFetchBtn').disabled = true;
+        document.getElementById('refreshOfflineBtn').disabled = true;
+        document.getElementById('exportM3uBtn').disabled = true;
+        document.getElementById('exportJsonBtn').disabled = true;
+        document.getElementById('exportCsvBtn').disabled = true;
+        document.getElementById('statsGrid').style.display = 'grid';
+        document.getElementById('progressFill').style.width = '0%';
+        let statusDiv = document.getElementById('status');
+        statusDiv.innerHTML = '🕸️ جاري جلب القوائم من ' + SOURCES.length + ' مصدر... <span class="loading"></span>';
+        
+        let allRaw = [];
+        for (let i = 0; i < SOURCES.length; i++) {
+            const src = SOURCES[i];
+            statusDiv.innerHTML = `📥 تحميل ${i+1}/${SOURCES.length}: ${src.split('/').pop()} <span class="loading"></span>`;
+            document.getElementById('progressFill').style.width = `${(i/SOURCES.length)*50}%`;
+            try {
+                const content = await fetchWithProxy(src);
+                const parsed = parseM3U(content);
+                allRaw.push(...parsed);
+                statusDiv.innerHTML = `✅ تم تحميل ${parsed.length} قناة من ${src}`;
+            } catch(e) { statusDiv.innerHTML = `⚠️ فشل ${src}: ${e.message}`; await new Promise(r=>setTimeout(r,200)); }
+        }
+        statusDiv.innerHTML = `🧹 تم العثور على ${allRaw.length} قناة. جاري إزالة التكرار...`;
+        const unique = deduplicateChannels(allRaw);
+        statusDiv.innerHTML = `🔍 فحص صحة ${unique.length} قناة فريدة (قد يستغرق دقائق)... <span class="loading"></span>`;
+        document.getElementById('progressFill').style.width = '50%';
+        const validated = await validateBatch(unique, 10, (done, total, name) => {
+            statusDiv.innerHTML = `🔍 فحص ${done}/${total}: ${name}`;
+            document.getElementById('progressFill').style.width = `${50 + (done/total)*50}%`;
+        });
+        allChannels = validated;
+        await saveToDB(allChannels);
+        updateUI(allChannels);
+        buildGroupFilters(allChannels);
+        renderFiltered();
+        document.getElementById('statsGrid').style.display = 'grid';
+        document.getElementById('exportM3uBtn').disabled = false;
+        document.getElementById('exportJsonBtn').disabled = false;
+        document.getElementById('exportCsvBtn').disabled = false;
+        statusDiv.innerHTML = `✅ اكتمل! القنوات النشطة: ${allChannels.filter(c=>c.status).length} من ${allChannels.length}`;
+        isFetching = false;
+        document.getElementById('autoFetchBtn').disabled = false;
+        document.getElementById('refreshOfflineBtn').disabled = false;
+        showToast("تم التحديث بنجاح");
+    }
 
-/* =========================
-REDDIT SEARCH
-========================= */
+    async function refreshOffline() {
+        if (!allChannels.length) { showToast("لا توجد قنوات سابقة"); return; }
+        const offline = allChannels.filter(c => !c.status);
+        if (!offline.length) { showToast("جميع القنوات نشطة"); return; }
+        showToast(`إعادة فحص ${offline.length} قناة معطلة...`);
+        const validated = await validateBatch(offline, 8, (done,total,name) => {
+            document.getElementById('status').innerHTML = `🔄 إعادة فحص ${done}/${total}: ${name}`;
+        });
+        for (let i=0; i<offline.length; i++) {
+            const orig = allChannels.findIndex(c => c.url === offline[i].url);
+            if (orig !== -1) allChannels[orig] = validated[i];
+        }
+        await saveToDB(allChannels);
+        updateUI(allChannels);
+        renderFiltered();
+        showToast("تم تحديث القنوات المعطلة");
+    }
 
-async function scanReddit(){
+    async function restoreFromDB() {
+        const saved = await loadFromDB();
+        if (saved && saved.length) {
+            allChannels = saved;
+            updateUI(allChannels);
+            buildGroupFilters(allChannels);
+            renderFiltered();
+            document.getElementById('statsGrid').style.display = 'grid';
+            document.getElementById('exportM3uBtn').disabled = false;
+            document.getElementById('exportJsonBtn').disabled = false;
+            document.getElementById('exportCsvBtn').disabled = false;
+            document.getElementById('status').innerHTML = `📀 تم استعادة ${allChannels.length} قناة من التخزين المحلي. اضغط "جلب تلقائي" للتحديث.`;
+        } else {
+            document.getElementById('status').innerHTML = `⚡ لا توجد بيانات سابقة. اضغط "جلب تلقائي" لبدء الجمع.`;
+        }
+    }
 
-results.innerHTML="Searching Reddit..."
+    // Exports
+    function exportM3U() {
+        const working = allChannels.filter(c => c.status);
+        let m3u = "#EXTM3U\n";
+        working.forEach(ch => {
+            m3u += `#EXTINF:-1 group-title="${ch.group}" tvg-logo="${ch.logo || ''}" tvg-name="${ch.name}",${ch.name}\n${ch.url}\n`;
+        });
+        downloadFile(m3u, `iptv_working_${Date.now()}.m3u`, 'application/vnd.apple.mpegurl');
+    }
+    function exportJSON() {
+        const data = { generated: new Date().toISOString(), total: allChannels.length, online: allChannels.filter(c=>c.status).length, channels: allChannels };
+        downloadFile(JSON.stringify(data, null, 2), `iptv_report_${Date.now()}.json`, 'application/json');
+    }
+    function exportCSV() {
+        const headers = ["name","group","url","status","responseTime","logo"];
+        const rows = allChannels.map(c => [c.name, c.group, c.url, c.status, c.responseTime||"", c.logo||""]);
+        const csv = [headers, ...rows].map(row => row.map(cell => `"${String(cell).replace(/"/g,'""')}"`).join(",")).join("\n");
+        downloadFile("\uFEFF" + csv, `iptv_export_${Date.now()}.csv`, 'text/csv');
+    }
+    function downloadFile(content, filename, mime) {
+        const blob = new Blob([content], {type: mime});
+        const a = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        a.href = url; a.download = filename; a.click();
+        URL.revokeObjectURL(url);
+    }
 
-let res = await fetch(
-"https://www.reddit.com/search.json?q=iptv+m3u"
-)
+    // Theme
+    function toggleTheme() { document.body.classList.toggle('light'); localStorage.setItem('theme', document.body.classList.contains('light') ? 'light' : 'dark'); }
+    if (localStorage.getItem('theme') === 'light') document.body.classList.add('light');
 
-let data = await res.json()
+    // Event listeners
+    document.getElementById('autoFetchBtn').onclick = autoCollect;
+    document.getElementById('refreshOfflineBtn').onclick = refreshOffline;
+    document.getElementById('exportM3uBtn').onclick = exportM3U;
+    document.getElementById('exportJsonBtn').onclick = exportJSON;
+    document.getElementById('exportCsvBtn').onclick = exportCSV;
+    document.getElementById('themeToggle').onclick = toggleTheme;
+    document.getElementById('searchInput').addEventListener('input', (e) => { currentSearch = e.target.value; renderFiltered(); });
+    document.getElementById('sortSelect').addEventListener('change', (e) => { currentSort = e.target.value; renderFiltered(); });
 
-results.innerHTML=""
-
-data.data.children.slice(0,20).forEach(post=>{
-
-add(post.data.title,post.data.url)
-
-})
-
-}
-
-/* =========================
-PASTEBIN SEARCH
-========================= */
-
-async function scanPastebin(){
-
-results.innerHTML="Searching Pastebin..."
-
-const urls=[
-
-"https://pastebin.com/raw/8A0h2kF6",
-"https://pastebin.com/raw/Zm0pXQyQ",
-"https://pastebin.com/raw/tp4zjH1r"
-
-]
-
-results.innerHTML=""
-
-urls.forEach(u=>{
-
-add("M3U Playlist",u)
-
-})
-
-}
-
+    restoreFromDB();
 </script>
-
 </body>
 </html>
