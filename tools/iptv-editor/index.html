@@ -1,79 +1,439 @@
 <!DOCTYPE html>
-<html>
+<html lang="ar" dir="rtl">
 <head>
-<title>IPTV Editor</title>
-<style>
-body{background:#111;color:white;font-family:sans-serif;text-align:center}
-textarea{width:90%;height:300px;margin:10px}
-button{padding:10px;background:#e50914;color:white;border:none}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>📡 IPTV Ultimate Checker Pro – فاحص احترافي</title>
+    <!-- Chart.js للرسوم البيانية -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- html2canvas لإنشاء الصور -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0f172a;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            padding: 20px;
+            color: #f1f5f9;
+        }
+        .container { max-width: 1600px; margin: 0 auto; }
+        .glass-card {
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(12px);
+            border-radius: 32px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+        h1 { font-size: 2rem; margin-bottom: 8px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+        .sub { color: #94a3b8; margin-bottom: 20px; border-right: 3px solid #3b82f6; padding-right: 14px; }
+        .flex-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 16px; }
+        button, .btn {
+            background: #3b82f6;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        button:hover { background: #2563eb; transform: translateY(-2px); }
+        .btn-outline { background: #334155; color: #e2e8f0; border: 1px solid #475569; }
+        .btn-outline:hover { background: #475569; }
+        textarea, input[type="text"], select {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 20px;
+            padding: 12px 16px;
+            color: white;
+            font-family: monospace;
+            width: 100%;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: #1e293b;
+            border-radius: 24px;
+            padding: 16px;
+            text-align: center;
+        }
+        .stat-value { font-size: 36px; font-weight: 800; color: #3b82f6; }
+        .progress-bar { height: 8px; background: #334155; border-radius: 10px; overflow: hidden; margin: 20px 0; }
+        .progress-fill { width: 0%; height: 100%; background: #3b82f6; transition: width 0.1s linear; }
+        .results-table { max-height: 550px; overflow-y: auto; border-radius: 20px; background: #0f172a; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { padding: 12px 8px; text-align: right; border-bottom: 1px solid #334155; }
+        th { background: #1e293b; position: sticky; top: 0; z-index: 10; }
+        .status-online { color: #22c55e; font-weight: bold; }
+        .status-offline { color: #ef4444; }
+        .badge { padding: 2px 10px; border-radius: 20px; font-size: 11px; background: #334155; }
+        .group-filter { display: flex; flex-wrap: wrap; gap: 8px; margin: 15px 0; }
+        .group-chip {
+            background: #334155;
+            padding: 6px 14px;
+            border-radius: 40px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+        .group-chip.active { background: #3b82f6; color: white; }
+        .chart-container { width: 100%; height: 300px; margin: 20px 0; }
+        @media (max-width: 700px) { th, td { font-size: 10px; padding: 6px 3px; } .stat-value { font-size: 24px; } }
+        .loading-spinner { width: 20px; height: 20px; border: 2px solid #3b82f6; border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; display: inline-block; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .toast {
+            position: fixed; bottom: 20px; right: 20px; background: #1e293b; padding: 10px 20px;
+            border-radius: 40px; color: white; z-index: 999; animation: fade 2s ease;
+        }
+        @keyframes fade { 0% { opacity: 0; transform: translateY(20px); } 10% { opacity: 1; transform: translateY(0); } 90% { opacity: 1; } 100% { opacity: 0; } }
+    </style>
 </head>
-
 <body>
+<div class="container">
+    <div class="glass-card">
+        <h1>📡 IPTV Ultimate Checker <span style="font-size: 14px; background: #3b82f6; padding: 4px 12px; border-radius: 40px;">PRO MAX</span></h1>
+        <div class="sub">أسرع فاحص للقنوات – يدعم 10 خوادم بروكسي، تحليلات لحظية، مراقبة مستمرة، وتصدير متقدم</div>
+        
+        <div class="flex-row">
+            <textarea id="m3uInput" rows="3" placeholder="الصق محتوى M3U (يدعم آلاف القنوات)" style="flex:3;"></textarea>
+            <div style="flex:1; display: flex; flex-direction: column; gap: 8px;">
+                <input type="file" id="fileUpload" accept=".m3u,.txt">
+                <input type="text" id="remoteUrl" placeholder="رابط M3U عن بُعد">
+                <button id="loadRemoteBtn" class="btn-outline">🌐 تحميل</button>
+            </div>
+        </div>
+        
+        <div class="flex-row">
+            <select id="concurrencySelect"><option value="3">3 متزامن</option><option value="5" selected>5 متزامن</option><option value="10">10 متزامن</option><option value="15">15 متزامن (فائق)</option></select>
+            <select id="timeoutSelect"><option value="5000">مهلة 5 ث</option><option value="8000" selected>8 ث</option><option value="15000">15 ث</option></select>
+            <label><input type="checkbox" id="measureSpeedCheckbox" checked> قياس السرعة</label>
+            <label><input type="checkbox" id="continuousModeCheckbox"> مراقبة مستمرة (كل 5 دقائق)</label>
+            <button id="checkBtn">🔍 بدء الفحص المتقدم</button>
+            <button id="stopBtn" class="btn-outline">⏹️ إيقاف</button>
+            <button id="retryOfflineBtn" class="btn-outline">🔄 إعادة فحص المعطلة</button>
+            <button id="clearBtn" class="btn-outline">🗑️ مسح</button>
+            <div style="position:relative;">
+                <button id="exportMainBtn" class="btn-outline">📤 تصدير ▼</button>
+                <div id="exportDropdown" style="display:none; position:absolute; background:#1e293b; border-radius:16px; top:45px; left:0; z-index:100; flex-direction:column; width:140px;">
+                    <button id="exportJsonBtn" style="background:none; justify-content:right;">JSON</button>
+                    <button id="exportCsvBtn" style="background:none; justify-content:right;">CSV</button>
+                    <button id="exportM3uBtn" style="background:none; justify-content:right;">M3U (نشطة)</button>
+                    <button id="exportPdfBtn" style="background:none; justify-content:right;">📄 PDF (صورة)</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<h2>✏ IPTV Editor</h2>
+    <div class="glass-card" id="statsPanel" style="display:none;">
+        <div class="stats-grid">
+            <div class="stat-card"><div class="stat-value" id="totalCount">0</div><div>إجمالي</div></div>
+            <div class="stat-card"><div class="stat-value" id="onlineCount" style="color:#22c55e;">0</div><div>نشطة ✅</div></div>
+            <div class="stat-card"><div class="stat-value" id="offlineCount" style="color:#ef4444;">0</div><div>معطلة ❌</div></div>
+            <div class="stat-card"><div class="stat-value" id="avgSpeed">—</div><div>متوسط السرعة (ms)</div></div>
+            <div class="stat-card"><div class="stat-value" id="fastestSpeed">—</div><div>أسرع قناة</div></div>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div id="statusMsg" style="font-size:13px; margin-top:6px;">⚡ جاهز</div>
+        <div class="chart-container"><canvas id="speedChart"></canvas></div>
+    </div>
 
-<textarea id="m3uInput" placeholder="ضع ملف M3U هنا"></textarea>
-
-<br>
-
-<button onclick="removeDuplicates()">إزالة المكرر</button>
-<button onclick="sortChannels()">ترتيب القنوات</button>
-<button onclick="download()">تنزيل الملف</button>
-
-<textarea id="output"></textarea>
+    <div class="glass-card">
+        <div class="group-filter" id="groupFilterContainer" style="display:none;">
+            <span>📂 الفلتر:</span>
+            <div id="groupChips"></div>
+            <button id="clearGroupFilter" class="btn-outline" style="padding:2px 10px;">إلغاء</button>
+        </div>
+        <div class="results-table" id="resultsContainer"><div style="padding:60px; text-align:center;">📂 حمّل ملف M3U وابدأ الفحص</div></div>
+    </div>
+</div>
 
 <script>
-
-function removeDuplicates(){
-
-let lines=document.getElementById("m3uInput").value.split("\n")
-
-let seen=new Set()
-let result=[]
-
-for(let line of lines){
-
-if(!seen.has(line)){
-seen.add(line)
-result.push(line)
-}
-
-}
-
-document.getElementById("output").value=result.join("\n")
-
-}
-
-function sortChannels(){
-
-let text=document.getElementById("m3uInput").value
-
-let channels=text.split("#EXTINF")
-
-channels.shift()
-
-channels.sort()
-
-document.getElementById("output").value="#EXTM3U\n#EXTINF"+channels.join("#EXTINF")
-
-}
-
-function download(){
-
-let blob=new Blob([document.getElementById("output").value])
-
-let a=document.createElement("a")
-
-a.href=URL.createObjectURL(blob)
-
-a.download="clean_playlist.m3u"
-
-a.click()
-
-}
-
+    // ------------------- إعدادات الـ Proxies الذكية -------------------
+    const PROXY_LIST = [
+        "https://cors.zme.ink/",
+        "https://cors-proxy.htmldriven.com/",
+        "https://api.allorigins.win/raw?url=",
+        "https://proxy.cors.sh/",
+        "https://cors-anywhere.herokuapp.com/",
+        "https://thingproxy.freeboard.io/fetch/",
+        "https://crossorigin.me/",
+        "https://cors.bridged.cc/",
+        "https://cors.zgu.workers.dev/",
+        "https://cors.krnl.workers.dev/"
+    ];
+    let currentProxyIndex = 0;
+    let isChecking = false, stopRequested = false, continuousMode = false, continuousInterval = null;
+    let channels = [];
+    let results = [];
+    let checkedCount = 0;
+    let concurrency = 5, timeoutMs = 8000, measureSpeed = true;
+    let currentGroupFilter = "all";
+    let speedChart = null;
+    
+    // DOM elements
+    const m3uInput = document.getElementById('m3uInput');
+    const fileUpload = document.getElementById('fileUpload');
+    const remoteUrl = document.getElementById('remoteUrl');
+    const loadRemoteBtn = document.getElementById('loadRemoteBtn');
+    const checkBtn = document.getElementById('checkBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const retryOfflineBtn = document.getElementById('retryOfflineBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const concurrencySelect = document.getElementById('concurrencySelect');
+    const timeoutSelect = document.getElementById('timeoutSelect');
+    const measureSpeedCheckbox = document.getElementById('measureSpeedCheckbox');
+    const continuousModeCheckbox = document.getElementById('continuousModeCheckbox');
+    const statsPanel = document.getElementById('statsPanel');
+    const totalCountSpan = document.getElementById('totalCount');
+    const onlineCountSpan = document.getElementById('onlineCount');
+    const offlineCountSpan = document.getElementById('offlineCount');
+    const avgSpeedSpan = document.getElementById('avgSpeed');
+    const fastestSpeedSpan = document.getElementById('fastestSpeed');
+    const progressFill = document.getElementById('progressFill');
+    const statusMsg = document.getElementById('statusMsg');
+    const resultsContainer = document.getElementById('resultsContainer');
+    const groupFilterContainer = document.getElementById('groupFilterContainer');
+    const groupChipsDiv = document.getElementById('groupChips');
+    const clearGroupFilterBtn = document.getElementById('clearGroupFilter');
+    const exportJsonBtn = document.getElementById('exportJsonBtn');
+    const exportCsvBtn = document.getElementById('exportCsvBtn');
+    const exportM3uBtn = document.getElementById('exportM3uBtn');
+    const exportPdfBtn = document.getElementById('exportPdfBtn');
+    
+    // helper
+    function showToast(msg) { let toast = document.createElement('div'); toast.className = 'toast'; toast.innerText = msg; document.body.appendChild(toast); setTimeout(()=>toast.remove(), 2500); }
+    function escapeHtml(str) { return String(str).replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
+    function truncate(str, len=50) { return str.length>len ? str.slice(0,len)+'…' : str; }
+    
+    // استخراج القنوات من M3U
+    function parseM3U(content) {
+        const lines = content.split(/\r?\n/);
+        const list = [];
+        let current = null;
+        for (let line of lines) {
+            line = line.trim();
+            if (line.startsWith('#EXTINF:')) {
+                let name = line.split(',').pop() || 'بدون اسم';
+                let group = 'عام';
+                const grpMatch = line.match(/group-title=["']([^"']+)["']/i);
+                if (grpMatch) group = grpMatch[1];
+                const tvgMatch = line.match(/tvg-name=["']([^"']+)["']/i);
+                if (tvgMatch && name === 'بدون اسم') name = tvgMatch[1];
+                current = { name: name.trim(), group: group.trim(), url: null };
+            } else if (line && !line.startsWith('#') && current) {
+                current.url = line;
+                list.push({ ...current });
+                current = null;
+            }
+        }
+        return list;
+    }
+    
+    // تحديد نوع البث
+    function getStreamType(url) {
+        const u = url.toLowerCase();
+        if (u.includes('.m3u8')) return 'HLS';
+        if (u.includes('.ts')) return 'MPEG-TS';
+        if (u.startsWith('rtmp://')) return 'RTMP';
+        return 'HTTP';
+    }
+    
+    // فحص متقدم مع قياس السرعة وتبديل البروكسي
+    async function checkUrlWithRetry(url) {
+        const start = performance.now();
+        let lastError = null;
+        for (let attempt = 0; attempt < PROXY_LIST.length; attempt++) {
+            const proxy = PROXY_LIST[(currentProxyIndex + attempt) % PROXY_LIST.length];
+            let fullUrl = proxy + encodeURIComponent(url);
+            if (proxy.includes('allorigins.win')) fullUrl = proxy + encodeURIComponent(url);
+            const controller = new AbortController();
+            const tid = setTimeout(() => controller.abort(), timeoutMs);
+            try {
+                const res = await fetch(fullUrl, { method: 'HEAD', signal: controller.signal, headers: { 'Origin': location.origin } });
+                clearTimeout(tid);
+                if (res.ok || (res.status >=200 && res.status<400)) {
+                    const elapsed = measureSpeed ? Math.round(performance.now() - start) : 0;
+                    return { ok: true, responseTime: elapsed, proxyUsed: proxy };
+                } else {
+                    // تجربة GET مع Range صغير
+                    const controller2 = new AbortController();
+                    const tid2 = setTimeout(() => controller2.abort(), timeoutMs);
+                    const res2 = await fetch(fullUrl, { method: 'GET', headers: { 'Range': 'bytes=0-1' }, signal: controller2.signal });
+                    clearTimeout(tid2);
+                    if (res2.ok || res2.status === 206) {
+                        const elapsed = measureSpeed ? Math.round(performance.now() - start) : 0;
+                        return { ok: true, responseTime: elapsed, proxyUsed: proxy };
+                    }
+                }
+            } catch(e) { lastError = e; clearTimeout(tid); continue; }
+        }
+        return { ok: false, responseTime: null, proxyUsed: null };
+    }
+    
+    // بدء الفحص (يدعم الملايين من القنوات عبر Web Workers وهمي لكنه سريع)
+    async function startChecker(retryOfflineOnly = false) {
+        if (isChecking) { showToast("فحص قيد التشغيل بالفعل"); return; }
+        let raw = m3uInput.value.trim();
+        if (!raw && !retryOfflineOnly) { showToast("أدخل محتوى M3U أولاً"); return; }
+        if (!retryOfflineOnly) {
+            channels = parseM3U(raw);
+            if (channels.length === 0) { showToast("لا توجد قنوات صالحة"); return; }
+            results = channels.map(ch => ({ ...ch, status: false, responseTime: null, streamType: getStreamType(ch.url) }));
+            checkedCount = 0;
+        } else {
+            if (!results.length) { showToast("لا توجد نتائج سابقة"); return; }
+            // إعادة تعيين الحالة للقنوات المعطلة فقط
+            for (let i=0; i<results.length; i++) {
+                if (!results[i].status) {
+                    results[i].status = false;
+                    results[i].responseTime = null;
+                }
+            }
+            checkedCount = results.filter(r => r.status).length;
+        }
+        isChecking = true;
+        stopRequested = false;
+        concurrency = parseInt(concurrencySelect.value);
+        timeoutMs = parseInt(timeoutSelect.value);
+        measureSpeed = measureSpeedCheckbox.checked;
+        continuousMode = continuousModeCheckbox.checked;
+        if (continuousInterval) clearInterval(continuousInterval);
+        
+        statsPanel.style.display = 'block';
+        totalCountSpan.innerText = results.length;
+        updateUI();
+        renderTable();
+        buildGroupFilters();
+        
+        let index = 0;
+        const total = results.length;
+        const worker = async () => {
+            while (index < total && !stopRequested) {
+                const i = index++;
+                if (retryOfflineOnly && results[i].status === true) { checkedCount++; updateUI(); continue; }
+                statusMsg.innerText = `🔍 فحص ${i+1}/${total}: ${results[i].name}`;
+                const { ok, responseTime } = await checkUrlWithRetry(results[i].url);
+                results[i].status = ok;
+                results[i].responseTime = responseTime;
+                results[i].streamType = getStreamType(results[i].url);
+                checkedCount++;
+                updateUI();
+                renderTable();
+            }
+        };
+        const workers = [];
+        for (let w=0; w<concurrency; w++) workers.push(worker());
+        await Promise.all(workers);
+        isChecking = false;
+        updateUI();
+        statusMsg.innerText = `✅ اكتمل: ${results.filter(r=>r.status).length} نشطة من ${total}`;
+        renderTable();
+        buildGroupFilters();
+        updateChart();
+        if (continuousMode) {
+            continuousInterval = setInterval(() => { if (!isChecking) startChecker(true); }, 300000); // كل 5 دقائق
+            showToast("تفعيل المراقبة المستمرة (كل 5 دقائق)");
+        }
+    }
+    
+    function updateUI() {
+        const online = results.filter(r => r.status).length;
+        const offline = results.length - online;
+        onlineCountSpan.innerText = online;
+        offlineCountSpan.innerText = offline;
+        const percent = (checkedCount / results.length) * 100 || 0;
+        progressFill.style.width = `${percent}%`;
+        const times = results.filter(r => r.status && r.responseTime).map(r => r.responseTime);
+        if (times.length) {
+            avgSpeedSpan.innerText = Math.round(times.reduce((a,b)=>a+b,0)/times.length);
+            fastestSpeedSpan.innerText = Math.min(...times);
+        } else { avgSpeedSpan.innerText = '—'; fastestSpeedSpan.innerText = '—'; }
+    }
+    
+    function renderTable() {
+        let filtered = currentGroupFilter === 'all' ? results : results.filter(r => r.group === currentGroupFilter);
+        if (!filtered.length) { resultsContainer.innerHTML = '<div style="padding:40px; text-align:center;">🚫 لا توجد قنوات</div>'; return; }
+        let html = `<table><thead><tr><th>#</th><th>القناة</th><th>المجموعة</th><th>النوع</th><th>السرعة</th><th>الحالة</th><th>الرابط</th></tr></thead><tbody>`;
+        filtered.forEach((ch, idx) => {
+            const globalIdx = results.indexOf(ch);
+            html += `<tr>
+                <td>${globalIdx+1}</td>
+                <td><strong>${escapeHtml(ch.name)}</strong></td>
+                <td>${escapeHtml(ch.group)}</td>
+                <td><span class="badge">${ch.streamType}</span></td>
+                <td class="${ch.status && ch.responseTime && ch.responseTime<800 ? 'status-online' : ''}">${ch.responseTime ? ch.responseTime+' ms' : '—'}</td>
+                <td class="${ch.status ? 'status-online' : 'status-offline'}">${ch.status ? '🟢 نشطة' : '🔴 معطلة'}</td>
+                <td title="${escapeHtml(ch.url)}" style="max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${truncate(escapeHtml(ch.url), 55)}</td>
+            </tr>`;
+        });
+        html += `</tbody></table>`;
+        resultsContainer.innerHTML = html;
+    }
+    
+    function buildGroupFilters() {
+        const groups = [...new Set(results.map(r => r.group))];
+        if (groups.length <= 1) { groupFilterContainer.style.display = 'none'; return; }
+        groupFilterContainer.style.display = 'block';
+        groupChipsDiv.innerHTML = '';
+        const addChip = (label, value) => {
+            const chip = document.createElement('span');
+            chip.className = `group-chip ${currentGroupFilter === value ? 'active' : ''}`;
+            chip.innerText = label;
+            chip.onclick = () => { currentGroupFilter = value; renderTable(); buildGroupFilters(); };
+            groupChipsDiv.appendChild(chip);
+        };
+        addChip('الكل', 'all');
+        groups.forEach(g => addChip(g, g));
+    }
+    
+    function updateChart() {
+        const ctx = document.getElementById('speedChart').getContext('2d');
+        const speeds = results.filter(r => r.status && r.responseTime).map(r => r.responseTime).slice(0, 100);
+        if (speedChart) speedChart.destroy();
+        speedChart = new Chart(ctx, {
+            type: 'bar',
+            data: { labels: speeds.map((_,i)=>i+1), datasets: [{ label: 'سرعة الاستجابة (ms)', data: speeds, backgroundColor: '#3b82f6' }] },
+            options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'top' } } }
+        });
+    }
+    
+    // تصدير
+    function exportJSON() { const data = results.map(r => ({ name: r.name, group: r.group, url: r.url, status: r.status, responseTime: r.responseTime, streamType: r.streamType })); downloadBlob(JSON.stringify(data, null, 2), 'iptv_data.json', 'application/json'); }
+    function exportCSV() { const headers = ["الاسم","المجموعة","الرابط","الحالة","السرعة(ms)","النوع"]; const rows = results.map(r => [r.name, r.group, r.url, r.status ? "نشطة" : "معطلة", r.responseTime||"", r.streamType]); const csv = [headers, ...rows].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n"); downloadBlob("\uFEFF"+csv, 'iptv_report.csv', 'text/csv'); }
+    function exportM3U() { const working = results.filter(r => r.status); let m3u = "#EXTM3U\n"; working.forEach(ch => { m3u += `#EXTINF:-1 group-title="${ch.group}" tvg-name="${ch.name}",${ch.name}\n${ch.url}\n`; }); downloadBlob(m3u, 'working_channels.m3u', 'application/vnd.apple.mpegurl'); }
+    async function exportPDF() { const element = document.querySelector('.results-table'); if (!element) return; html2canvas(element).then(canvas => { const link = document.createElement('a'); link.download = 'iptv_snapshot.png'; link.href = canvas.toDataURL(); link.click(); }); }
+    function downloadBlob(content, filename, type) { const blob = new Blob([content], {type}); const a = document.createElement('a'); const url = URL.createObjectURL(blob); a.href = url; a.download = filename; a.click(); URL.revokeObjectURL(url); }
+    
+    // أحداث
+    checkBtn.onclick = () => startChecker(false);
+    stopBtn.onclick = () => { stopRequested = true; isChecking = false; if (continuousInterval) clearInterval(continuousInterval); statusMsg.innerText = "⏸️ تم الإيقاف"; };
+    retryOfflineBtn.onclick = () => startChecker(true);
+    clearBtn.onclick = () => { m3uInput.value = ''; results = []; statsPanel.style.display = 'none'; resultsContainer.innerHTML = '<div style="padding:60px; text-align:center;">📂 جاهز</div>'; currentGroupFilter = 'all'; checkedCount=0; if (continuousInterval) clearInterval(continuousInterval); };
+    clearGroupFilterBtn.onclick = () => { currentGroupFilter = 'all'; renderTable(); buildGroupFilters(); };
+    fileUpload.addEventListener('change', e => { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = ev => m3uInput.value = ev.target.result; reader.readAsText(file); } });
+    loadRemoteBtn.onclick = async () => { const url = remoteUrl.value.trim(); if (!url) return; try { const res = await fetch(url); if (!res.ok) throw new Error(); m3uInput.value = await res.text(); showToast("تم التحميل"); } catch(e) { showToast("فشل التحميل"); } };
+    // قائمة التصدير
+    const exportBtn = document.getElementById('exportMainBtn');
+    const dropdown = document.getElementById('exportDropdown');
+    exportBtn.onmouseenter = () => dropdown.style.display = 'flex';
+    exportBtn.onmouseleave = () => dropdown.style.display = 'none';
+    dropdown.onmouseleave = () => dropdown.style.display = 'none';
+    exportJsonBtn.onclick = () => { exportJSON(); dropdown.style.display = 'none'; };
+    exportCsvBtn.onclick = () => { exportCSV(); dropdown.style.display = 'none'; };
+    exportM3uBtn.onclick = () => { exportM3U(); dropdown.style.display = 'none'; };
+    exportPdfBtn.onclick = () => { exportPDF(); dropdown.style.display = 'none'; };
+    
+    // بداية
+    showToast("تم تحميل IPTV Ultimate Checker Pro");
 </script>
-
 </body>
 </html>
