@@ -2,8 +2,8 @@
 <html lang="ar">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🌍 Audio Engine UX PRO</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>🌍 Audio Engine UX PRO - النسخة المتكاملة</title>
 
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
@@ -31,7 +31,6 @@ body{
   overflow-x:hidden;
 }
 
-/* Dynamic background */
 body::before{
   content:"";
   position:fixed;
@@ -42,7 +41,6 @@ body::before{
   z-index:-1;
 }
 
-/* ===== STICKY TOP BAR ===== */
 .top-bar{
   position:sticky;
   top:0;
@@ -52,7 +50,6 @@ body::before{
   padding-bottom:8px;
 }
 
-/* HEADER */
 header{
   text-align:center;
   padding:14px;
@@ -60,7 +57,6 @@ header{
   font-weight:700;
 }
 
-/* NAV */
 nav{
   display:flex;
   gap:8px;
@@ -74,13 +70,14 @@ nav button{
   border-radius:18px;
   background:var(--card);
   color:var(--text);
+  cursor:pointer;
+  transition:0.2s;
 }
 nav button.active{
   background:var(--main);
   color:#fff;
 }
 
-/* CONTROLS */
 .controls{
   display:grid;
   grid-template-columns:1fr 1fr auto auto auto auto;
@@ -100,13 +97,11 @@ input,select{
   color:var(--text);
 }
 
-/* CONTAINER */
 .container{
   padding:10px;
   padding-bottom:180px;
 }
 
-/* RADIO CARD */
 .radio-card{
   background:var(--card);
   border-radius:18px;
@@ -115,7 +110,8 @@ input,select{
   display:flex;
   justify-content:space-between;
   align-items:center;
-  overflow:hidden;
+  cursor:pointer;
+  transition:0.2s;
   box-shadow:0 4px 14px rgba(0,0,0,.12);
 }
 .radio-card.active{outline:2px solid var(--main);}
@@ -132,8 +128,8 @@ input,select{
   max-width:180px;
 }
 small{color:var(--muted);}
+.fav-btn{background:transparent;border:none;font-size:22px;cursor:pointer;}
 
-/* EQUALIZER */
 .eq{display:flex;gap:3px;opacity:0;}
 body.playing .eq{opacity:1;}
 .eq span{
@@ -145,7 +141,6 @@ body.playing .eq{opacity:1;}
 .eq span:nth-child(3){animation-delay:.4s}
 @keyframes eq{from{height:5px;}to{height:22px;}}
 
-/* FLOATING PLAYER */
 .floating-player{
   position:fixed;
   left:10px;right:10px;
@@ -162,7 +157,6 @@ body.playing .eq{opacity:1;}
 body.playing .floating-player{transform:translateY(0);}
 .floating-player audio{width:100%;}
 
-/* BOTTOM SHEET */
 .sheet{
   position:fixed;
   left:0;
@@ -190,46 +184,47 @@ body.playing .floating-player{transform:translateY(0);}
   border-radius:20px;
   object-fit:cover;
 }
-#sheetPlayer{width:100%;margin-top:auto;}
+.load-more-btn{
+  text-align:center;
+  padding:12px;
+  background:var(--card);
+  border-radius:40px;
+  margin:16px 0;
+  cursor:pointer;
+  font-weight:bold;
+}
 </style>
 </head>
-
 <body>
 
 <div class="top-bar">
 <header>🌍 Audio Engine UX PRO</header>
-
 <nav>
-<button class="active" onclick="setMode('all',this)">📻 راديو</button>
-<button onclick="setMode('news',this)">📰 أخبار</button>
-<button onclick="setMode('quran',this)">📖 قرآن</button>
-<button onclick="setMode('music',this)">🎵 موسيقى</button>
-<button onclick="setMode('religious',this)">🕌 ديني</button>
-<button onclick="setMode('fav',this)">⭐ المفضلة</button>
+<button class="active" data-mode="all">📻 راديو</button>
+<button data-mode="news">📰 أخبار</button>
+<button data-mode="quran">📖 قرآن</button>
+<button data-mode="music">🎵 موسيقى</button>
+<button data-mode="religious">🕌 ديني</button>
+<button data-mode="fav">⭐ المفضلة</button>
 </nav>
-
 <div class="controls">
 <select id="country"></select>
 <input id="search" placeholder="🔍 بحث">
-<button onclick="toggleTheme()">🌙</button>
-<button onclick="shuffle()">🔀</button>
-<button onclick="prev()">⏮</button>
-<button onclick="next()">⏭</button>
+<button id="themeBtn">🌙</button>
+<button id="shuffleBtn">🔀</button>
+<button id="prevBtn">⏮</button>
+<button id="nextBtn">⏭</button>
 </div>
 </div>
 
-<div class="container">
-<div id="radioList"></div>
-</div>
+<div class="container" id="radioList"></div>
 
-<!-- Floating Player -->
 <div class="floating-player" id="floatingPlayer">
   <div class="now" id="nowPlaying">▶️ جاهز</div>
   <div class="eq"><span></span><span></span><span></span></div>
   <audio id="player" controls></audio>
 </div>
 
-<!-- Bottom Sheet -->
 <div id="sheet" class="sheet">
   <div class="sheet-handle"></div>
   <img id="sheetImg" class="sheet-img">
@@ -238,149 +233,210 @@ body.playing .floating-player{transform:translateY(0);}
 </div>
 
 <script>
-const state={mode:"all",stations:[],filtered:[],currentIndex:-1,renderLimit:30};
-let favs=JSON.parse(localStorage.getItem("favs")||"[]");
+// ------------------------- الإعدادات الأساسية -------------------------
+const state = { mode: "all", stations: [], filtered: [], currentIndex: -1, currentPage: 0, pageSize: 25 };
+let favs = JSON.parse(localStorage.getItem("favs") || "[]");
 
-const rules={
-all:/.*/,news:/news|talk|info/,quran:/quran|koran|islam/,
-music:/music|pop|rock|jazz|classical/,
-religious:/islam|religion|mosque|sermon/,fav:/.*/
+const rules = {
+  all: /.*/,
+  news: /news|talk|info|bbc|cnn/,
+  quran: /quran|koran|islam|قرآن/,
+  music: /music|pop|rock|jazz|classical|hits/,
+  religious: /islam|religion|mosque|sermon|dawah/,
+  fav: /.*/
 };
 
-const player=document.getElementById("player");
-const sheet=document.getElementById("sheet");
-const sheetImg=document.getElementById("sheetImg");
-const sheetTitle=document.getElementById("sheetTitle");
-const sheetPlayer=document.getElementById("sheetPlayer");
+// إضافة قائمة قرآنية ثابتة احتياطية (لضمان وجود محطات قرآنية دائماً)
+const quranFallbackStations = [
+  { name: "📖 إذاعة القرآن الكريم - مكة", url: "https://live.mp3quran.net:8000/afs", favicon: "https://cdn-icons-png.flaticon.com/512/3095/3095444.png", tags: "quran islam", bitrate: 128 },
+  { name: "📖 إذاعة الشيخ السديس", url: "https://live.mp3quran.net:8000/sudais", favicon: "https://cdn-icons-png.flaticon.com/512/3095/3095444.png", tags: "quran", bitrate: 128 },
+  { name: "📖 إذاعة المعيقلي", url: "https://live.mp3quran.net:8000/maher", favicon: "https://cdn-icons-png.flaticon.com/512/3095/3095444.png", tags: "quran", bitrate: 128 }
+];
 
-if(localStorage.getItem("theme")==="true")
-document.body.classList.add("dark");
+const player = document.getElementById("player");
+const sheet = document.getElementById("sheet");
+const sheetImg = document.getElementById("sheetImg");
+const sheetTitle = document.getElementById("sheetTitle");
+const sheetPlayer = document.getElementById("sheetPlayer");
 
-/* Dynamic Color AI */
-function applyDynamicColor(img){
- const c=document.createElement("canvas");
- const x=c.getContext("2d");
- c.width=50;c.height=50;
- x.drawImage(img,0,0,50,50);
- const d=x.getImageData(0,0,50,50).data;
- let r=0,g=0,b=0,n=0;
- for(let i=0;i<d.length;i+=4){r+=d[i];g+=d[i+1];b+=d[i+2];n++;}
- document.documentElement.style
- .setProperty("--main",`rgb(${r/n|0},${g/n|0},${b/n|0})`);
+// ربط المشغلين
+sheetPlayer.addEventListener("play", () => { if (player.src !== sheetPlayer.src) { player.src = sheetPlayer.src; player.play(); } });
+player.addEventListener("play", () => { sheetPlayer.src = player.src; document.body.classList.add("playing"); });
+player.addEventListener("pause", () => document.body.classList.remove("playing"));
+player.addEventListener("timeupdate", () => { if (sheetPlayer.src === player.src && !sheetPlayer.paused && !player.paused) sheetPlayer.currentTime = player.currentTime; });
+
+// ------------------------- تحميل الدول (كما في الأصل - كل دول العالم) -------------------------
+async function fetchCached(url) {
+  const cache = await caches.open("radio-cache");
+  const cached = await cache.match(url);
+  if (cached) return cached.json();
+  const response = await fetch(url);
+  cache.put(url, response.clone());
+  return response.json();
 }
 
-async function fetchCached(url){
- const c=await caches.open("radio-cache");
- const m=await c.match(url);
- if(m) return m.json();
- const r=await fetch(url); c.put(url,r.clone());
- return r.json();
+async function loadCountries() {
+  const select = document.getElementById("country");
+  select.innerHTML = "<option>🌍 جاري تحميل الدول...</option>";
+  try {
+    const data = await fetchCached("https://de1.api.radio-browser.info/json/countries");
+    select.innerHTML = "";
+    data.forEach(c => {
+      const option = document.createElement("option");
+      option.value = c.iso_3166_1.toLowerCase();
+      option.textContent = `🌍 ${c.name}`;
+      select.appendChild(option);
+    });
+    // استعادة آخر دولة مختارة
+    const lastCountry = localStorage.getItem("lastCountry");
+    if (lastCountry && [...select.options].some(opt => opt.value === lastCountry)) select.value = lastCountry;
+    else select.value = "sa";
+    select.onchange = () => {
+      localStorage.setItem("lastCountry", select.value);
+      loadRadios();
+    };
+    loadRadios();
+  } catch (err) {
+    console.error("فشل تحميل الدول", err);
+    select.innerHTML = "<option value='sa'>🌍 السعودية</option><option value='us'>🇺🇸 الولايات المتحدة</option><option value='eg'>🇪🇬 مصر</option>";
+    select.onchange = () => loadRadios();
+    loadRadios();
+  }
 }
 
-async function loadCountries(){
- const data=await fetchCached("https://de1.api.radio-browser.info/json/countries");
- country.innerHTML="";
- data.forEach(c=>{
-  country.innerHTML+=`<option value="${c.iso_3166_1.toLowerCase()}">🌍 ${c.name}</option>`;
- });
+// تحميل المحطات حسب الدولة
+async function loadRadios() {
+  const countryCode = document.getElementById("country").value;
+  if (!countryCode) return;
+  const api = `https://de1.api.radio-browser.info/json/stations/bycountrycodeexact/${countryCode}?limit=200&hidebroken=true`;
+  state.stations = await fetchCached(api);
+  // دمج محطات القرآن الاحتياطية (لتكون ظاهرة حتى لو كانت الدولة لا تحتوي عليها)
+  const existingNames = new Set(state.stations.map(s => s.name));
+  for (let q of quranFallbackStations) {
+    if (!existingNames.has(q.name)) state.stations.unshift(q);
+  }
+  applyFilter();
 }
 
-async function loadRadios(){
- const api=`https://de1.api.radio-browser.info/json/stations/bycountrycodeexact/${country.value}?limit=150&hidebroken=true`;
- state.stations=await fetchCached(api);
- applyFilter();
+function applyFilter() {
+  const q = document.getElementById("search").value.toLowerCase();
+  state.filtered = state.mode === "fav"
+    ? state.stations.filter(s => favs.includes(s.name))
+    : state.stations.filter(s => {
+        const text = (s.name + " " + (s.tags || "")).toLowerCase();
+        return rules[state.mode].test(text) && text.includes(q);
+      });
+  state.currentPage = 0;
+  render();
 }
 
-function applyFilter(){
- const q=search.value.toLowerCase();
- state.filtered=state.mode==="fav"
- ? state.stations.filter(s=>favs.includes(s.name))
- : state.stations.filter(s=>{
-  const t=(s.name+" "+(s.tags||"")).toLowerCase();
-  return rules[state.mode].test(t)&&t.includes(q);
- });
- render();
+function render() {
+  const container = document.getElementById("radioList");
+  const start = state.currentPage * state.pageSize;
+  const end = start + state.pageSize;
+  const pageData = state.filtered.slice(start, end);
+  if (state.currentPage === 0) container.innerHTML = "";
+  pageData.forEach((s, idx) => {
+    const globalIdx = start + idx;
+    const card = document.createElement("div");
+    card.className = "radio-card" + (globalIdx === state.currentIndex ? " active" : "");
+    card.innerHTML = `
+      <div style="display:flex; gap:12px; align-items:center;">
+        <img src="${s.favicon || 'https://cdn-icons-png.flaticon.com/512/616/616490.png'}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/616/616490.png'">
+        <div><strong>${escapeHtml(s.name)}</strong><small>${s.bitrate || "?"} kbps</small></div>
+      </div>
+      <button class="fav-btn" data-name="${escapeHtml(s.name)}" onclick="event.stopPropagation(); toggleFav('${escapeHtml(s.name).replace(/'/g, "\\'")}')">
+        ${favs.includes(s.name) ? "⭐" : "☆"}
+      </button>
+    `;
+    card.onclick = () => play(globalIdx);
+    container.appendChild(card);
+  });
+  if (end < state.filtered.length && !document.querySelector(".load-more-btn")) {
+    const moreBtn = document.createElement("div");
+    moreBtn.className = "load-more-btn";
+    moreBtn.innerText = "➕ تحميل المزيد";
+    moreBtn.onclick = () => { state.currentPage++; render(); };
+    container.appendChild(moreBtn);
+  } else if (end >= state.filtered.length) {
+    const existing = document.querySelector(".load-more-btn");
+    if (existing) existing.remove();
+  }
 }
 
-function render(){
- radioList.innerHTML="";
- state.filtered.slice(0,state.renderLimit).forEach((s,i)=>{
-  const d=document.createElement("div");
-  d.className="radio-card"+(i===state.currentIndex?" active":"");
-  d.innerHTML=`
-   <div style="display:flex;gap:12px;align-items:center;">
-   <img src="${s.favicon||'https://via.placeholder.com/50'}">
-   <div><strong>${s.name}</strong><small>${s.bitrate||"?"} kbps</small></div>
-   </div>
-   <button onclick="event.stopPropagation();toggleFav('${s.name}')">
-   ${favs.includes(s.name)?"⭐":"☆"}</button>`;
-  d.onclick=()=>play(i);
-  radioList.appendChild(d);
- });
+function escapeHtml(str) { return str.replace(/[&<>]/g, function(m){ if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
+
+function play(index) {
+  if (index < 0 || index >= state.filtered.length) return;
+  state.currentIndex = index;
+  const s = state.filtered[index];
+  const stream = s.url_resolved || s.url;
+  if (!stream) return;
+  player.src = stream;
+  sheetPlayer.src = stream;
+  player.play().catch(e => console.log("تشغيل تلقائي محظور"));
+  document.getElementById("nowPlaying").innerText = "🎵 " + s.name;
+  sheetTitle.innerText = s.name;
+  sheetImg.src = s.favicon || "https://cdn-icons-png.flaticon.com/512/616/616490.png";
+  sheetImg.onerror = () => sheetImg.src = "https://cdn-icons-png.flaticon.com/512/616/616490.png";
+  // حفظ آخر محطة
+  localStorage.setItem("lastStation", JSON.stringify({ name: s.name, url: stream, favicon: s.favicon }));
+  render();
 }
 
-function toggleFav(n){
- favs=favs.includes(n)?favs.filter(f=>f!==n):[...favs,n];
- localStorage.setItem("favs",JSON.stringify(favs));
- render();
+function next() { if (state.filtered.length) play((state.currentIndex + 1) % state.filtered.length); }
+function prev() { if (state.currentIndex > 0) play(state.currentIndex - 1); else if (state.filtered.length) play(state.filtered.length - 1); }
+function shuffle() { if (state.filtered.length) play(Math.floor(Math.random() * state.filtered.length)); }
+
+function toggleFav(name) {
+  if (favs.includes(name)) favs = favs.filter(f => f !== name);
+  else favs.push(name);
+  localStorage.setItem("favs", JSON.stringify(favs));
+  if (state.mode === "fav") applyFilter();
+  else render();
 }
 
-function play(i){
- const s=state.filtered[i]; if(!s)return;
- state.currentIndex=i;
- player.src=s.url_resolved||s.url;
- player.play();
-
- nowPlaying.innerText="🎶 "+s.name;
- sheetTitle.innerText=s.name;
- sheetImg.src=s.favicon||"https://via.placeholder.com/300";
- sheetPlayer.src=player.src;
-
- const img=new Image();
- img.crossOrigin="anonymous";
- img.src=sheetImg.src;
- img.onload=()=>applyDynamicColor(img);
-
- render();
+function setMode(mode, btn) {
+  state.mode = mode;
+  document.querySelectorAll("nav button").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  applyFilter();
 }
 
-function next(){if(state.filtered.length)play((state.currentIndex+1)%state.filtered.length);}
-function prev(){if(state.currentIndex>0)play(state.currentIndex-1);}
-function shuffle(){play(Math.floor(Math.random()*state.filtered.length));}
+function toggleTheme() {
+  document.body.classList.toggle("dark");
+  localStorage.setItem("theme", document.body.classList.contains("dark"));
+  document.getElementById("themeBtn").innerHTML = document.body.classList.contains("dark") ? "🌞" : "🌙";
+}
 
-player.onplay=()=>document.body.classList.add("playing");
-player.onpause=()=>document.body.classList.remove("playing");
+// الأحداث
+document.getElementById("themeBtn").onclick = toggleTheme;
+document.getElementById("shuffleBtn").onclick = shuffle;
+document.getElementById("prevBtn").onclick = prev;
+document.getElementById("nextBtn").onclick = next;
+document.getElementById("search").oninput = applyFilter;
 
-window.addEventListener("scroll",()=>{
- const bar=document.querySelector(".top-bar");
- bar.style.boxShadow=window.scrollY>10?"0 4px 20px rgba(0,0,0,.15)":"none";
+document.querySelectorAll("nav button").forEach(btn => {
+  btn.onclick = () => setMode(btn.dataset.mode, btn);
 });
 
-function setMode(m,b){
- state.mode=m;
- document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active"));
- b.classList.add("active");
- applyFilter();
+document.getElementById("floatingPlayer").onclick = () => sheet.classList.add("open");
+
+let startY = 0;
+sheet.addEventListener("touchstart", e => startY = e.touches[0].clientY);
+sheet.addEventListener("touchmove", e => { if (e.touches[0].clientY - startY > 80) sheet.classList.remove("open"); });
+sheet.querySelector(".sheet-handle").addEventListener("click", () => sheet.classList.remove("open"));
+
+// استعادة الثيم
+if (localStorage.getItem("theme") === "true" || localStorage.getItem("theme") === "dark") {
+  document.body.classList.add("dark");
+  document.getElementById("themeBtn").innerHTML = "🌞";
+} else {
+  document.getElementById("themeBtn").innerHTML = "🌙";
 }
 
-function toggleTheme(){
- document.body.classList.toggle("dark");
- localStorage.setItem("theme",document.body.classList.contains("dark"));
-}
-
-document.getElementById("floatingPlayer").onclick=()=>sheet.classList.add("open");
-
-let startY=0;
-sheet.addEventListener("touchstart",e=>startY=e.touches[0].clientY);
-sheet.addEventListener("touchmove",e=>{
- if(e.touches[0].clientY-startY>80) sheet.classList.remove("open");
-});
-
-search.oninput=applyFilter;
-country.onchange=loadRadios;
-
-loadCountries().then(()=>{country.value="us";loadRadios();});
+// بدء التشغيل
+loadCountries();
 </script>
-
 </body>
 </html>
