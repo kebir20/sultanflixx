@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📋 مستخرج روابط IPTV – خفيف وبسيط + رفع ملف ظاهر دائماً</title>
+    <title>📋 مستخرج روابط IPTV – خفيف وبسيط</title>
     <style>
         body {
             background: #0b1120;
@@ -108,6 +108,12 @@
         input[type="file"] {
             display: none;
         }
+        .fetch-file-btn {
+            background: #f59e0b;
+        }
+        .fetch-file-btn:hover {
+            background: #d97706;
+        }
     </style>
 </head>
 <body>
@@ -123,23 +129,24 @@
         <div id="connectionStatus" class="stats"></div>
     </div>
 
-    <!-- بطاقة اختيار الملف (ظاهرة دائماً بغض النظر عن حالة xtream) -->
+    <!-- بطاقة رفع الملف مع زر معالجة منفصل -->
     <div class="card">
         <div class="file-row">
             <label class="file-label">
-                📂 اختيار ملف من جهازك (ظاهر دائماً)
+                📂 اختيار ملف من جهازك
                 <input type="file" id="localFileInput" accept=".txt,.m3u,.csv,text/plain,application/mpegurl">
             </label>
-            <span style="font-size:13px; color:#94a3b8;">(txt, m3u, csv - يعرض المحتوى في المربع السفلي)</span>
+            <button id="processFileBtn" class="fetch-file-btn">📡 جلب القنوات من الملف</button>
+            <span style="font-size:13px; color:#94a3b8;">(يدعم M3U وملفات النص العادي)</span>
         </div>
     </div>
 
     <div id="categoriesPanel" class="card" style="display:none;">
-        <div><strong>📂 اختر التصنيف:</strong></div>
+        <div><strong>📂 اختر التصنيف (من Xtream):</strong></div>
         <div id="categoryButtons" class="category-buttons"></div>
         <hr>
         <div id="linksArea">
-            <textarea id="linksTextarea" readonly placeholder="اضغط على أي تصنيف لعرض الروابط هنا... أو اختر ملفاً لعرض محتواه"></textarea>
+            <textarea id="linksTextarea" readonly placeholder="اضغط على أي تصنيف لعرض الروابط... أو اختر ملفاً ثم اضغط 'جلب القنوات من الملف'"></textarea>
             <button id="copyAllBtn" class="copy-all-btn" style="display:none;">📋 نسخ كل النص</button>
         </div>
     </div>
@@ -152,6 +159,7 @@
     let serverBase = "";
     let usernameVal = "";
     let passwordVal = "";
+    let uploadedFileContent = null;   // لتخزين محتوى الملف المرفوع مؤقتاً
 
     const serverInput = document.getElementById('serverUrl');
     const usernameInput = document.getElementById('username');
@@ -162,7 +170,10 @@
     const linksTextarea = document.getElementById('linksTextarea');
     const copyAllBtn = document.getElementById('copyAllBtn');
     const connectionStatusDiv = document.getElementById('connectionStatus');
+    const fileInput = document.getElementById('localFileInput');
+    const processFileBtn = document.getElementById('processFileBtn');
 
+    // دالة مساعدة للـ API
     async function apiCall(url) {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 15000);
@@ -293,28 +304,92 @@
 
     fetchBtn.onclick = fetchAllData;
 
+    // حفظ البيانات المحفوظة
     if (localStorage.getItem('xtream_server')) serverInput.value = localStorage.getItem('xtream_server');
     if (localStorage.getItem('xtream_user')) usernameInput.value = localStorage.getItem('xtream_user');
     serverInput.onchange = () => localStorage.setItem('xtream_server', serverInput.value);
     usernameInput.onchange = () => localStorage.setItem('xtream_user', usernameInput.value);
 
-    // رفع الملف (يعمل دائماً حتى بدون تسجيل دخول)
-    const fileInput = document.getElementById('localFileInput');
+    // قراءة الملف عند اختياره (تخزين المحتوى مؤقتاً)
     fileInput.addEventListener('change', function(event) {
         const file = event.target.files[0];
-        if (!file) return;
+        if (!file) {
+            uploadedFileContent = null;
+            return;
+        }
         const reader = new FileReader();
         reader.onload = function(e) {
-            linksTextarea.value = e.target.result;
-            copyAllBtn.style.display = 'inline-block';
-            document.querySelectorAll('.cat-btn').forEach(btn => btn.classList.remove('active'));
+            uploadedFileContent = e.target.result;
+            // لا نعرضه مباشرة، ننتظر الضغط على زر "جلب القنوات"
+            connectionStatusDiv.innerHTML = `<span style="color:#3b82f6;">📁 تم تحميل الملف: ${file.name} - اضغط "جلب القنوات من الملف" لعرض القنوات</span>`;
         };
         reader.onerror = function() {
-            linksTextarea.value = "⚠️ حدث خطأ أثناء قراءة الملف.";
-            copyAllBtn.style.display = 'none';
+            uploadedFileContent = null;
+            connectionStatusDiv.innerHTML = `<span style="color:#ef4444;">❌ خطأ في قراءة الملف</span>`;
         };
         reader.readAsText(file, 'UTF-8');
     });
+
+    // دالة لاستخراج القنوات من ملف M3U أو نص عادي
+    function parseM3UOrText(content) {
+        const lines = content.split(/\r?\n/);
+        const channels = [];
+        let currentName = "";
+        for (let i = 0; i < lines.length; i++) {
+            let line = lines[i].trim();
+            if (line.startsWith("#EXTINF:")) {
+                // استخراج اسم القناة: عادة بعد آخر فاصلة
+                const commaIndex = line.lastIndexOf(',');
+                if (commaIndex !== -1) {
+                    currentName = line.substring(commaIndex + 1).trim();
+                } else {
+                    currentName = "قناة بدون اسم";
+                }
+                // قد يكون السطر التالي هو الرابط
+                if (i + 1 < lines.length && !lines[i+1].startsWith("#")) {
+                    let url = lines[i+1].trim();
+                    if (url.startsWith("http")) {
+                        channels.push({ name: currentName, url: url });
+                        i++; // تخطي سطر الرابط
+                        currentName = "";
+                    }
+                }
+            } else if (line.startsWith("http")) {
+                // في حالة نص عادي كل سطر فيه رابط فقط
+                let url = line;
+                let name = `قناة ${channels.length + 1}`;
+                channels.push({ name: name, url: url });
+            } else if (line.includes("||")) {
+                // تنسيق "الاسم || الرابط" مباشر
+                let parts = line.split("||");
+                if (parts.length >= 2) {
+                    channels.push({ name: parts[0].trim(), url: parts[1].trim() });
+                }
+            }
+        }
+        return channels;
+    }
+
+    // زر معالجة الملف وعرض القنوات
+    processFileBtn.onclick = () => {
+        if (!uploadedFileContent) {
+            alert("يرجى اختيار ملف أولاً");
+            return;
+        }
+        const channels = parseM3UOrText(uploadedFileContent);
+        if (channels.length === 0) {
+            linksTextarea.value = "⚠️ لم يتم العثور على قنوات في الملف. تأكد من أنه بصيغة M3U أو يحتوي على روابط HTTP.";
+            copyAllBtn.style.display = 'none';
+            return;
+        }
+        // عرض بنفس التنسيق: الاسم || الرابط
+        let lines = channels.map(ch => `${ch.name} || ${ch.url}`);
+        linksTextarea.value = lines.join('\n');
+        copyAllBtn.style.display = 'inline-block';
+        // إلغاء التحديد من أزرار التصنيفات (لأن المحتوى الآن من ملف)
+        document.querySelectorAll('.cat-btn').forEach(btn => btn.classList.remove('active'));
+        connectionStatusDiv.innerHTML = `<span style="color:#22c55e;">✅ تم استخراج ${channels.length} قناة من الملف</span>`;
+    };
 </script>
 </body>
 </html>
