@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📋 مستخرج روابط IPTV – خفيف وبسيط + ملف</title>
+    <title>📋 مستخرج روابط IPTV – خفيف وبسيط + ملف مع تصنيفات</title>
     <style>
         body {
             background: #0b1120;
@@ -114,6 +114,10 @@
         .fetch-file-btn:hover {
             background: #d97706;
         }
+        .separator {
+            margin: 15px 0;
+            border-top: 1px solid #334155;
+        }
     </style>
 </head>
 <body>
@@ -129,7 +133,7 @@
         <div id="connectionStatus" class="stats"></div>
     </div>
 
-    <!-- بطاقة رفع الملف ومعالجته (تعمل بشكل مستقل) -->
+    <!-- رفع الملف ومعالجته -->
     <div class="card">
         <div class="file-row">
             <label class="file-label">
@@ -137,48 +141,58 @@
                 <input type="file" id="localFileInput" accept=".txt,.m3u,.csv,text/plain,application/mpegurl">
             </label>
             <button id="processFileBtn" class="fetch-file-btn">📡 جلب القنوات من الملف</button>
-            <span style="font-size:13px; color:#94a3b8;">(يدعم M3U وملفات النص العادي)</span>
+            <span style="font-size:13px; color:#94a3b8;">(يدعم M3U مع group-title)</span>
         </div>
     </div>
 
-    <!-- منطقة عرض القنوات (ظاهرة دائماً) -->
-    <div class="card" id="linksCard">
-        <div><strong>📺 قائمة القنوات (من Xtream أو من الملف):</strong></div>
+    <!-- لوحة تصنيفات الملف (تظهر فقط بعد معالجة ملف) -->
+    <div id="fileCategoriesPanel" class="card" style="display:none;">
+        <div><strong>📂 تصنيفات الملف:</strong></div>
+        <div id="fileCategoryButtons" class="category-buttons"></div>
+        <div class="separator"></div>
         <div id="linksArea">
-            <textarea id="linksTextarea" readonly placeholder="اضغط على تصنيف Xtream أو ارفع ملفاً واضغط 'جلب القنوات من الملف'"></textarea>
+            <textarea id="linksTextarea" readonly placeholder="اختر تصنيفاً من الملف أو من Xtream"></textarea>
             <button id="copyAllBtn" class="copy-all-btn" style="display:none;">📋 نسخ كل النص</button>
         </div>
     </div>
 
-    <!-- لوحة تصنيفات Xtream (تظهر فقط بعد جلب البيانات) -->
-    <div id="categoriesPanel" class="card" style="display:none;">
-        <div><strong>📂 اختر التصنيف (من Xtream):</strong></div>
-        <div id="categoryButtons" class="category-buttons"></div>
+    <!-- لوحة تصنيفات Xtream (تظهر فقط بعد جلب بيانات Xtream) -->
+    <div id="xtreamCategoriesPanel" class="card" style="display:none;">
+        <div><strong>📂 تصنيفات Xtream:</strong></div>
+        <div id="xtreamCategoryButtons" class="category-buttons"></div>
     </div>
 </div>
 
 <script>
-    // متغيرات عامة
-    let liveChannels = [];
-    let categories = [];
+    // ---------- متغيرات عامة ----------
+    let liveChannels = [];          // قنوات Xtream
+    let xtreamCategories = [];      // تصنيفات Xtream
     let serverBase = "";
     let usernameVal = "";
     let passwordVal = "";
-    let uploadedFileContent = null;
 
+    // بيانات الملف
+    let fileChannels = [];          // { name, url, groupTitle }
+    let fileGroups = new Map();     // groupTitle -> list of channels
+
+    // عناصر DOM
     const serverInput = document.getElementById('serverUrl');
     const usernameInput = document.getElementById('username');
     const passwordInput = document.getElementById('password');
     const fetchBtn = document.getElementById('fetchBtn');
-    const categoriesPanel = document.getElementById('categoriesPanel');
-    const categoryButtonsDiv = document.getElementById('categoryButtons');
+    const xtreamCategoriesPanel = document.getElementById('xtreamCategoriesPanel');
+    const xtreamCategoryButtonsDiv = document.getElementById('xtreamCategoryButtons');
+    const fileCategoriesPanel = document.getElementById('fileCategoriesPanel');
+    const fileCategoryButtonsDiv = document.getElementById('fileCategoryButtons');
     const linksTextarea = document.getElementById('linksTextarea');
     const copyAllBtn = document.getElementById('copyAllBtn');
     const connectionStatusDiv = document.getElementById('connectionStatus');
     const fileInput = document.getElementById('localFileInput');
     const processFileBtn = document.getElementById('processFileBtn');
 
-    // دالة مساعدة للـ API
+    let uploadedFileContent = null;
+
+    // ---------- دوال مساعدة للـ API (Xtream) ----------
     async function apiCall(url) {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 15000);
@@ -216,7 +230,7 @@
         return `${serverBase}/live/${usernameVal}/${passwordVal}/${streamId}.ts`;
     }
 
-    // عرض القنوات في textarea (مشترك بين Xtream والملف)
+    // عرض القنوات في textarea (عام)
     function displayChannels(channelsArray) {
         if (!channelsArray || channelsArray.length === 0) {
             linksTextarea.value = "⚠️ لا توجد قنوات لعرضها.";
@@ -228,46 +242,123 @@
         copyAllBtn.style.display = 'inline-block';
     }
 
-    // دالة عرض تصنيفات Xtream
-    function renderCategoryButtons() {
-        categoryButtonsDiv.innerHTML = '';
+    // ---------- دوال Xtream ----------
+    function renderXtreamCategoryButtons() {
+        xtreamCategoryButtonsDiv.innerHTML = '';
         const allBtn = document.createElement('button');
         allBtn.className = 'cat-btn';
-        allBtn.innerText = '📺 جميع القنوات';
+        allBtn.innerText = '📺 جميع القنوات (Xtream)';
         allBtn.onclick = () => {
-            activateButton(allBtn);
+            activateButton(allBtn, 'xtream');
             let allChannels = liveChannels.map(ch => ({ name: ch.name, url: buildStreamUrl(ch.stream_id) }));
             displayChannels(allChannels);
         };
-        categoryButtonsDiv.appendChild(allBtn);
+        xtreamCategoryButtonsDiv.appendChild(allBtn);
 
-        categories.forEach(cat => {
+        xtreamCategories.forEach(cat => {
             const btn = document.createElement('button');
             btn.className = 'cat-btn';
             btn.innerText = cat.category_name;
             btn.onclick = () => {
-                activateButton(btn);
+                activateButton(btn, 'xtream');
                 let filtered = liveChannels.filter(ch => ch.category_id == cat.category_id);
                 let chs = filtered.map(ch => ({ name: ch.name, url: buildStreamUrl(ch.stream_id) }));
                 displayChannels(chs);
             };
-            categoryButtonsDiv.appendChild(btn);
+            xtreamCategoryButtonsDiv.appendChild(btn);
         });
     }
 
-    function activateButton(activeBtn) {
-        document.querySelectorAll('.cat-btn').forEach(btn => btn.classList.remove('active'));
+    // ---------- دوال الملف (مع group-title) ----------
+    function parseM3UWithGroups(content) {
+        const lines = content.split(/\r?\n/);
+        const channels = [];    // { name, url, groupTitle }
+        let currentGroup = "عام";
+        let currentName = "";
+
+        for (let i = 0; i < lines.length; i++) {
+            let line = lines[i].trim();
+            if (line.startsWith("#EXTINF:")) {
+                // استخراج group-title إن وجد
+                let groupMatch = line.match(/group-title="([^"]*)"/i);
+                if (groupMatch && groupMatch[1]) {
+                    currentGroup = groupMatch[1];
+                } else {
+                    currentGroup = "عام";
+                }
+                // استخراج الاسم بعد آخر فاصلة
+                let commaIndex = line.lastIndexOf(',');
+                if (commaIndex !== -1) {
+                    currentName = line.substring(commaIndex + 1).trim();
+                } else {
+                    currentName = "قناة بدون اسم";
+                }
+                // الرابط في السطر التالي
+                if (i + 1 < lines.length && !lines[i+1].startsWith("#")) {
+                    let url = lines[i+1].trim();
+                    if (url.startsWith("http")) {
+                        channels.push({ name: currentName, url: url, groupTitle: currentGroup });
+                        i++;
+                        currentName = "";
+                    }
+                }
+            } else if (line.startsWith("http") && !line.startsWith("#")) {
+                // ملف نصي عادي: كل سطر رابط
+                let url = line;
+                let name = `قناة ${channels.length + 1}`;
+                channels.push({ name: name, url: url, groupTitle: "عام" });
+            } else if (line.includes("||")) {
+                // تنسيق الاسم || الرابط
+                let parts = line.split("||");
+                if (parts.length >= 2) {
+                    channels.push({ name: parts[0].trim(), url: parts[1].trim(), groupTitle: "عام" });
+                }
+            }
+        }
+        return channels;
+    }
+
+    // بناء أزرار التصنيفات من الملف
+    function buildFileCategoryButtons(channels) {
+        const groupsMap = new Map();
+        channels.forEach(ch => {
+            let group = ch.groupTitle || "عام";
+            if (!groupsMap.has(group)) groupsMap.set(group, []);
+            groupsMap.get(group).push(ch);
+        });
+        fileGroups = groupsMap;
+
+        fileCategoryButtonsDiv.innerHTML = '';
+        const allBtn = document.createElement('button');
+        allBtn.className = 'cat-btn';
+        allBtn.innerText = '📺 جميع القنوات (الملف)';
+        allBtn.onclick = () => {
+            activateButton(allBtn, 'file');
+            let allChs = [];
+            for (let chs of fileGroups.values()) allChs.push(...chs);
+            displayChannels(allChs);
+        };
+        fileCategoryButtonsDiv.appendChild(allBtn);
+
+        for (let [groupName, chs] of fileGroups.entries()) {
+            const btn = document.createElement('button');
+            btn.className = 'cat-btn';
+            btn.innerText = groupName;
+            btn.onclick = () => {
+                activateButton(btn, 'file');
+                displayChannels(chs);
+            };
+            fileCategoryButtonsDiv.appendChild(btn);
+        }
+    }
+
+    function activateButton(activeBtn, source) {
+        // إلغاء تنشيط جميع الأزرار في كلا القسمين
+        document.querySelectorAll('#xtreamCategoryButtons .cat-btn, #fileCategoryButtons .cat-btn').forEach(btn => btn.classList.remove('active'));
         activeBtn.classList.add('active');
     }
 
-    // نسخ النص
-    copyAllBtn.onclick = () => {
-        navigator.clipboard.writeText(linksTextarea.value).then(() => {
-            alert('✅ تم نسخ كل الروابط إلى الحافظة');
-        }).catch(() => alert('تم النسخ (بديل)'));
-    };
-
-    // جلب بيانات Xtream
+    // ---------- جلب بيانات Xtream ----------
     async function fetchAllData() {
         let server = serverInput.value.trim();
         let user = usernameInput.value.trim();
@@ -287,21 +378,20 @@
 
         try {
             await getUserInfo(serverBase, usernameVal, passwordVal);
-            categories = await fetchLiveCategories(serverBase, usernameVal, passwordVal);
+            xtreamCategories = await fetchLiveCategories(serverBase, usernameVal, passwordVal);
             liveChannels = await fetchLiveStreams(serverBase, usernameVal, passwordVal);
             
-            connectionStatusDiv.innerHTML = `<span style="color:#22c55e;">✅ متصل بنجاح - مرحباً ${usernameVal} | عدد القنوات: ${liveChannels.length} | مجموعات: ${categories.length}</span>`;
-            categoriesPanel.style.display = 'block';
-            renderCategoryButtons();
+            connectionStatusDiv.innerHTML = `<span style="color:#22c55e;">✅ متصل بنجاح | عدد القنوات: ${liveChannels.length} | مجموعات: ${xtreamCategories.length}</span>`;
+            xtreamCategoriesPanel.style.display = 'block';
+            renderXtreamCategoryButtons();
             // عرض جميع القنوات تلقائياً
             let allChannels = liveChannels.map(ch => ({ name: ch.name, url: buildStreamUrl(ch.stream_id) }));
             displayChannels(allChannels);
-            // تنشيط زر "جميع القنوات"
-            const firstBtn = document.querySelector('.cat-btn');
+            const firstBtn = document.querySelector('#xtreamCategoryButtons .cat-btn');
             if (firstBtn) firstBtn.classList.add('active');
         } catch (err) {
             connectionStatusDiv.innerHTML = `<span style="color:#ef4444;">❌ فشل: ${err.message}</span>`;
-            categoriesPanel.style.display = 'none';
+            xtreamCategoriesPanel.style.display = 'none';
         } finally {
             fetchBtn.disabled = false;
             fetchBtn.innerText = '🔍 جلب البيانات';
@@ -310,13 +400,13 @@
 
     fetchBtn.onclick = fetchAllData;
 
-    // حفظ البيانات
+    // حفظ بيانات Xtream
     if (localStorage.getItem('xtream_server')) serverInput.value = localStorage.getItem('xtream_server');
     if (localStorage.getItem('xtream_user')) usernameInput.value = localStorage.getItem('xtream_user');
     serverInput.onchange = () => localStorage.setItem('xtream_server', serverInput.value);
     usernameInput.onchange = () => localStorage.setItem('xtream_user', usernameInput.value);
 
-    // قراءة الملف
+    // ---------- معالجة الملف ----------
     fileInput.addEventListener('change', function(event) {
         const file = event.target.files[0];
         if (!file) {
@@ -326,7 +416,7 @@
         const reader = new FileReader();
         reader.onload = function(e) {
             uploadedFileContent = e.target.result;
-            connectionStatusDiv.innerHTML = `<span style="color:#3b82f6;">📁 تم تحميل الملف: ${file.name} - اضغط "جلب القنوات من الملف" لعرض القنوات</span>`;
+            connectionStatusDiv.innerHTML = `<span style="color:#3b82f6;">📁 تم تحميل الملف: ${file.name} - اضغط "جلب القنوات من الملف"</span>`;
         };
         reader.onerror = function() {
             uploadedFileContent = null;
@@ -335,59 +425,36 @@
         reader.readAsText(file, 'UTF-8');
     });
 
-    // استخراج القنوات من الملف (M3U أو نص)
-    function parseM3UOrText(content) {
-        const lines = content.split(/\r?\n/);
-        const channels = [];
-        let currentName = "";
-        for (let i = 0; i < lines.length; i++) {
-            let line = lines[i].trim();
-            if (line.startsWith("#EXTINF:")) {
-                const commaIndex = line.lastIndexOf(',');
-                if (commaIndex !== -1) {
-                    currentName = line.substring(commaIndex + 1).trim();
-                } else {
-                    currentName = "قناة بدون اسم";
-                }
-                if (i + 1 < lines.length && !lines[i+1].startsWith("#")) {
-                    let url = lines[i+1].trim();
-                    if (url.startsWith("http")) {
-                        channels.push({ name: currentName, url: url });
-                        i++;
-                        currentName = "";
-                    }
-                }
-            } else if (line.startsWith("http")) {
-                let url = line;
-                let name = `قناة ${channels.length + 1}`;
-                channels.push({ name: name, url: url });
-            } else if (line.includes("||")) {
-                let parts = line.split("||");
-                if (parts.length >= 2) {
-                    channels.push({ name: parts[0].trim(), url: parts[1].trim() });
-                }
-            }
-        }
-        return channels;
-    }
-
-    // زر جلب القنوات من الملف
     processFileBtn.onclick = () => {
         if (!uploadedFileContent) {
             alert("يرجى اختيار ملف أولاً");
             return;
         }
-        const channels = parseM3UOrText(uploadedFileContent);
+        const channels = parseM3UWithGroups(uploadedFileContent);
         if (channels.length === 0) {
-            linksTextarea.value = "⚠️ لم يتم العثور على قنوات في الملف. تأكد من أنه بصيغة M3U أو يحتوي على روابط HTTP.";
+            linksTextarea.value = "⚠️ لم يتم العثور على قنوات في الملف.";
             copyAllBtn.style.display = 'none';
+            fileCategoriesPanel.style.display = 'none';
             return;
         }
-        // عرض القنوات في نفس textarea
-        displayChannels(channels);
-        // إلغاء تحديد أي زر تصنيف Xtream (لأننا نعرض من ملف)
-        document.querySelectorAll('.cat-btn').forEach(btn => btn.classList.remove('active'));
-        connectionStatusDiv.innerHTML = `<span style="color:#22c55e;">✅ تم استخراج ${channels.length} قناة من الملف وعرضها بنجاح</span>`;
+        fileChannels = channels;
+        buildFileCategoryButtons(fileChannels);
+        fileCategoriesPanel.style.display = 'block';
+        // عرض جميع القنوات
+        let allChs = [];
+        for (let chs of fileGroups.values()) allChs.push(...chs);
+        displayChannels(allChs);
+        // تفعيل زر الكل
+        const allFileBtn = document.querySelector('#fileCategoryButtons .cat-btn:first-child');
+        if (allFileBtn) allFileBtn.classList.add('active');
+        connectionStatusDiv.innerHTML = `<span style="color:#22c55e;">✅ تم استخراج ${channels.length} قناة و ${fileGroups.size} تصنيف من الملف</span>`;
+    };
+
+    // نسخ النص
+    copyAllBtn.onclick = () => {
+        navigator.clipboard.writeText(linksTextarea.value).then(() => {
+            alert('✅ تم نسخ كل الروابط إلى الحافظة');
+        }).catch(() => alert('تم النسخ (بديل)'));
     };
 </script>
 </body>
